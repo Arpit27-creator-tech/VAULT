@@ -1,5 +1,9 @@
 import React from 'react';
-import { Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key } from 'lucide-react';
+import { 
+  Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, 
+  ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key,
+  MapPin, BookOpen, Lightbulb
+} from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 
 export default function SkillAnalyticsModal({ 
@@ -7,9 +11,12 @@ export default function SkillAnalyticsModal({
   isVictory, 
   stageTitle, 
   stats, 
+  stageData,
+  solvedRoles = {},
   onNextStage, 
   onRetry, 
-  onReturnToLobby 
+  onReturnToLobby,
+  onOpenRoadmap
 }) {
   if (!isOpen) return null;
 
@@ -23,8 +30,8 @@ export default function SkillAnalyticsModal({
   const totalXp = xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in">
-      <div className="forest-card max-w-2xl w-full p-6 sm:p-8 space-y-6 border-[4px] border-[#03140C] bg-[#051811] shadow-[12px_12px_0px_#020C07]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="forest-card max-w-2xl w-full p-6 sm:p-8 space-y-6 border-[4px] border-[#03140C] bg-[#051811] shadow-[12px_12px_0px_#020C07] max-h-[95vh] overflow-y-auto">
         {/* Banner Header */}
         <div className="text-center space-y-2 border-b-2 border-[#03140C] pb-5">
           <div className="inline-flex items-center justify-center p-3 rounded-none border-2 border-[#03140C] mb-2 bg-[#020B06]">
@@ -45,6 +52,34 @@ export default function SkillAnalyticsModal({
             {stageTitle} — {isVictory ? "All interlocked chamber locks neutralized." : "Security grid tripped before payload extraction."}
           </p>
         </div>
+
+        {/* FAILURE REMEDIATION ROADMAP CALLOUT (WHEN FAILED) */}
+        {!isVictory && (
+          <div className="bg-[#1C0D12] border-[3px] border-[#FF4D6D] p-4 sm:p-5 space-y-3 shadow-[4px_4px_0px_#020C07]">
+            <div className="flex items-center space-x-2">
+              <Lightbulb className="w-5 h-5 text-[#FBBF24] animate-bounce" />
+              <h3 className="font-mono text-xs sm:text-sm font-black uppercase text-[#F0FDF4] tracking-wider">
+                🗺️ ADAPTIVE REMEDIATION ROADMAP GENERATED!
+              </h3>
+            </div>
+            
+            <p className="text-xs text-red-100 font-medium leading-relaxed">
+              We identified the exact STEM concepts that caused extraction failure. An automated study roadmap with <strong>topic deep-dives, formula cheat-sheets, and practice drills</strong> has been assembled for your squad!
+            </p>
+
+            <button
+              onClick={() => {
+                heistAudio.playKeyClick();
+                if (onOpenRoadmap) onOpenRoadmap();
+              }}
+              className="w-full bg-[#FBBF24] text-[#02140D] font-black py-3 px-4 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase flex items-center justify-center space-x-2 text-xs sm:text-sm"
+            >
+              <BookOpen className="w-4 h-4 stroke-[2.5]" />
+              <span>Explore Personalized Learning Roadmap & Topics</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+        )}
 
         {/* Tactical Performance Telemetry */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">

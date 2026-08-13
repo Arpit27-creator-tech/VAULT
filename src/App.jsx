@@ -27,6 +27,7 @@ import InterdependenceMatrix from './components/InterdependenceMatrix';
 import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
 import CreateCustomHeistModal from './components/CreateCustomHeistModal';
+import RemediationRoadmapModal from './components/RemediationRoadmapModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('missions');
@@ -57,8 +58,9 @@ export default function App() {
   const [bgDimMode, setBgDimMode] = useState('vivid'); // 'cinema' (0.08), 'vivid' (0.22), 'focus' (0.45)
   const videoRef = useRef(null);
 
-  // Custom Heist Builder Modal state
+  // Custom Heist Builder & Remediation Roadmap state
   const [isCustomHeistModalOpen, setIsCustomHeistModalOpen] = useState(false);
+  const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState(false);
   const [allStages, setAllStages] = useState(heistStages);
 
   // Live Multi-Role Heist Engine State
@@ -1232,10 +1234,20 @@ export default function App() {
                 <div>
                   <h2 className="text-3xl font-black uppercase tracking-tight flex items-center space-x-2 text-[#F0FDF4]">
                     <BookOpen className="w-8 h-8 text-[#10B981]" />
-                    <span>Cross-Disciplinary Subject Matrix</span>
+                    <span>Cross-Disciplinary Subject Matrix & Roadmaps</span>
                   </h2>
                   <p className="text-emerald-200 font-medium">Applied problem solving across computer science, physics, chemistry, and cryptography.</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setIsRoadmapModalOpen(true);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="bg-[#FBBF24] text-[#02140D] font-black px-4 py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase flex items-center space-x-2 text-xs sm:text-sm flex-shrink-0"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>Interactive STEM Learning Roadmap</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1568,6 +1580,11 @@ export default function App() {
         isVictory={isMatchVictory}
         stageTitle={currentStageData.title}
         stats={analyticsStats}
+        stageData={currentStageData}
+        solvedRoles={currentStageSolved}
+        onOpenRoadmap={() => {
+          setIsRoadmapModalOpen(true);
+        }}
         onNextStage={() => {
           setAnalyticsModalOpen(false);
           const nextIdx = (currentStageIdx + 1) % allStages.length;
@@ -1580,6 +1597,22 @@ export default function App() {
         onReturnToLobby={() => {
           setAnalyticsModalOpen(false);
           setActiveTab('lobby');
+        }}
+      />
+
+      {/* TARGETED FAILURE REMEDIATION & TOPICS ROADMAP MODAL */}
+      <RemediationRoadmapModal
+        isOpen={isRoadmapModalOpen}
+        onClose={() => setIsRoadmapModalOpen(false)}
+        stageData={currentStageData}
+        solvedRoles={currentStageSolved}
+        alarmFails={alarmFails}
+        onRetryWithHints={() => {
+          setIsRoadmapModalOpen(false);
+          setAnalyticsModalOpen(false);
+          handleStartHeistStage(currentStageIdx);
+          setTimeLeft(prev => prev + 60);
+          toast.success("💡 Tactical retry initiated with +60s bonus time!");
         }}
       />
     </div>

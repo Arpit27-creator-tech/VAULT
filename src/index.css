@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 154 50% 6%;
+    --foreground: 140 60% 98%;
+    --card: 155 45% 10%;
+    --card-foreground: 140 60% 98%;
+    --popover: 155 45% 10%;
+    --popover-foreground: 140 60% 98%;
+    --primary: 158 80% 45%;
+    --primary-foreground: 154 50% 6%;
+    --secondary: 42 96% 56%;
+    --secondary-foreground: 154 50% 6%;
+    --muted: 155 30% 16%;
+    --muted-foreground: 145 20% 70%;
+    --accent: 172 85% 55%;
+    --accent-foreground: 154 50% 6%;
+    --destructive: 345 90% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 154 45% 12%;
+    --input: 154 45% 14%;
+    --ring: 158 80% 45%;
+    --radius: 0px;
+  }
+
+  body {
+    background-color: #051811;
+    color: #F0FDF4;
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+  }
+}
+
+/* Sylvan Forest Neo-Brutalist & Glassmorphic Utilities */
+.forest-glass {
+  background: rgba(7, 30, 20, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 3px solid #03140C;
+  box-shadow: 4px 4px 0px #020C07, 0 0 15px rgba(16, 185, 129, 0.12);
+}
+
+.forest-card {
+  background: rgba(10, 38, 27, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 3px solid #03140C;
+  box-shadow: 5px 5px 0px #020C07;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.forest-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px #10B981, 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.neo-btn-emerald {
+  border: 3px solid #03140C;
+  box-shadow: 3px 3px 0px #03140C;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neo-btn-emerald:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #10B981;
+}
+
+.neo-btn-emerald:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #03140C;
+}
+
+/* Custom Forest Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #051811;
+  border-left: 2px solid #03140C;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #10B981;
+  border: 2px solid #03140C;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #34D399;
+}

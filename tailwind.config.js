@@ -7,10 +7,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-        comic: ['"Comic Neue"', 'cursive'],
-        display: ['Fredoka', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+        sans: ['"Rajdhani"', '"Chakra Petch"', 'system-ui', 'sans-serif'],
+        game: ['"Chakra Petch"', '"Rajdhani"', 'sans-serif'],
+        display: ['"Orbitron"', '"Chakra Petch"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
       },
       colors: {
         ink: '#03140C',

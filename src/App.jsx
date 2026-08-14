@@ -5,9 +5,11 @@ import {
   ShieldAlert, Sparkles, Users, MapPin, BookOpen, Rocket, Scroll, Zap, 
   Lock, Unlock, Play, CheckCircle2, Trophy, Clock, UserPlus, Compass, 
   Radio, Terminal, ChevronRight, Award, Star, AlertTriangle, Flame, RefreshCw, Volume2, VolumeX,
-  Video, VideoOff, Eye, Sliders, Sun, Trees, Flower2, Leaf, FlaskConical, Key, Activity, Send, ArrowRight, Plus
+  Video, VideoOff, Eye, Sliders, Sun, Trees, Flower2, Leaf, FlaskConical, Key, Activity, Send, ArrowRight, Plus,
+  Menu, X, PanelLeftClose, PanelLeftOpen, ArrowLeft, LogOut, Home, BarChart3, User, UserCheck, LogIn,
+  Mic, MicOff, Headphones, PhoneCall, PhoneOff
 } from 'lucide-react';
-import bgVideo from './assets/nature.mp4';
+import bgVideo from './assets/backgroundnew.mp4';
 import { 
   initialMissions, 
   initialCharacters, 
@@ -28,9 +30,28 @@ import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
 import CreateCustomHeistModal from './components/CreateCustomHeistModal';
 import RemediationRoadmapModal from './components/RemediationRoadmapModal';
+import HeroPage from './components/HeroPage';
+import AuthModal from './components/AuthModal';
+import StatsDashboard from './components/StatsDashboard';
+import GraphicalRoadmap from './components/GraphicalRoadmap';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('missions');
+  const [activeTab, setActiveTab] = useState('home');
+  const [tabHistory, setTabHistory] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [isEndHeistModalOpen, setIsEndHeistModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Operative Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vault_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [missions, setMissions] = useState(() => {
     try {
       const saved = localStorage.getItem('kh_missions_subject_v4');
@@ -51,6 +72,12 @@ export default function App() {
       return initialLobby;
     }
   });
+
+  // Squad Lobby Voice Chat State
+  const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(true);
+  const [isLobbyMicMuted, setIsLobbyMicMuted] = useState(false);
+  const [isLobbyDeafened, setIsLobbyDeafened] = useState(false);
+  const [speakingPlayerSlot, setSpeakingPlayerSlot] = useState(1);
 
   // Sound & Ambient Video Controls
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -97,6 +124,132 @@ export default function App() {
     accuracy: "96%",
     alarmsTripped: 0
   });
+
+  const navigateToTab = (newTab) => {
+    if (newTab === 'login') {
+      setIsAuthModalOpen(true);
+      heistAudio.playKeyClick();
+      return;
+    }
+    // Only lock private operational zones (Stats Dossier, Custom Forge) behind login
+    const protectedTabs = ['stats', 'builder'];
+    if (!currentUser && protectedTabs.includes(newTab)) {
+      setIsAuthModalOpen(true);
+      toast.info("🔐 Operative clearance required: Sign in with email & password to access this sector.");
+      return;
+    }
+    if (newTab !== activeTab) {
+      if (activeTab === 'liveheist' && newTab !== 'liveheist') {
+        setIsTimerRunning(false);
+        heistAudio.stopTension();
+      }
+      setTabHistory(prev => [...prev, activeTab]);
+      setActiveTab(newTab);
+    }
+  };
+
+  const handleGoBack = () => {
+    heistAudio.playKeyClick();
+    if (activeTab === 'liveheist') {
+      setIsTimerRunning(false);
+      heistAudio.stopTension();
+    }
+    if (tabHistory.length > 0) {
+      const prevTab = tabHistory[tabHistory.length - 1];
+      setTabHistory(prev => prev.slice(0, -1));
+      setActiveTab(prevTab);
+    } else {
+      setActiveTab('home');
+    }
+  };
+
+  const handleConcludeHeist = (actionType = 'abort') => {
+    setIsTimerRunning(false);
+    heistAudio.stopTension();
+    setIsEndHeistModalOpen(false);
+
+    const stage = allStages[currentStageIdx] || heistStages[0];
+    const stageId = stage.stageId || 1;
+    const defaultTime = stage.timeLimit || 180;
+
+    if (actionType === 'debrief') {
+      heistAudio.playSuccessChime();
+      const solved = stageSolvedRoles[stageId] || {};
+      const solvedCount = Object.keys(solved).filter(k => solved[k]).length;
+      const totalTimeSpent = Math.max(0, defaultTime - timeLeft);
+      const timeStr = `${Math.floor(totalTimeSpent / 60)}m ${(totalTimeSpent % 60)}s`;
+
+      setIsMatchVictory(solvedCount > 0);
+      setAnalyticsStats({
+        hackerXp: solved.hacker ? 350 : 100,
+        engineerXp: solved.engineer ? 350 : 100,
+        scientistXp: solved.scientist ? 350 : 100,
+        cryptoXp: solved.cryptographer ? 350 : 100,
+        timeElapsed: timeStr,
+        accuracy: alarmFails === 0 ? "100%" : `${Math.max(50, 100 - alarmFails * 10)}%`,
+        alarmsTripped: alarmFails
+      });
+
+      // Update logged in user stats automatically
+      if (currentUser) {
+        const gainedXp = solvedCount > 0 ? 450 : 150;
+        const newRecord = {
+          id: `h-${Date.now()}`,
+          mission: stage.title || 'Infiltration Op',
+          role: activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer',
+          result: solvedCount > 0 ? 'VICTORY' : 'CONCLUDED',
+          xp: `+${gainedXp} XP`,
+          time: timeStr,
+          date: 'Just now'
+        };
+        const updatedUser = {
+          ...currentUser,
+          xp: currentUser.xp + gainedXp,
+          level: Math.floor((currentUser.xp + gainedXp) / 1000) + 1,
+          stats: {
+            ...currentUser.stats,
+            missionsCompleted: (currentUser.stats?.missionsCompleted || 0) + 1,
+            vaultsCracked: (currentUser.stats?.vaultsCracked || 0) + solvedCount,
+            alarmsTripped: (currentUser.stats?.alarmsTripped || 0) + alarmFails
+          },
+          history: [newRecord, ...(currentUser.history || [])]
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('vault_current_user', JSON.stringify(updatedUser));
+      }
+
+      // Reset timer, alarm state, and fail counters back to clean initial state
+      setTimeLeft(defaultTime);
+      setAlarmLevel('LOW_SECURITY');
+      setAlarmFails(0);
+
+      setAnalyticsModalOpen(true);
+      toast.success("📊 Operation Concluded. Generating Tactical Debrief & Skill Analytics.");
+    } else {
+      heistAudio.playRadioSquelch();
+      // Full reset of timer, security level, and alarms
+      setTimeLeft(defaultTime);
+      setAlarmLevel('LOW_SECURITY');
+      setAlarmFails(0);
+
+      toast.info("🚁 Emergency Exfiltration Confirmed. Mission timer reset to full duration.");
+      setActiveTab('home');
+    }
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setCurrentUser(userData);
+    localStorage.setItem('vault_current_user', JSON.stringify(userData));
+    setSidebarCollapsed(false);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('vault_current_user');
+    setActiveTab('home');
+    setTabHistory([]);
+    toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
+  };
 
   // Waitlist state
   const [emailInput, setEmailInput] = useState('');
@@ -205,6 +358,11 @@ export default function App() {
   }, [isTimerRunning, timeLeft, alarmLevel]);
 
   const handleStartHeistStage = (stageIdx = 0) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      toast.info("🔐 Operative clearance required: Sign in with email & password to launch co-op operations.");
+      return;
+    }
     setCurrentStageIdx(stageIdx);
     const stage = allStages[stageIdx] || heistStages[0];
     setTimeLeft(stage.timeLimit || 180);
@@ -513,7 +671,7 @@ export default function App() {
   const currentStagePuzzles = currentStageData.puzzles || heistStages[0].puzzles || {};
 
   return (
-    <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
       <Toaster position="top-right" richColors />
 
       {/* BACKGROUND VIDEO LAYER */}
@@ -529,12 +687,12 @@ export default function App() {
             className="w-full h-full object-cover scale-105 filter brightness-105 saturate-110 contrast-105 transition-opacity duration-1000"
           />
         )}
-        {/* Dynamic Translucent Dimmer Overlay */}
+        {/* Translucent Dimmer Overlay */}
         <div 
           className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
           style={{
             backgroundColor: '#051811',
-            opacity: bgDimMode === 'cinema' ? 0.08 : bgDimMode === 'focus' ? 0.42 : 0.22
+            opacity: 0.22
           }}
         />
         {/* Alarm lockdown flasher overlay */}
@@ -544,146 +702,384 @@ export default function App() {
       </div>
 
       {/* FOREGROUND APPLICATION (z-10) */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col min-h-screen">
 
-        {/* HEADER / NAVIGATION */}
-        <header className="sticky top-0 z-50 bg-[#071E14]/85 backdrop-blur-xl border-b-[3px] border-[#03140C] px-4 sm:px-6 py-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* STICKY TOP MENU BAR */}
+        <header className="sticky top-0 z-50 bg-[#071E14]/95 backdrop-blur-xl border-b-[3px] border-[#03140C] px-3 sm:px-6 py-2.5 sm:py-3 shadow-[0_4px_25px_rgba(0,0,0,0.6)]">
+          <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
             
-            {/* Brand Logo */}
-            <div className="flex items-center justify-between w-full md:w-auto">
-              <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => setActiveTab('missions')}>
-                <div className="bg-[#10B981] border-[3px] border-[#03140C] p-2 shadow-[3px_3px_0px_#020C07] group-hover:rotate-6 transition-transform rotate-[-2deg]">
-                  <Leaf className="w-6 h-6 text-[#02140D]" />
+            {/* Left: If Logged In -> Back, Home, Sidebar Toggles, Brand Logo; If Visitor -> Brand Logo */}
+            <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+              
+              {/* TOP-LEFT BACK BUTTON (When Logged In) */}
+              {currentUser && (
+                <button 
+                  onClick={handleGoBack}
+                  disabled={activeTab === 'home' && tabHistory.length === 0}
+                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-all active:translate-x-0.5 active:translate-y-0.5 ${
+                    activeTab === 'home' && tabHistory.length === 0
+                      ? 'bg-[#051811] text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                      : 'bg-[#FBBF24] text-[#02140D] hover:bg-[#F59E0B]'
+                  }`}
+                  title={activeTab === 'home' && tabHistory.length === 0 ? "At Mission HQ" : "Go Back to Previous Screen"}
+                  aria-label="Go Back"
+                >
+                  <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">BACK</span>
+                </button>
+              )}
+
+              {/* MENU BAR HOME SECTION BUTTON (When Logged In) */}
+              {currentUser && (
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => {
+                    navigateToTab('home');
+                    heistAudio.playKeyClick();
+                    if (window.innerWidth < 768) setSidebarOpen(false);
+                  }}
+                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-colors ${
+                    activeTab === 'home'
+                      ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#FBBF24]'
+                      : 'bg-[#0A261B] text-[#6EE7B7] hover:bg-[#10B981]/20 hover:text-white'
+                  }`}
+                  title="Mission HQ / Home Page"
+                  aria-label="Home Section"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="hidden sm:inline">HOME</span>
+                </motion.button>
+              )}
+
+              {/* Mobile Sidebar Menu Toggle (When Logged In) */}
+              {currentUser && (
+                <button 
+                  onClick={() => {
+                    setSidebarOpen(!sidebarOpen);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="md:hidden p-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#FBBF24] shadow-[2px_2px_0px_#020C07] hover:bg-[#10B981] hover:text-[#02140D] active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  title={sidebarOpen ? "Close Syndicate Menu" : "Open Syndicate Menu"}
+                  aria-label="Toggle navigation menu"
+                >
+                  {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              )}
+
+              {/* Desktop Sidebar Collapse Toggle (When Logged In) */}
+              {currentUser && (
+                <button 
+                  onClick={() => {
+                    setSidebarCollapsed(!sidebarCollapsed);
+                    heistAudio.playKeyClick();
+                  }}
+                  className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-all active:translate-x-0.5 active:translate-y-0.5 ${
+                    sidebarCollapsed
+                      ? 'bg-[#10B981] text-[#02140D] hover:bg-[#34D399] shadow-[2px_2px_0px_#FBBF24]'
+                      : 'bg-[#0A261B] text-[#6EE7B7] hover:text-[#FBBF24] hover:bg-[#0E3526]'
+                  }`}
+                  title={sidebarCollapsed ? "Open Syndicate Sidebar Menu" : "Minimize / Hide Sidebar Menu Completely"}
+                  aria-label="Toggle sidebar visibility"
+                >
+                  {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                  <span>{sidebarCollapsed ? "MENU" : "HIDE"}</span>
+                </button>
+              )}
+
+              {/* Brand Logo */}
+              <div 
+                className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group" 
+                onClick={() => {
+                  navigateToTab('home');
+                  heistAudio.playKeyClick();
+                  if (window.innerWidth < 768) setSidebarOpen(false);
+                }}
+              >
+                <div className="bg-[#10B981] border-[3px] border-[#03140C] p-1.5 sm:p-2 shadow-[3px_3px_0px_#020C07] group-hover:rotate-6 transition-transform rotate-[-2deg]">
+                  <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-[#02140D]" />
                 </div>
                 <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-black tracking-widest uppercase font-mono bg-[#FBBF24] text-[#02140D] px-2.5 py-0.5 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07]">
+                  <div className="flex items-center space-x-1.5 sm:space-x-2">
+                    <span className="text-lg sm:text-2xl font-black tracking-widest uppercase font-mono bg-[#FBBF24] text-[#02140D] px-2 sm:px-2.5 py-0.5 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07]">
                       V.A.U.L.T
                     </span>
                     <span className="hidden sm:inline-block bg-[#10B981]/20 text-[#34D399] text-[10px] font-mono font-bold px-2 py-0.5 border border-[#10B981]/40 uppercase tracking-widest">
                       v3.5 CO-OP
                     </span>
                   </div>
-                  <span className="text-xs block font-bold text-[#6EE7B7] tracking-widest mt-0.5">
+                  <span className="text-[9px] sm:text-xs block font-bold text-[#6EE7B7] tracking-widest mt-0.5">
                     VIRTUAL ACADEMIC UNDERGROUND LEARNING TEAM
                   </span>
                 </div>
               </div>
-
-              {/* Mobile controls */}
-              <div className="flex items-center space-x-2 md:hidden">
-                <button 
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-2 border-2 border-[#03140C] bg-[#0A2D1F] text-xs font-black text-[#FBBF24] shadow-[2px_2px_0px_#020C07]"
-                  title={soundEnabled ? "Mute SFX" : "Enable SFX"}
-                >
-                  {soundEnabled ? <Volume2 className="w-4 h-4 text-[#10B981]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
-                </button>
-              </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <nav className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto w-full md:w-auto py-1 max-w-full">
-              {[
-                { id: 'missions', label: 'Expeditions', icon: Compass },
-                { id: 'liveheist', label: 'Live Cockpit', icon: Zap, highlight: true },
-                { id: 'lobby', label: 'Squad Lobby', icon: Users },
-                { id: 'characters', label: '4 Roles', icon: Sparkles },
-                { id: 'topics', label: 'Disciplines', icon: BookOpen },
-                { id: 'map', label: 'Canopy Map', icon: MapPin },
-                { id: 'builder', label: 'Architect', icon: Terminal },
-                { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket }
-              ].map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      heistAudio.playKeyClick();
-                      if (tab.id === 'liveheist' && !isTimerRunning) {
-                        setIsTimerRunning(true);
-                      }
-                    }}
-                    className={`flex items-center space-x-1.5 px-3 sm:px-3.5 py-2 rounded-none font-black text-xs sm:text-sm transition-all border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap ${
-                      isActive 
-                        ? 'bg-[#10B981] text-[#02140D] -translate-y-0.5 shadow-[3px_3px_0px_#FBBF24]' 
-                        : tab.highlight
-                        ? 'bg-[#FBBF24] text-[#02140D] hover:bg-[#F59E0B] animate-pulse'
-                        : 'bg-[#0A261B]/80 text-[#E2FBEA] hover:bg-[#10B981]/30 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Desktop Action & Visibility Controls */}
-            <div className="hidden md:flex items-center space-x-2.5">
+            {/* Right: Actions & Operative Authentication Controls */}
+            <div className="flex items-center space-x-1.5 sm:space-x-2.5">
               
-              {/* Background Preset Selector */}
-              <div className="flex items-center bg-[#051811] border-[2px] border-[#03140C] p-0.5 shadow-[2px_2px_0px_#020C07]">
-                {[
-                  { id: 'cinema', label: '100% Video' },
-                  { id: 'vivid', label: 'Vivid' },
-                  { id: 'focus', label: 'Focus' }
-                ].map(mode => (
-                  <button
-                    key={mode.id}
-                    onClick={() => {
-                      setBgDimMode(mode.id);
-                      heistAudio.playKeyClick();
-                      toast.info(`Background: ${mode.label}`);
-                    }}
-                    className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider transition-all ${
-                      bgDimMode === mode.id 
-                        ? 'bg-[#FBBF24] text-[#02140D]' 
-                        : 'text-emerald-300 hover:text-white hover:bg-emerald-900/40'
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
+              {/* If in liveheist: Show End Heist Quick Button in Top Bar */}
+              {activeTab === 'liveheist' && (
+                <button
+                  onClick={() => setIsEndHeistModalOpen(true)}
+                  className="bg-[#FF4D6D] text-white font-mono font-black text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 transition-all flex items-center space-x-1.5 uppercase animate-pulse"
+                  title="Conclude or Abort this operation on your own wish"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">END HEIST</span>
+                  <span className="sm:hidden">END</span>
+                </button>
+              )}
 
               {/* Sound Toggle */}
               <button 
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-2 border-[2px] border-[#03140C] bg-[#0A261B] text-[#34D399] font-black shadow-[2px_2px_0px_#020C07] hover:bg-[#0E3526]"
+                className="p-1.5 sm:p-2 border-[2px] border-[#03140C] bg-[#0A261B] text-[#34D399] font-black shadow-[2px_2px_0px_#020C07] hover:bg-[#0E3526]"
                 title={soundEnabled ? "Mute SFX" : "Enable SFX"}
               >
                 {soundEnabled ? <Volume2 className="w-4 h-4 text-[#10B981]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
               </button>
 
-              {/* Create Custom Heist Action */}
-              <button
-                onClick={() => {
-                  setIsCustomHeistModalOpen(true);
-                  heistAudio.playKeyClick();
-                }}
-                className="bg-[#FBBF24] text-[#02140D] font-black px-3.5 sm:px-4 py-2 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-1.5 text-xs sm:text-sm"
-                title="Create a custom multi-role heist with selected roles"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>CUSTOM HEIST</span>
-              </button>
+              {/* Operative Login / Profile Button */}
+              {currentUser ? (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      navigateToTab('stats');
+                      heistAudio.playKeyClick();
+                    }}
+                    className={`flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 border-2 border-[#03140C] font-mono shadow-[2px_2px_0px_#020C07] transition-all ${
+                      activeTab === 'stats' 
+                        ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#FBBF24]' 
+                        : 'bg-[#0A261B] text-[#F0FDF4] hover:bg-[#10B981]/20'
+                    }`}
+                    title={`View ${currentUser.callsign}'s Operative Dossier`}
+                  >
+                    <img 
+                      src={currentUser.avatar} 
+                      alt={currentUser.callsign} 
+                      className="w-5 h-5 object-cover border border-[#03140C]" 
+                    />
+                    <div className="text-left hidden md:block leading-tight">
+                      <span className="text-[11px] font-black uppercase block truncate max-w-[90px]">{currentUser.callsign}</span>
+                      <span className="text-[9px] text-[#FBBF24] font-bold block">LVL {currentUser.level}</span>
+                    </div>
+                  </button>
 
-              {/* Start Expedition Action */}
-              <button
-                onClick={() => handleStartHeistStage(0)}
-                className="bg-[#FF4D6D] text-white font-black px-4 sm:px-5 py-2 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-2 text-sm"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>LAUNCH STAGE 1</span>
-              </button>
+                  {/* Create Custom Heist Action */}
+                  <button
+                    onClick={() => {
+                      setIsCustomHeistModalOpen(true);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="hidden sm:flex bg-[#FBBF24] text-[#02140D] font-black px-2.5 sm:px-4 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 active:translate-y-0.5 transition-all items-center space-x-1 sm:space-x-1.5 text-xs sm:text-sm"
+                    title="Create a custom multi-role heist with selected roles"
+                  >
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                    <span className="hidden sm:inline">CUSTOM HEIST</span>
+                    <span className="sm:hidden">HEIST</span>
+                  </button>
+
+                  {/* Start Expedition Action (when not in liveheist) */}
+                  {activeTab !== 'liveheist' && (
+                    <button
+                      onClick={() => handleStartHeistStage(0)}
+                      className="bg-[#FF4D6D] text-white font-black px-3 sm:px-5 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                    >
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
+                      <span className="hidden sm:inline">LAUNCH STAGE 1</span>
+                      <span className="sm:hidden">STAGE 1</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Visitor Mode: Clean Standard Sign In Button */
+                <button
+                  onClick={() => {
+                    setIsAuthModalOpen(true);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2"
+                  title="Sign In with email or username and password"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In / Register</span>
+                </button>
+              )}
             </div>
 
           </div>
         </header>
+
+        {/* WORKSPACE LAYOUT: SIDEBAR (WHEN AUTHENTICATED) + MAIN CONTENT */}
+        <div className="flex flex-1 relative min-h-[calc(100vh-65px)]">
+
+          {/* MOBILE SIDEBAR BACKDROP */}
+          {currentUser && sidebarOpen && (
+            <div 
+              className="fixed inset-0 z-30 bg-black/75 backdrop-blur-sm md:hidden transition-opacity"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
+          {/* SIDEBAR UNDER MENU BAR (LOCKED/HIDDEN UNTIL AUTHENTICATED) */}
+          {currentUser && (
+            <aside className={`
+              fixed md:sticky top-[58px] sm:top-[65px] z-40 md:z-20
+              h-[calc(100vh-58px)] sm:h-[calc(100vh-65px)]
+              bg-[#061E14]/95 md:bg-[#071E14]/90 backdrop-blur-xl
+              border-r-[3px] border-[#03140C] shadow-[4px_0_20px_rgba(0,0,0,0.5)]
+              flex flex-col justify-between
+              transition-all duration-300 ease-in-out
+              overflow-y-auto overflow-x-hidden flex-shrink-0
+              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+              ${sidebarCollapsed 
+                ? 'md:-translate-x-full md:w-0 md:opacity-0 md:pointer-events-none md:border-r-0 md:overflow-hidden' 
+                : 'w-72 md:w-60 lg:w-64 md:opacity-100'
+              }
+            `}>
+            
+            {/* Top Section / Syndicate Deck Header & Nav items */}
+            <div className="flex-1 w-72 md:w-60 lg:w-64">
+              
+              {/* Syndicate Menu Header */}
+              <div className="p-3.5 border-b-2 border-[#03140C] bg-[#04160E]/80 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                  <span className="text-[11px] font-black uppercase font-mono tracking-wider text-[#34D399]">
+                    SYNDICATE MENU
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[10px] font-mono bg-[#0A261B] text-[#FBBF24] px-2 py-0.5 border border-[#03140C] font-bold">
+                    10 OPS
+                  </span>
+                  {/* Quick minimize button inside sidebar */}
+                  <button
+                    onClick={() => {
+                      setSidebarCollapsed(true);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="hidden md:flex p-1 text-slate-400 hover:text-white hover:bg-[#0E3526] border border-[#03140C]"
+                    title="Minimize Sidebar"
+                  >
+                    <PanelLeftClose className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation Options List */}
+              <nav className="p-2.5 sm:p-3 space-y-1.5">
+                {[
+                  { id: 'home', label: 'Home HQ', icon: Home, badge: 'HOME', sub: 'Platform Overview' },
+                  { id: 'stats', label: 'My Stats', icon: BarChart3, badge: currentUser ? `LVL ${currentUser.level}` : 'STATS', sub: 'Operative Dossier', highlight: !!currentUser },
+                  { id: 'missions', label: 'Expeditions', icon: Compass, badge: '3 Ops', sub: 'Campaign Missions' },
+                  { id: 'liveheist', label: 'Live Cockpit', icon: Zap, badge: 'LIVE HUD', sub: 'Real-time Co-op', highlight: true },
+                  { id: 'lobby', label: 'Squad Lobby', icon: Users, badge: '4 Roles', sub: 'Crew Assembly' },
+                  { id: 'characters', label: '4 Roles', icon: Sparkles, badge: 'Classes', sub: 'Role Capabilities' },
+                  { id: 'topics', label: 'Disciplines', icon: BookOpen, badge: 'STEM', sub: 'Cross-Curricular' },
+                  { id: 'map', label: 'Canopy Map', icon: MapPin, badge: 'Tactical', sub: 'Interactive Vaults' },
+                  { id: 'builder', label: 'Architect', icon: Terminal, badge: 'Forge', sub: 'Custom Blueprints' },
+                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket, badge: 'VIP', sub: 'Early Access Pass' }
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+
+                  return (
+                    <motion.button
+                      key={tab.id}
+                      whileHover={{ x: 3 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => {
+                        navigateToTab(tab.id);
+                        heistAudio.playKeyClick();
+                        if (tab.id === 'liveheist' && !isTimerRunning) {
+                          setIsTimerRunning(true);
+                        }
+                        if (window.innerWidth < 768) {
+                          setSidebarOpen(false);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between p-2.5 transition-colors text-left border-[2.5px] border-[#03140C] ${
+                        isActive
+                          ? 'bg-[#10B981] text-[#02140D] font-black shadow-[3px_3px_0px_#FBBF24] translate-x-0.5'
+                          : tab.highlight
+                          ? 'bg-[#0E3523] text-[#FBBF24] hover:bg-[#10B981]/25 hover:text-white border-amber-400/40 shadow-[2px_2px_0px_#020C07]'
+                          : 'bg-[#0A261B]/80 text-[#D1FAE5] hover:bg-[#10B981]/20 hover:text-white shadow-[2px_2px_0px_#020C07]'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                        <div className={`p-1.5 border border-[#03140C] flex-shrink-0 ${
+                          isActive 
+                            ? 'bg-[#02140D] text-[#10B981]' 
+                            : tab.highlight 
+                            ? 'bg-[#FBBF24] text-[#02140D]' 
+                            : 'bg-[#051A12] text-[#34D399]'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-black uppercase tracking-wider truncate flex items-center space-x-1.5">
+                            <span>{tab.label}</span>
+                            {tab.highlight && (
+                              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#02140D]' : 'bg-red-500'} animate-ping`} />
+                            )}
+                          </div>
+                          <p className={`text-[10px] truncate ${isActive ? 'text-[#02140D]/80 font-bold' : 'text-emerald-400/70 font-medium'}`}>
+                            {tab.sub}
+                          </p>
+                        </div>
+                      </div>
+
+                      {tab.badge && (
+                        <span className={`text-[9px] font-mono font-black px-1.5 py-0.5 border flex-shrink-0 ${
+                          isActive
+                            ? 'bg-[#02140D] text-[#FBBF24] border-[#02140D]'
+                            : tab.highlight
+                            ? 'bg-[#FF4D6D] text-white border-[#03140C] animate-pulse'
+                            : 'bg-[#051C13] text-[#6EE7B7] border-[#03140C]'
+                        }`}>
+                          {tab.badge}
+                        </span>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </nav>
+
+            </div>
+
+            {/* Bottom Section / Tactical Status in Sidebar */}
+            <div className="p-3 border-t-2 border-[#03140C] bg-[#04160E]/90 space-y-2.5 w-72 md:w-60 lg:w-64">
+              {/* Radar Live Status */}
+              <div className="p-2 bg-[#020B06] border border-[#03140C] flex items-center justify-between text-[11px] font-mono font-bold">
+                <div className="flex items-center space-x-1.5 text-[#34D399]">
+                  <Radio className="w-3.5 h-3.5 text-[#10B981] animate-pulse" />
+                  <span>RADAR ACTIVE</span>
+                </div>
+                <span className="text-[#FBBF24] text-[10px]">4.8K CO-OP</span>
+              </div>
+
+              {/* Fast Stage Action */}
+              <button
+                onClick={() => {
+                  handleStartHeistStage(0);
+                  if (window.innerWidth < 768) setSidebarOpen(false);
+                }}
+                className="w-full bg-[#FF4D6D] text-white font-black text-xs py-2 px-2.5 border-[2px] border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 flex items-center justify-center space-x-1.5 uppercase"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>LAUNCH CO-OP</span>
+              </button>
+            </div>
+
+          </aside>
+          )}
+
+          {/* MAIN CONTENT AREA */}
+          <div className="flex-1 min-w-0 flex flex-col">
 
         {/* HERO BANNER */}
         {activeTab === 'missions' && (
@@ -692,13 +1088,24 @@ export default function App() {
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
               
               <div className="lg:col-span-7 space-y-6">
-                <div className="inline-flex items-center space-x-2 bg-[#FBBF24] text-[#02140D] font-black text-xs uppercase px-3.5 py-1.5 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] rotate-[-1deg]">
-                  <Trees className="w-4 h-4" />
-                  <span>🌲 REAL-TIME MULTIPLAYER LEARNING HEIST</span>
+                <div className="inline-flex items-center space-x-2 bg-[#FBBF24] text-[#02140D] font-mono font-black text-xs sm:text-sm uppercase px-3.5 py-1.5 border-[2.5px] border-[#03140C] shadow-[3px_3px_0px_#020C07] rotate-[-1.5deg]">
+                  <Trees className="w-4 h-4 text-[#02140D] stroke-[2.5]" />
+                  <span className="text-sm">🌲</span>
+                  <span className="tracking-wide">REAL–TIME MULTIPLAYER LEARNING HEIST</span>
                 </div>
                 
-                <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none uppercase drop-shadow-[4px_4px_0px_#020C07]">
-                  EDUCATION IS A <span className="bg-[#10B981] text-[#02140D] px-3 py-1 border-[3px] border-[#03140C]">TEAM SPORT!</span>
+                <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none uppercase drop-shadow-[4px_4px_0px_#020C07] text-[#F0FDF4]">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span>EDUCATION IS A</span>
+                    <span className="bg-[#10B981] text-[#02140D] px-3.5 sm:px-5 py-0.5 sm:py-1 border-[3.5px] border-[#03140C] shadow-[5px_5px_0px_#020C07] inline-block">
+                      TEAM
+                    </span>
+                  </div>
+                  <div className="mt-2.5 sm:mt-3">
+                    <span className="bg-[#10B981] text-[#02140D] px-3.5 sm:px-5 py-0.5 sm:py-1 border-[3.5px] border-[#03140C] shadow-[5px_5px_0px_#020C07] inline-block">
+                      SPORT!
+                    </span>
+                  </div>
                 </h1>
                 
                 <p className="text-base sm:text-lg font-medium text-emerald-100/90 max-w-xl leading-relaxed">
@@ -753,78 +1160,140 @@ export default function App() {
         )}
 
         {/* MAIN CONTAINER */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-14 w-full">
+          <AnimatePresence mode="wait" initial={false}>
+
+          {/* TAB 0: MISSION HQ HERO PAGE */}
+          {activeTab === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <HeroPage
+                onNavigate={navigateToTab}
+                onStartStage={handleStartHeistStage}
+                onOpenCustomHeist={() => {
+                  if (!currentUser) {
+                    setIsAuthModalOpen(true);
+                    toast.info("🔐 Please sign in with email & password to build custom heist blueprints.");
+                  } else {
+                    setIsCustomHeistModalOpen(true);
+                  }
+                }}
+                onRequireAuth={() => setIsAuthModalOpen(true)}
+                currentUser={currentUser}
+                characters={characters}
+                missions={missions}
+                heistStages={allStages}
+              />
+            </motion.div>
+          )}
 
           {/* TAB 1: LIVE HEIST COCKPIT & OPERATION ENGINE */}
           {activeTab === 'liveheist' && (
-            <div className="space-y-6">
+            <motion.div
+              key="liveheist"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5 max-w-7xl mx-auto"
+            >
               
-              {/* Mission Stage Header & Realtime HUD */}
-              <div className="forest-glass p-5 border-[3px] border-[#03140C] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
+              {/* Mission Stage Header */}
+              <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg">
+                <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="bg-[#FF4D6D] text-white font-mono font-black text-xs px-2.5 py-0.5 border border-[#03140C] uppercase">
-                      ACTIVE OPERATION
+                    <span className="bg-[#10B981] text-[#02140D] font-bold text-[10px] px-2.5 py-0.5 rounded uppercase font-mono">
+                      Active Mission
                     </span>
-                    <span className="text-xs font-mono font-bold text-emerald-300">
-                      TARGET: {currentStageData.targetFacility}
+                    <span className="text-xs font-mono text-emerald-300">
+                      Target: {currentStageData.targetFacility}
                     </span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#F0FDF4] mt-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                     {currentStageData.title}
                   </h2>
-                  <p className="text-xs text-emerald-200 font-medium">{currentStageData.description}</p>
+                  <p className="text-xs text-slate-300 max-w-2xl">{currentStageData.description}</p>
                 </div>
 
-                {/* Tactical HUD Counters */}
-                <div className="flex flex-wrap items-center gap-3 font-mono">
+                {/* Tactical Status Counters */}
+                <div className="flex flex-wrap items-center gap-2.5 font-mono text-xs self-stretch lg:self-auto justify-between lg:justify-end">
                   
                   {/* Countdown Timer */}
-                  <div className={`p-2.5 border-2 border-[#03140C] text-center min-w-[120px] shadow-[2px_2px_0px_#020C07] ${
-                    timeLeft <= 30 ? 'bg-red-900/90 text-white animate-bounce' : 'bg-[#020B06] text-[#FBBF24]'
+                  <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 ${
+                    timeLeft <= 30 
+                      ? 'bg-red-950/80 border-red-500 text-red-200 animate-pulse' 
+                      : 'bg-[#020B06] border-emerald-900/60 text-[#FBBF24]'
                   }`}>
-                    <div className="flex items-center justify-center space-x-1 text-[10px] uppercase font-bold text-slate-400">
-                      <Clock className="w-3 h-3 text-[#FBBF24]" />
-                      <span>EXTRACTION TIMER</span>
+                    <Clock className="w-4 h-4 text-[#FBBF24]" />
+                    <div>
+                      <span className="text-[9px] text-slate-400 block leading-none">TIMER</span>
+                      <span className="font-bold text-base leading-none">
+                        {Math.floor(timeLeft / 60)}:{((timeLeft % 60)).toString().padStart(2, '0')}
+                      </span>
                     </div>
-                    <p className="text-2xl font-black">
-                      {Math.floor(timeLeft / 60)}:{((timeLeft % 60)).toString().padStart(2, '0')}
-                    </p>
                   </div>
 
-                  {/* Alarm Level Meter */}
-                  <div className={`p-2.5 border-2 border-[#03140C] text-center min-w-[140px] shadow-[2px_2px_0px_#020C07] ${
+                  {/* Security Alert Level */}
+                  <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 ${
                     alarmLevel === 'HIGH_LOCKDOWN' 
-                      ? 'bg-red-900 text-white animate-pulse' 
+                      ? 'bg-red-950 border-red-500 text-red-200 animate-pulse' 
                       : alarmLevel === 'MEDIUM_ALERT'
-                      ? 'bg-amber-900/90 text-amber-200'
-                      : 'bg-[#020B06] text-[#10B981]'
+                      ? 'bg-amber-950 border-amber-500 text-amber-200'
+                      : 'bg-[#020B06] border-emerald-900/60 text-[#10B981]'
                   }`}>
-                    <div className="flex items-center justify-center space-x-1 text-[10px] uppercase font-bold text-slate-300">
-                      <ShieldAlert className="w-3 h-3" />
-                      <span>SECURITY LEVEL</span>
+                    <ShieldAlert className="w-4 h-4" />
+                    <div>
+                      <span className="text-[9px] text-slate-400 block leading-none">STATUS</span>
+                      <span className="font-bold text-xs leading-none">
+                        {alarmLevel === 'LOW_STEALTH' ? 'Normal' : alarmLevel.replace('_', ' ')}
+                      </span>
                     </div>
-                    <p className="text-xs font-black uppercase mt-1">
-                      {alarmLevel.replace('_', ' ')} ({alarmFails} FAILS)
-                    </p>
                   </div>
 
-                  {/* Stage Switcher Controls */}
-                  <div className="flex bg-[#03140C] border-2 border-[#03140C] p-0.5">
+                  {/* Stage Switcher Pills */}
+                  <div className="flex bg-[#020B06] rounded-lg p-1 border border-emerald-900/60">
                     {allStages.map((stg, sIdx) => (
                       <button
                         key={stg.stageId || sIdx}
                         onClick={() => handleStartHeistStage(sIdx)}
-                        className={`px-3 py-2 text-xs font-black uppercase transition-all ${
+                        className={`px-2.5 py-1 text-xs font-semibold rounded transition-all ${
                           currentStageIdx === sIdx 
                             ? 'bg-[#10B981] text-[#02140D]' 
-                            : 'text-emerald-300 hover:text-white'
+                            : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {stg.isCustom ? `CUSTOM` : `STAGE 0${stg.stageId}`}
+                        {stg.isCustom ? 'Custom' : `S0${stg.stageId}`}
                       </button>
                     ))}
                   </div>
+
+                  {/* Restart Button */}
+                  <button
+                    onClick={() => {
+                      handleStartHeistStage(currentStageIdx);
+                      toast.info(`🔄 Stage restarted! Timer reset.`);
+                    }}
+                    className="p-2 rounded-lg border border-emerald-900/60 bg-[#020B06] text-[#FBBF24] hover:bg-[#10B981] hover:text-[#02140D] transition-colors"
+                    title="Restart Stage"
+                    aria-label="Restart Stage"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+
+                  {/* End Heist Button */}
+                  <button
+                    onClick={() => setIsEndHeistModalOpen(true)}
+                    className="bg-[#FF4D6D] text-white font-bold text-xs px-3 py-2 rounded-lg hover:bg-[#FF3366] transition-colors flex items-center space-x-1.5"
+                    title="End or Abort Operation"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>End Heist</span>
+                  </button>
 
                 </div>
               </div>
@@ -837,12 +1306,12 @@ export default function App() {
               />
 
               {/* Role Cockpit Switcher Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { id: 'hacker', name: 'The Hacker', icon: Terminal, color: '#10B981', discipline: 'Data Structures / Code' },
-                  { id: 'engineer', name: 'The Engineer', icon: Compass, color: '#FBBF24', discipline: 'Physics / Geometry' },
-                  { id: 'scientist', name: 'The Scientist', icon: FlaskConical, color: '#06B6D4', discipline: 'Chemistry / Biology' },
-                  { id: 'cryptographer', name: 'The Cryptographer', icon: Key, color: '#C084FC', discipline: 'Ciphers / Languages' }
+                  { id: 'hacker', name: 'The Hacker', icon: Terminal, color: '#10B981', discipline: 'Data Structures' },
+                  { id: 'engineer', name: 'The Engineer', icon: Compass, color: '#FBBF24', discipline: 'Physics & Optics' },
+                  { id: 'scientist', name: 'The Scientist', icon: FlaskConical, color: '#06B6D4', discipline: 'Chemistry & pH' },
+                  { id: 'cryptographer', name: 'The Cryptographer', icon: Key, color: '#C084FC', discipline: 'Math & Ciphers' }
                 ].filter(roleItem => !currentStageData.selectedRoles || currentStageData.selectedRoles[roleItem.id]).map(roleItem => {
                   const Icon = roleItem.icon;
                   const isRoleSolved = !!currentStageSolved[roleItem.id];
@@ -855,31 +1324,31 @@ export default function App() {
                         setActiveCockpitRole(roleItem.id);
                         heistAudio.playKeyClick();
                       }}
-                      className={`p-3.5 border-[3px] border-[#03140C] text-left transition-all flex flex-col justify-between ${
+                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
                         isActive
-                          ? 'bg-[#0A3020] shadow-[4px_4px_0px_#FBBF24] -translate-y-1'
-                          : 'bg-[#051811]/90 shadow-[2px_2px_0px_#020C07] hover:bg-[#08281A]'
+                          ? 'bg-[#0A2E1E] border-[#10B981] shadow-md ring-1 ring-[#10B981]'
+                          : 'bg-[#051C12] border-emerald-900/40 hover:bg-[#072418]'
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-2">
-                          <Icon className="w-4 h-4" style={{ color: roleItem.color }} />
-                          <span className="font-mono text-xs font-black uppercase" style={{ color: roleItem.color }}>
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <Icon className="w-4 h-4 flex-shrink-0" style={{ color: roleItem.color }} />
+                          <span className="font-bold text-xs truncate text-white">
                             {roleItem.name}
                           </span>
                         </div>
                         {isRoleSolved && (
-                          <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                          <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-[10px] text-emerald-300 font-mono mt-2">{roleItem.discipline}</p>
+                      <p className="text-[10px] text-slate-400 font-mono mt-1.5">{roleItem.discipline}</p>
                     </button>
                   );
                 })}
               </div>
 
               {/* Cockpit Workspace & Walkie-Talkie Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 
                 {/* Left 8 Cols: Active Role Cockpit Interactive Component */}
                 <div className="lg:col-span-8 space-y-4">
@@ -929,107 +1398,122 @@ export default function App() {
                   />
 
                   {/* Co-Op Helper / Bot Simulator */}
-                  <div className="forest-card p-4 border-[2px] border-[#03140C] bg-[#051811]/90 space-y-3">
+                  <div className="bg-[#051C12] p-4 rounded-xl border border-emerald-800/40 space-y-2.5 shadow-md">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="w-4 h-4 text-[#FBBF24]" />
-                      <span className="text-xs font-mono font-black uppercase text-emerald-300">
-                        Solo / Co-Op Simulator
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                        AI Teammate Assist
                       </span>
                     </div>
-                    <p className="text-[11px] text-emerald-200">
-                      Playing solo or missing a squadmate? Simulate an AI teammate solving one of the other pending roles.
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Playing solo or need a squadmate clue? Trigger an AI teammate to solve one of the pending roles.
                     </p>
                     <button
                       onClick={handleSimulateBotTeammates}
-                      className="w-full bg-[#0A2D1F] text-[#FBBF24] font-black text-xs py-2.5 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#10B981] hover:text-[#02140D] transition-colors uppercase"
+                      className="w-full bg-[#10B981] text-[#02140D] font-bold text-xs py-2.5 rounded-lg hover:bg-[#34D399] transition-colors"
                     >
-                      🤖 Request Bot Squadmate Input
+                      🤖 Request AI Teammate Clue
                     </button>
                   </div>
                 </div>
 
               </div>
 
-            </div>
+            </motion.div>
           )}
 
           {/* TAB 2: EXPEDITIONS / MISSIONS */}
           {activeTab === 'missions' && (
-            <div className="space-y-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-4 border-[#03140C] pb-4 bg-[#071E14]/70 p-4 backdrop-blur-md">
+            <motion.div
+              key="missions"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6 max-w-7xl mx-auto"
+            >
+              {/* Clean Header Bar */}
+              <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                 <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight flex items-center space-x-2 text-[#F0FDF4]">
-                    <Compass className="w-8 h-8 text-[#10B981]" />
-                    <span>Active STEM Expeditions & Custom Heists</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-[#10B981] text-[#02140D] font-bold text-[10px] px-2.5 py-0.5 rounded uppercase font-mono">
+                      Campaigns
+                    </span>
+                    <span className="text-xs font-mono text-emerald-300">
+                      {missions.length} Operations Ready
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mt-1 font-game">
+                    STEM Expeditions
                   </h2>
-                  <p className="text-emerald-200 font-medium">Select a multidisciplinary vault target, craft custom operations, and assemble your squad.</p>
+                  <p className="text-xs sm:text-sm text-slate-300">
+                    Select a collaborative mission target below to start your co-op heist.
+                  </p>
                 </div>
-                <div className="flex items-center space-x-3">
+
+                <div className="flex items-center space-x-2.5 self-start sm:self-auto">
                   <button
                     onClick={() => {
                       setIsCustomHeistModalOpen(true);
                       heistAudio.playKeyClick();
                     }}
-                    className="bg-[#FBBF24] text-[#02140D] font-black text-xs px-4 py-2 border-2 border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase flex items-center space-x-1.5"
+                    className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 py-2.5 rounded-lg hover:bg-[#34D399] transition-colors flex items-center space-x-1.5 shadow-md shadow-emerald-950 font-game"
                   >
-                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <Plus className="w-4 h-4" />
                     <span>Create Custom Heist</span>
                   </button>
-                  <span className="bg-[#10B981] text-[#02140D] border-2 border-[#03140C] font-black text-xs px-3 py-2 shadow-[2px_2px_0px_#020C07]">
-                    {missions.length} EXPEDITIONS READY
-                  </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Clean Mission Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {missions.map((mission, mIdx) => (
-                  <motion.div
-                    key={mission.id}
-                    whileHover={{ y: -4, x: -2 }}
-                    className="forest-card flex flex-col justify-between overflow-hidden"
+                  <div
+                    key={mission.id || mIdx}
+                    className="bg-[#051C12] border border-emerald-800/40 rounded-xl overflow-hidden shadow-md flex flex-col justify-between hover:border-[#10B981]/70 hover:bg-[#072418] transition-all group"
                   >
                     <div>
-                      <div className="relative h-56 border-b-[3px] border-[#03140C] overflow-hidden bg-[#03140C]">
+                      {/* Mission Thumbnail */}
+                      <div className="relative h-44 overflow-hidden bg-[#020B06]">
                         <img 
                           src={mission.image} 
                           alt={mission.title} 
                           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_SUBJECT_IMG; }}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         />
-                        <div className="absolute top-3 left-3">
-                          <span className="bg-[#FBBF24] text-[#02140D] font-black text-xs px-3 py-1 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] uppercase">
-                            {mission.category}
-                          </span>
+                        <div className="absolute top-3 left-3 bg-[#020B06]/85 backdrop-blur-sm text-[#34D399] font-mono text-[10px] font-bold px-2.5 py-1 rounded border border-emerald-900/60">
+                          {mission.category}
                         </div>
                         <div className="absolute top-3 right-3">
-                          <span className={`font-black text-xs px-3 py-1 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] uppercase ${
-                            mission.difficulty.includes('Master') 
-                              ? 'bg-[#FF4D6D] text-white' 
+                          <span className={`text-[10px] font-bold font-mono px-2.5 py-1 rounded ${
+                            mission.difficulty?.includes('Master') 
+                              ? 'bg-red-500/90 text-white' 
                               : 'bg-[#10B981] text-[#02140D]'
                           }`}>
                             {mission.difficulty}
                           </span>
                         </div>
-                        <div className="absolute bottom-3 right-3 bg-[#071E14]/90 text-[#FBBF24] font-black text-xs px-3 py-1 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07]">
-                          🎁 {mission.reward}
-                        </div>
                       </div>
 
-                      <div className="p-6 space-y-4">
+                      {/* Content */}
+                      <div className="p-5 space-y-2 text-left">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-2xl font-black text-[#F0FDF4] uppercase tracking-tight">{mission.title}</h3>
-                          <span className="text-xs font-mono font-bold text-emerald-300 bg-[#0A261B] px-2.5 py-1 border border-emerald-500/30">
-                            {mission.customStageData ? `${Object.values(mission.customStageData.selectedRoles || {}).filter(Boolean).length} ROLES` : '3 STAGES'}
+                          <h3 className="font-bold text-lg text-white group-hover:text-[#10B981] transition-colors font-game">
+                            {mission.title}
+                          </h3>
+                          <span className="text-[11px] font-mono text-amber-300 font-semibold">
+                            🎁 {mission.reward}
                           </span>
                         </div>
 
-                        <p className="text-emerald-200/90 text-sm leading-relaxed font-medium">
+                        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
                           {mission.description}
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-6 pt-0 border-t border-[#0E3A28]/50 mt-4 flex items-center justify-between">
+                    {/* Action Button */}
+                    <div className="p-5 pt-0">
                       <button
                         onClick={() => {
                           if (mission.customStageData) {
@@ -1038,117 +1522,283 @@ export default function App() {
                             handleStartHeistStage(mIdx % allStages.length);
                           }
                         }}
-                        className="w-full bg-[#10B981] text-[#02140D] font-black py-3 px-6 border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 uppercase flex items-center justify-center space-x-2 text-sm"
+                        className="w-full bg-[#10B981] text-[#02140D] font-bold py-2.5 rounded-lg hover:bg-[#34D399] active:scale-[0.98] transition-all text-xs flex items-center justify-center space-x-2 uppercase font-game shadow-md shadow-emerald-950"
                       >
                         <Play className="w-4 h-4 fill-current" />
-                        <span>INFILTRATE TARGET VAULT</span>
+                        <span>Launch Expedition</span>
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* TAB 3: SQUAD LOBBY */}
+          {/* TAB 3: SQUAD LOBBY WITH VOICE CHAT */}
           {activeTab === 'lobby' && (
-            <div className="space-y-8">
-              <div className="forest-card p-6 sm:p-8 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-[#03140C] pb-5">
-                  <div>
+            <motion.div
+              key="lobby"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6 max-w-7xl mx-auto text-left"
+            >
+              {/* Lobby Header Card */}
+              <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-900/60 pb-5">
+                  <div className="space-y-1">
                     <div className="flex items-center space-x-2">
-                      <span className="bg-[#10B981] text-[#02140D] font-black text-xs px-2.5 py-0.5 border border-[#03140C] uppercase">
+                      <span className="bg-[#10B981] text-[#02140D] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded uppercase">
                         SQUAD ASSEMBLED
                       </span>
-                      <span className="text-xs font-mono text-emerald-300">MULTIPLAYER ROOM</span>
+                      <span className="text-xs font-mono text-emerald-300">4-OPERATIVE MULTIPLAYER ROOM</span>
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight mt-1 text-[#F0FDF4]">{lobby.name}</h2>
-                    <p className="text-emerald-200 text-sm">Lock in your specialized roles and launch simultaneous synchronized extraction.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-[#F0FDF4] font-game">
+                      {lobby.name}
+                    </h2>
+                    <p className="text-slate-300 text-xs sm:text-sm">
+                      Lock in your specialized roles, tune voice frequencies, and launch synchronized extraction.
+                    </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="bg-[#020B06] px-4 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07]">
-                      <span className="text-[10px] font-mono text-emerald-400 block uppercase font-bold">Invite Code</span>
-                      <span className="text-xl font-mono font-black text-[#FBBF24] tracking-widest">{lobby.code}</span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-emerald-800/60">
+                      <span className="text-[9px] font-mono text-emerald-400 block uppercase font-bold">Invite Code</span>
+                      <span className="text-lg font-mono font-bold text-[#FBBF24] tracking-widest">{lobby.code}</span>
                     </div>
                     <button
                       onClick={() => {
                         setIsCustomHeistModalOpen(true);
                         heistAudio.playKeyClick();
                       }}
-                      className="bg-[#FBBF24] text-[#02140D] font-black px-4 py-3.5 border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase flex items-center space-x-1.5 text-sm"
+                      className="bg-[#020B06] text-[#FBBF24] border border-amber-500/60 hover:bg-amber-950/40 font-bold px-3.5 py-2.5 rounded-xl uppercase flex items-center space-x-1.5 text-xs font-game transition-all"
                     >
-                      <Plus className="w-4 h-4 stroke-[3]" />
+                      <Plus className="w-4 h-4" />
                       <span>Custom Heist</span>
                     </button>
                     <button
                       onClick={() => handleStartHeistStage(0)}
-                      className="bg-[#10B981] text-[#02140D] font-black px-6 py-3.5 border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 uppercase flex items-center space-x-2 text-base"
+                      className="bg-[#10B981] text-[#02140D] font-bold px-5 py-2.5 rounded-xl hover:bg-[#34D399] uppercase flex items-center space-x-2 text-sm font-game shadow-lg shadow-emerald-950 transition-all"
                     >
-                      <Play className="w-5 h-5 fill-current" />
-                      <span>LAUNCH OPERATION</span>
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>LAUNCH HEIST</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 4 Ranger Slots */}
+                {/* ========================================================================= */}
+                {/* SQUAD LIVE VOICE CHAT COMMS DECK */}
+                {/* ========================================================================= */}
+                <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Left: Radio Frequency & Live Waveform */}
+                  <div className="flex items-center space-x-3.5">
+                    <div className={`p-2.5 rounded-xl border transition-all ${
+                      isLobbyVoiceConnected
+                        ? 'bg-[#042416] border-[#10B981] text-[#10B981] shadow-[0_0_12px_#10B98144]'
+                        : 'bg-[#020B06] border-slate-700 text-slate-500'
+                    }`}>
+                      <Radio className="w-5 h-5" />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-white font-game">
+                          Squad Radio Frequency: <span className="text-amber-300 font-mono">SYLVAN-142.85 MHz</span>
+                        </span>
+                        <span className={`w-2 h-2 rounded-full ${isLobbyVoiceConnected ? 'bg-[#10B981] animate-ping' : 'bg-slate-600'}`} />
+                      </div>
+                      <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-400 mt-0.5">
+                        <span className={isLobbyVoiceConnected ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                          {isLobbyVoiceConnected ? '● VOICE COMMS LIVE' : '○ VOICE COMMS MUTED'}
+                        </span>
+                        <span>•</span>
+                        <span>Low-Latency Opus HD</span>
+                        <span>•</span>
+                        <span>4 Operatives Linked</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Middle: Live Audio Equalizer Waves */}
+                  {isLobbyVoiceConnected && !isLobbyMicMuted && (
+                    <div className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#020B06] rounded-lg border border-emerald-900/60">
+                      <span className="text-[10px] font-mono text-emerald-400 mr-2">MIC AUDIO:</span>
+                      {[12, 24, 18, 28, 16, 22, 14, 26].map((h, i) => (
+                        <span
+                          key={i}
+                          style={{ height: `${h}px` }}
+                          className="w-1 bg-[#10B981] rounded-full animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Right: Interactive Voice Controls */}
+                  <div className="flex items-center space-x-2">
+                    {/* Microphone Mute Toggle */}
+                    <button
+                      onClick={() => {
+                        setIsLobbyMicMuted(!isLobbyMicMuted);
+                        heistAudio.playKeyClick();
+                        toast.info(!isLobbyMicMuted ? "🔇 Microphone Muted" : "🎙️ Microphone Live & Transmitting");
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
+                        isLobbyMicMuted
+                          ? 'bg-red-950/80 text-red-300 border border-red-800'
+                          : 'bg-[#042416] text-[#34D399] border border-emerald-700 hover:bg-[#073621]'
+                      }`}
+                      title={isLobbyMicMuted ? "Unmute Microphone" : "Mute Microphone"}
+                    >
+                      {isLobbyMicMuted ? <MicOff className="w-4 h-4 text-red-400" /> : <Mic className="w-4 h-4 text-[#10B981]" />}
+                      <span>{isLobbyMicMuted ? 'Muted' : 'Mic On'}</span>
+                    </button>
+
+                    {/* Headphone Deafen Toggle */}
+                    <button
+                      onClick={() => {
+                        setIsLobbyDeafened(!isLobbyDeafened);
+                        heistAudio.playKeyClick();
+                        toast.info(!isLobbyDeafened ? "🎧 Deafen Active: Audio Muted" : "🔊 Deafen Off: Audio Live");
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
+                        isLobbyDeafened
+                          ? 'bg-purple-950/80 text-purple-300 border border-purple-800'
+                          : 'bg-[#020B06] text-slate-300 border border-emerald-900/60 hover:text-white'
+                      }`}
+                      title={isLobbyDeafened ? "Undeafen Audio" : "Deafen Audio"}
+                    >
+                      {isLobbyDeafened ? <VolumeX className="w-4 h-4 text-purple-400" /> : <Headphones className="w-4 h-4 text-slate-300" />}
+                      <span>{isLobbyDeafened ? 'Deafened' : 'Sound'}</span>
+                    </button>
+
+                    {/* Test Radio Transmission Ping */}
+                    <button
+                      onClick={() => {
+                        heistAudio.playRadioSquelch();
+                        toast.success("📻 Transmitting radio squelch telemetry ping to all 4 squad slots!");
+                      }}
+                      className="px-3 py-2 rounded-xl text-xs font-bold font-game bg-[#020B06] text-amber-300 border border-amber-900/60 hover:bg-amber-950/40 flex items-center space-x-1.5 transition-all"
+                      title="Test Voice Channel Ping"
+                    >
+                      <Radio className="w-4 h-4" />
+                      <span>Radio Ping</span>
+                    </button>
+
+                    {/* Connect / Disconnect Voice */}
+                    <button
+                      onClick={() => {
+                        setIsLobbyVoiceConnected(!isLobbyVoiceConnected);
+                        heistAudio.playKeyClick();
+                        toast.info(!isLobbyVoiceConnected ? "🟢 Connected to Squad Voice Channel" : "🔴 Disconnected from Squad Voice Channel");
+                      }}
+                      className={`p-2 rounded-xl border transition-all ${
+                        isLobbyVoiceConnected
+                          ? 'bg-red-950/40 border-red-900/80 text-red-400 hover:bg-red-900/60'
+                          : 'bg-emerald-950 border-emerald-700 text-[#10B981]'
+                      }`}
+                      title={isLobbyVoiceConnected ? "Disconnect Voice Call" : "Connect Voice Call"}
+                    >
+                      {isLobbyVoiceConnected ? <PhoneOff className="w-4 h-4" /> : <PhoneCall className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Ranger Slots Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {lobby.players.map((slot) => {
                     const char = characters.find(c => c.id === slot.characterId);
+                    const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && slot.slotId === 1;
+
                     return (
                       <div
                         key={slot.slotId}
-                        className={`p-5 border-[3px] border-[#03140C] relative flex flex-col justify-between ${
+                        className={`p-5 rounded-2xl border transition-all relative flex flex-col justify-between ${
                           slot.playerName 
-                            ? 'bg-[#071E14] shadow-[4px_4px_0px_#10B981]' 
-                            : 'bg-[#031209]/80 border-dashed shadow-[2px_2px_0px_#020C07]'
+                            ? isSpeaking
+                              ? 'bg-[#042416] border-[#10B981] shadow-[0_0_18px_#10B98144]'
+                              : 'bg-[#051C12] border-emerald-800/50 shadow-md' 
+                            : 'bg-[#020B06]/70 border-dashed border-emerald-950'
                         }`}
                       >
                         <div>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="bg-[#03140C] text-emerald-300 font-mono text-xs font-black px-2 py-0.5">
+                            <span className="bg-[#020B06] text-emerald-300 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-900">
                               SLOT 0{slot.slotId}
                             </span>
-                            {slot.isHost && (
-                              <span className="bg-[#FBBF24] text-[#02140D] text-xs font-black px-2 py-0.5 border border-[#03140C]">
-                                SQUAD LEADER
+                            
+                            {/* Voice Status Pill */}
+                            {slot.playerName && isLobbyVoiceConnected && (
+                              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
+                                isSpeaking
+                                  ? 'bg-[#10B981] text-[#02140D] animate-pulse'
+                                  : isLobbyMicMuted && slot.slotId === 1
+                                  ? 'bg-red-950 text-red-300 border border-red-800'
+                                  : 'bg-[#020B06] text-emerald-400 border border-emerald-900'
+                              }`}>
+                                {isSpeaking ? (
+                                  <>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#02140D] animate-ping" />
+                                    <span>SPEAKING</span>
+                                  </>
+                                ) : isLobbyMicMuted && slot.slotId === 1 ? (
+                                  <>
+                                    <MicOff className="w-2.5 h-2.5 text-red-300" />
+                                    <span>MUTED</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Mic className="w-2.5 h-2.5 text-[#10B981]" />
+                                    <span>VOICE READY</span>
+                                  </>
+                                )}
                               </span>
                             )}
                           </div>
 
                           {slot.playerName ? (
-                            <div className="space-y-3">
-                              <img 
-                                src={char?.avatar || FALLBACK_AVATAR_IMG} 
-                                alt={slot.playerName} 
-                                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
-                                className="w-16 h-16 rounded-none border-2 border-[#03140C] object-cover mx-auto"
-                              />
-                              <div className="text-center">
-                                <h4 className="font-black text-lg text-[#F0FDF4]">{slot.playerName}</h4>
-                                <div className="inline-block bg-[#10B981]/30 border border-[#10B981] px-2 py-0.5 text-xs font-bold uppercase text-[#6EE7B7] mt-1">
+                            <div className="space-y-3 text-center">
+                              <div className="relative w-16 h-16 mx-auto">
+                                <img 
+                                  src={char?.avatar || FALLBACK_AVATAR_IMG} 
+                                  alt={slot.playerName} 
+                                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                  className={`w-16 h-16 rounded-2xl border-2 object-cover transition-all ${
+                                    isSpeaking ? 'border-[#10B981] ring-4 ring-[#10B981]/30 scale-105' : 'border-emerald-800'
+                                  }`}
+                                />
+                                {slot.isHost && (
+                                  <span className="absolute -top-1.5 -right-1.5 bg-[#FBBF24] text-[#02140D] text-[9px] font-black px-1.5 py-0.5 rounded-full shadow">
+                                    ★ CAP
+                                  </span>
+                                )}
+                              </div>
+
+                              <div>
+                                <h4 className="font-bold text-base text-white font-game">{slot.playerName}</h4>
+                                <div className="inline-block bg-[#10B981]/20 border border-[#10B981]/40 px-2.5 py-0.5 rounded text-[11px] font-bold uppercase text-[#6EE7B7] mt-1 font-mono">
                                   {slot.role}
                                 </div>
                               </div>
                             </div>
                           ) : (
                             <div className="py-8 text-center space-y-2">
-                              <UserPlus className="w-8 h-8 text-emerald-600 mx-auto" />
-                              <p className="text-xs font-bold text-emerald-400">Empty Ranger Slot</p>
+                              <UserPlus className="w-8 h-8 text-emerald-700 mx-auto" />
+                              <p className="text-xs font-bold text-emerald-500 font-game">Empty Operative Slot</p>
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-4 pt-3 border-t-2 border-[#03140C]">
+                        <div className="mt-4 pt-3 border-t border-emerald-950">
                           {slot.playerName ? (
-                            <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-emerald-400">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                              <span>READY FOR DROP</span>
+                            <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-[#10B981] font-game">
+                              <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                              <span>SYNCED & READY</span>
                             </div>
                           ) : (
                             <button
                               onClick={() => handleClaimSlot(slot.slotId)}
-                              className="w-full bg-[#FBBF24] text-[#02140D] font-black text-xs py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase"
+                              className="w-full bg-[#FBBF24] text-[#02140D] font-bold text-xs py-2 rounded-lg hover:bg-[#F59E0B] uppercase font-game transition-all"
                             >
                               + Claim Slot
                             </button>
@@ -1159,12 +1809,19 @@ export default function App() {
                   })}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* TAB 4: ROLES & RANGERS */}
           {activeTab === 'characters' && (
-            <div className="space-y-8">
+            <motion.div
+              key="characters"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-8"
+            >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-4 border-[#03140C] pb-4 bg-[#071E14]/70 p-4 backdrop-blur-md">
                 <div>
                   <h2 className="text-3xl font-black uppercase tracking-tight flex items-center space-x-2 text-[#F0FDF4]">
@@ -1224,71 +1881,76 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* TAB 5: DISCIPLINES & TOPICS */}
+          {/* TAB 5: DISCIPLINES & GRAPHICAL LEARNING ROADMAP */}
           {activeTab === 'topics' && (
-            <div className="space-y-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-4 border-[#03140C] pb-4 bg-[#071E14]/70 p-4 backdrop-blur-md">
-                <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight flex items-center space-x-2 text-[#F0FDF4]">
-                    <BookOpen className="w-8 h-8 text-[#10B981]" />
-                    <span>Cross-Disciplinary Subject Matrix & Roadmaps</span>
-                  </h2>
-                  <p className="text-emerald-200 font-medium">Applied problem solving across computer science, physics, chemistry, and cryptography.</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsRoadmapModalOpen(true);
-                    heistAudio.playKeyClick();
-                  }}
-                  className="bg-[#FBBF24] text-[#02140D] font-black px-4 py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 uppercase flex items-center space-x-2 text-xs sm:text-sm flex-shrink-0"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span>Interactive STEM Learning Roadmap</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {topics.map(topic => (
-                  <div key={topic.id} className="forest-card p-6 space-y-4">
-                    <div className="bg-[#10B981] p-3 w-fit border-2 border-[#03140C]">
-                      <Sparkles className="w-6 h-6 text-[#02140D]" />
-                    </div>
-                    <h3 className="text-xl font-black text-[#F0FDF4] uppercase">{topic.name}</h3>
-                    <p className="text-xs text-emerald-200 leading-relaxed font-medium">{topic.description}</p>
-                    <div className="pt-2 border-t border-[#0E3A28] flex justify-between items-center text-xs font-mono">
-                      <span className="text-[#FBBF24] font-bold">Active Heists:</span>
-                      <span className="text-emerald-300 font-black">{topic.activeHeists}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <motion.div
+              key="topics"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6 max-w-7xl mx-auto text-left"
+            >
+              <GraphicalRoadmap 
+                onStartHeist={handleStartHeistStage}
+                onOpenModal={() => setIsRoadmapModalOpen(true)}
+              />
+            </motion.div>
           )}
 
-          {/* TAB 6: CANOPY ROOM MAP */}
+          {/* TAB 6: CANOPY ROOM MAP / MIND MAP */}
           {activeTab === 'map' && (
-            <div className="forest-card p-6 sm:p-8 space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-[#03140C] pb-4">
-                <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight text-[#F0FDF4]">Canopy Grove Map</h2>
-                  <p className="text-emerald-200 text-sm">Interactive chamber overview of the World Tree sanctuary.</p>
+            <motion.div
+              key="map"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6 max-w-7xl mx-auto text-left"
+            >
+              {/* Header Bar */}
+              <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-[#10B981] text-[#02140D] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded uppercase">
+                      Tactical Map
+                    </span>
+                    <span className="text-xs font-mono text-emerald-300">
+                      4 Sequential Vault Chambers
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-game">
+                    Canopy Grove Mind Map
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300">
+                    Unlock and clear sequential security chambers of the World Tree sanctuary by answering tactical STEM checks.
+                  </p>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <span className="bg-[#10B981] text-[#02140D] font-mono font-black text-xs px-3 py-1.5 border border-[#03140C]">
-                    XP: {xp}
-                  </span>
-                  <span className="bg-[#FBBF24] text-[#02140D] font-mono font-black text-xs px-3 py-1.5 border border-[#03140C]">
-                    STREAK: {streak} 🔥
-                  </span>
+
+                <div className="flex items-center space-x-2.5 font-mono text-xs">
+                  <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-emerald-800/60 flex items-center space-x-1.5">
+                    <span className="text-slate-400">Vault XP:</span>
+                    <span className="text-[#10B981] font-bold">{xp} XP</span>
+                  </div>
+                  <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-amber-900/60 flex items-center space-x-1.5">
+                    <span className="text-slate-400">Streak:</span>
+                    <span className="text-amber-400 font-bold">{streak} 🔥</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Trivia / Gate question */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(roomNum => {
+              {/* 4 Chamber Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { num: 1, name: "Roots of Logic", discipline: "Computer Science", color: "#10B981" },
+                  { num: 2, name: "Prism Canopy", discipline: "Physics & Optics", color: "#FBBF24" },
+                  { num: 3, name: "Caustic Bio-Vault", discipline: "Bio-Chemistry", color: "#60A5FA" },
+                  { num: 4, name: "Nexus Mastermind", discipline: "Cryptography", color: "#C084FC" }
+                ].map(chamber => {
+                  const roomNum = chamber.num;
                   const q = triviaQuestions[roomNum];
                   const isUnlocked = unlockedRooms.includes(roomNum);
                   const isDone = !!roomSolved[roomNum];
@@ -1296,64 +1958,119 @@ export default function App() {
                   return (
                     <div 
                       key={roomNum}
-                      className={`p-4 border-2 border-[#03140C] space-y-3 ${
+                      className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-md ${
                         isDone 
-                          ? 'bg-[#0A3020] shadow-[3px_3px_0px_#10B981]' 
+                          ? 'bg-[#041C12] border-emerald-500/80' 
                           : isUnlocked 
-                          ? 'bg-[#071E14] shadow-[3px_3px_0px_#FBBF24]' 
-                          : 'bg-[#031209] opacity-60'
+                          ? 'bg-[#051C12] border-amber-400/60' 
+                          : 'bg-[#020B06]/70 border-emerald-950 opacity-60'
                       }`}
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono text-xs font-black text-[#FBBF24]">CHAMBER 0{roomNum}</span>
-                        {isDone ? (
-                          <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                        ) : isUnlocked ? (
-                          <Unlock className="w-4 h-4 text-[#FBBF24]" />
-                        ) : (
-                          <Lock className="w-4 h-4 text-slate-500" />
-                        )}
+                      <div className="space-y-3">
+                        {/* Status Header */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#020B06] border border-emerald-900" style={{ color: chamber.color }}>
+                            CHAMBER 0{roomNum}
+                          </span>
+                          
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
+                            isDone ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' :
+                            isUnlocked ? 'bg-amber-950 text-amber-300 border border-amber-700' :
+                            'bg-slate-900 text-slate-500 border border-slate-800'
+                          }`}>
+                            {isDone ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-[#10B981]" />
+                                <span>CLEARED</span>
+                              </>
+                            ) : isUnlocked ? (
+                              <>
+                                <Unlock className="w-3 h-3 text-[#FBBF24]" />
+                                <span>READY</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-3 h-3 text-slate-500" />
+                                <span>LOCKED</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold text-base text-white font-game">{chamber.name}</h3>
+                          <p className="text-[11px] font-mono text-emerald-400">{chamber.discipline}</p>
+                        </div>
+
+                        {/* Question Text */}
+                        <p className="text-xs text-slate-200 leading-relaxed font-sans pt-1">
+                          {q?.question}
+                        </p>
+
+                        {/* Options Buttons */}
+                        <div className="space-y-1.5 pt-2">
+                          {q?.options.map((opt, oIdx) => {
+                            const isCorrectOpt = isDone && oIdx === q.correct;
+                            return (
+                              <button
+                                key={oIdx}
+                                disabled={!isUnlocked || isDone}
+                                onClick={() => {
+                                  if (oIdx === q.correct) {
+                                    heistAudio.playSuccessChime();
+                                    setRoomSolved(prev => ({ ...prev, [roomNum]: true }));
+                                    setUnlockedRooms(prev => [...new Set([...prev, roomNum + 1])]);
+                                    setXp(prev => prev + 250);
+                                    toast.success(`🎉 Chamber 0${roomNum} Cleared! +250 XP Awarded!`);
+                                  } else {
+                                    heistAudio.playAlarmSiren();
+                                    toast.error("⚠️ Security Gate Triggered! Review concept and try again.");
+                                  }
+                                }}
+                                className={`w-full text-left p-2.5 rounded-lg text-xs font-mono border transition-all ${
+                                  isCorrectOpt
+                                    ? 'bg-[#10B981] text-[#02140D] font-bold border-[#10B981]'
+                                    : isUnlocked && !isDone
+                                    ? 'bg-[#020B06] text-slate-200 border-emerald-800/60 hover:bg-[#10B981] hover:text-[#02140D] hover:border-emerald-400 cursor-pointer'
+                                    : 'bg-[#020B06]/50 text-slate-500 border-transparent cursor-not-allowed'
+                                }`}
+                              >
+                                <span className="font-bold mr-1.5">{String.fromCharCode(65 + oIdx)}.</span>
+                                <span>{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      <p className="text-xs text-emerald-100 font-bold leading-snug">{q?.question}</p>
-
-                      <div className="space-y-1.5 pt-2">
-                        {q?.options.map((opt, oIdx) => (
-                          <button
-                            key={oIdx}
-                            disabled={!isUnlocked || isDone}
-                            onClick={() => {
-                              if (oIdx === q.correct) {
-                                heistAudio.playSuccessChime();
-                                setRoomSolved(prev => ({ ...prev, [roomNum]: true }));
-                                setUnlockedRooms(prev => [...new Set([...prev, roomNum + 1])]);
-                                setXp(prev => prev + 250);
-                                toast.success(`Chamber 0${roomNum} Unlocked! +250 XP`);
-                              } else {
-                                heistAudio.playAlarmSiren();
-                                toast.error("Incorrect answer! Security gate locked.");
-                              }
-                            }}
-                            className={`w-full text-left px-2.5 py-1.5 text-[11px] font-mono border transition-colors ${
-                              isDone && oIdx === q.correct
-                                ? 'bg-[#10B981] text-[#02140D] font-bold border-[#10B981]'
-                                : 'bg-[#03140C] text-emerald-300 border-[#03140C] hover:bg-[#10B981]/20'
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
+                      {/* Footer info */}
+                      <div className="pt-3 mt-3 border-t border-emerald-950 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                        <span>Bounty: +250 XP</span>
+                        {isDone ? (
+                          <span className="text-[#10B981] font-bold">✓ Gate Overridden</span>
+                        ) : isUnlocked ? (
+                          <span className="text-amber-300 font-bold">Select Answer 👆</span>
+                        ) : (
+                          <span>Requires Ch. 0{roomNum - 1}</span>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* TAB 7: ARCHITECT WORKSHOP / MISSION BUILDER */}
           {activeTab === 'builder' && (
-            <div className="forest-card p-6 sm:p-8 space-y-6">
+            <motion.div
+              key="builder"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="forest-card p-6 sm:p-8 space-y-6"
+            >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-[#03140C] pb-4">
                 <div>
                   <h2 className="text-3xl font-black uppercase tracking-tight text-[#F0FDF4]">Heist Architect Workshop</h2>
@@ -1459,12 +2176,19 @@ export default function App() {
                   {builderSaving ? "Compiling Blueprint..." : "Publish Expedition Blueprint"}
                 </button>
               </form>
-            </div>
+            </motion.div>
           )}
 
           {/* TAB 8: SYNDICATE PASS / WAITLIST */}
           {activeTab === 'waitlist' && (
-            <div className="forest-card p-6 sm:p-8 space-y-6 max-w-2xl mx-auto text-center">
+            <motion.div 
+              key="waitlist"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="forest-card p-6 sm:p-8 space-y-6 max-w-2xl mx-auto text-center"
+            >
               <Rocket className="w-12 h-12 text-[#FBBF24] mx-auto animate-bounce" />
               <h2 className="text-3xl font-black uppercase tracking-tight text-[#F0FDF4]">
                 The Syndicate Battle Pass
@@ -1504,10 +2228,37 @@ export default function App() {
                   </button>
                 </form>
               )}
-            </div>
+            </motion.div>
           )}
 
+          {/* TAB 9: OPERATIVE STATS DOSSIER */}
+          {activeTab === 'stats' && (
+            <motion.div
+              key="stats"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <StatsDashboard
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                onStartHeist={handleStartHeistStage}
+                onNavigate={(dest) => {
+                  if (dest === 'login') {
+                    setIsAuthModalOpen(true);
+                  } else {
+                    navigateToTab(dest);
+                  }
+                }}
+              />
+            </motion.div>
+          )}
+
+          </AnimatePresence>
         </main>
+          </div>
+        </div>
       </div>
 
       {/* JOIN LOBBY SLOT MODAL */}
@@ -1615,6 +2366,71 @@ export default function App() {
           toast.success("💡 Tactical retry initiated with +60s bonus time!");
         }}
       />
+
+      {/* END HEIST CONFIRMATION MODAL */}
+      {isEndHeistModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in">
+          <div className="forest-card max-w-md w-full p-6 space-y-5 border-[4px] border-[#03140C] bg-[#051811] shadow-[10px_10px_0px_#020C07]">
+            <div className="flex justify-between items-center border-b-2 border-[#03140C] pb-3">
+              <div className="flex items-center space-x-2 text-[#FF4D6D]">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="text-xl font-black uppercase text-[#F0FDF4]">END OPERATION EARLY?</h3>
+              </div>
+              <button 
+                onClick={() => setIsEndHeistModalOpen(false)} 
+                className="text-slate-400 hover:text-white font-bold text-lg p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-sm text-emerald-100/90 leading-relaxed font-medium">
+              You are currently engaged in active operation <strong>{currentStageData.title}</strong>. You can end the mission at any time:
+            </p>
+
+            <div className="space-y-3 font-mono">
+              {/* Action 1: Conclude & View Analytics */}
+              <button
+                onClick={() => handleConcludeHeist('debrief')}
+                className="w-full bg-[#10B981] text-[#02140D] font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-2">
+                  <Trophy className="w-4 h-4 text-[#02140D]" />
+                  <span className="font-bold">END HEIST & VIEW ANALYTICS</span>
+                </div>
+                <span className="text-[10px] bg-[#02140D] text-[#FBBF24] px-1.5 py-0.5 border border-[#02140D]">CLAIM DEBRIEF</span>
+              </button>
+
+              {/* Action 2: Emergency Abort / Return HQ */}
+              <button
+                onClick={() => handleConcludeHeist('abort')}
+                className="w-full bg-[#FF4D6D] text-white font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-2">
+                  <LogOut className="w-4 h-4 text-white" />
+                  <span className="font-bold">EMERGENCY EXFILTRATE (ABORT)</span>
+                </div>
+                <span className="text-[10px] bg-black/40 text-white px-1.5 py-0.5">RETURN HQ</span>
+              </button>
+
+              {/* Action 3: Cancel and Resume */}
+              <button
+                onClick={() => setIsEndHeistModalOpen(false)}
+                className="w-full bg-[#0A261B] text-emerald-200 font-bold p-2.5 border-2 border-[#03140C] hover:bg-[#0E3526] text-xs uppercase"
+              >
+                RESUME HEIST OPERATION
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* AUTHENTICATION / LOGIN MODAL */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
     </div>
   );
 }

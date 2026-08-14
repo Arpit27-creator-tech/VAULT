@@ -91,26 +91,26 @@ ${plan.recommendedTopics.map((t, idx) => `
   const progressPercent = Math.round((masteredCount / Math.max(1, plan.recommendedTopics.length)) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#020B06]/90 backdrop-blur-xl animate-fade-in overflow-y-auto">
-      <div className="forest-card max-w-5xl w-full p-5 sm:p-7 space-y-6 border-[4px] border-[#03140C] bg-[#051811] shadow-[12px_12px_0px_#020C07] max-h-[92vh] flex flex-col justify-between overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#020B06]/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="max-w-5xl w-full p-5 sm:p-7 space-y-5 rounded-2xl border border-emerald-800/50 bg-[#051C12] shadow-2xl max-h-[92vh] flex flex-col justify-between overflow-hidden text-left">
         
         {/* MODAL HEADER */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b-2 border-[#03140C] pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-emerald-900/60 pb-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-[#FF4D6D] p-2.5 border-2 border-[#03140C] text-white shadow-[2px_2px_0px_#020C07]">
-              <ShieldAlert className="w-6 h-6 animate-pulse" />
+            <div className="bg-[#10B981] p-2 rounded-xl text-[#02140D] shadow-sm">
+              <Compass className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="bg-[#FBBF24] text-[#02140D] text-[10px] font-mono font-black px-2 py-0.5 border border-[#03140C] uppercase">
-                  ADAPTIVE REMEDIATION ROADMAP
+                <span className="bg-[#FBBF24] text-[#02140D] text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase">
+                  Adaptive Learning Roadmap
                 </span>
-                <span className="text-xs font-mono text-emerald-300 font-bold">
-                  {plan.estimatedStudyTime} Estimated
+                <span className="text-xs font-mono text-emerald-300">
+                  {plan.estimatedStudyTime} Estimated Study
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[#F0FDF4] mt-0.5">
-                Targeted Topics Learning Pathway
+              <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-white mt-0.5 font-game">
+                STEM Learning Pathway & Diagnostics
               </h2>
             </div>
           </div>
@@ -118,7 +118,7 @@ ${plan.recommendedTopics.map((t, idx) => `
           <div className="flex items-center space-x-2 self-end sm:self-auto">
             <button
               onClick={handleExportRoadmap}
-              className="bg-[#0A2D1F] text-emerald-200 border-2 border-[#03140C] px-3 py-1.5 text-xs font-black uppercase flex items-center space-x-1.5 hover:bg-[#10B981] hover:text-[#02140D] transition-colors shadow-[2px_2px_0px_#020C07]"
+              className="bg-[#020B06] text-emerald-300 border border-emerald-700/60 px-3 py-1.5 rounded-lg text-xs font-bold uppercase flex items-center space-x-1.5 hover:bg-[#10B981] hover:text-[#02140D] transition-colors font-game"
               title="Download Markdown Study Plan"
             >
               <Download className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ ${plan.recommendedTopics.map((t, idx) => `
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 border-2 border-[#03140C] bg-[#020B06] text-slate-400 hover:text-white hover:bg-red-900/40"
+              className="p-1.5 rounded-lg border border-emerald-800/60 bg-[#020B06] text-slate-400 hover:text-white hover:bg-red-950 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -134,27 +134,27 @@ ${plan.recommendedTopics.map((t, idx) => `
         </div>
 
         {/* DIAGNOSTIC BANNER */}
-        <div className="bg-[#03140C] border-2 border-emerald-900/60 p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="bg-[#020E08] border border-emerald-800/40 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center space-x-2.5">
             <Lightbulb className="w-5 h-5 text-[#FBBF24] flex-shrink-0" />
-            <p className="text-xs text-emerald-100 font-mono">
-              <strong className="text-[#FBBF24]">Diagnostic Finding:</strong> {plan.diagnosticSummary}
+            <p className="text-xs text-slate-200 font-mono">
+              <strong className="text-[#FBBF24]">Diagnostic:</strong> {plan.diagnosticSummary}
             </p>
           </div>
-          <div className="flex items-center space-x-2 text-xs font-mono text-emerald-300 bg-[#020B06] px-3 py-1 border border-emerald-800 flex-shrink-0">
+          <div className="flex items-center space-x-2 text-xs font-mono text-emerald-300 bg-[#041C12] px-3 py-1.5 rounded-lg border border-emerald-800/60 flex-shrink-0">
             <span>Mastery: {masteredCount}/{plan.recommendedTopics.length} ({progressPercent}%)</span>
-            <div className="w-16 h-2 bg-emerald-950 border border-emerald-700 overflow-hidden">
-              <div className="h-full bg-[#10B981] transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+            <div className="w-16 h-2 bg-emerald-950 rounded-full overflow-hidden border border-emerald-700">
+              <div className="h-full bg-[#10B981] transition-all duration-500 rounded-full" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         </div>
 
         {/* VIEW NAVIGATION TABS */}
-        <div className="flex border-b-2 border-[#03140C] bg-[#020B06] p-1 gap-1">
+        <div className="flex bg-[#020B06] p-1 gap-1 rounded-xl border border-emerald-900/60">
           {[
-            { id: 'roadmap', label: '🗺️ Visual Learning Roadmap', desc: '4-Phase Mastery Path' },
-            { id: 'topics', label: '📚 Recommended Topics & Formulas', desc: `${plan.recommendedTopics.length} Core Concepts` },
-            { id: 'drill', label: '🧪 Interactive Practice Drills', desc: 'Mini-Knowledge Checks' }
+            { id: 'roadmap', label: '🗺️ 4-Phase Pathway', desc: 'Step Progression' },
+            { id: 'topics', label: '📚 Core Concepts & Formulas', desc: `${plan.recommendedTopics.length} Key Topics` },
+            { id: 'drill', label: '🧪 Practice Drills', desc: 'Concept Checks' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -162,39 +162,39 @@ ${plan.recommendedTopics.map((t, idx) => `
                 setActiveTab(tab.id);
                 heistAudio.playKeyClick();
               }}
-              className={`flex-1 py-2 px-3 text-left transition-all border border-transparent ${
+              className={`flex-1 py-2 px-3 text-left transition-all rounded-lg ${
                 activeTab === tab.id
-                  ? 'bg-[#10B981] text-[#02140D] font-black border-[#03140C] shadow-[2px_2px_0px_#FBBF24]'
-                  : 'text-emerald-300 hover:text-white hover:bg-[#071E14]'
+                  ? 'bg-[#10B981] text-[#02140D] font-bold shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-[#072419]'
               }`}
             >
-              <span className="block text-xs sm:text-sm font-black">{tab.label}</span>
+              <span className="block text-xs sm:text-sm font-game font-bold">{tab.label}</span>
               <span className="hidden sm:block text-[10px] opacity-80 font-mono">{tab.desc}</span>
             </button>
           ))}
         </div>
 
         {/* MAIN BODY CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-[340px]">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-[320px]">
           
           {/* TAB 1: VISUAL 4-PHASE ROADMAP */}
           {activeTab === 'roadmap' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {plan.milestones.map((m, idx) => (
                   <div 
                     key={m.step}
-                    className={`p-4 border-2 border-[#03140C] relative flex flex-col justify-between ${
+                    className={`p-4 rounded-xl border relative flex flex-col justify-between ${
                       idx === 0 
-                        ? 'bg-[#0E3526] shadow-[3px_3px_0px_#10B981]'
+                        ? 'bg-[#0E3526] border-[#10B981]/60 shadow-md'
                         : idx === 1
-                        ? 'bg-[#072419] shadow-[3px_3px_0px_#FBBF24]'
-                        : 'bg-[#03140C] opacity-90'
+                        ? 'bg-[#072419] border-[#FBBF24]/50'
+                        : 'bg-[#03140C] border-emerald-900/40 opacity-90'
                     }`}
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-mono font-black uppercase text-[#FBBF24] bg-[#020B06] px-2 py-0.5 border border-amber-500/40">
+                        <span className="text-[10px] font-mono font-bold uppercase text-[#FBBF24] bg-[#020B06] px-2 py-0.5 rounded border border-amber-500/40">
                           PHASE 0{m.step}
                         </span>
                         {idx === 0 ? (
@@ -203,8 +203,8 @@ ${plan.recommendedTopics.map((t, idx) => `
                           <Sparkles className="w-4 h-4 text-emerald-400" />
                         )}
                       </div>
-                      <h4 className="text-sm font-black uppercase text-[#F0FDF4]">{m.title}</h4>
-                      <p className="text-[11px] text-emerald-200 leading-relaxed font-medium">{m.desc}</p>
+                      <h4 className="text-sm font-bold uppercase text-white font-game">{m.title}</h4>
+                      <p className="text-xs text-slate-300 leading-snug">{m.desc}</p>
                     </div>
 
                     <button
@@ -214,7 +214,7 @@ ${plan.recommendedTopics.map((t, idx) => `
                         if (idx === 3 && onRetryWithHints) onRetryWithHints();
                         heistAudio.playKeyClick();
                       }}
-                      className="mt-4 w-full bg-[#020B06] text-emerald-300 font-mono text-[10px] font-bold py-1.5 border border-emerald-700 hover:bg-[#10B981] hover:text-[#02140D] transition-colors uppercase"
+                      className="mt-3.5 w-full bg-[#020B06] text-emerald-300 font-mono text-[10px] font-bold py-1.5 rounded-lg border border-emerald-700/60 hover:bg-[#10B981] hover:text-[#02140D] transition-colors uppercase font-game"
                     >
                       {idx === 0 ? "Diagnosed" : idx === 1 ? "Explore Topics →" : idx === 2 ? "Take Drills →" : "Launch Retry →"}
                     </button>
@@ -223,12 +223,12 @@ ${plan.recommendedTopics.map((t, idx) => `
               </div>
 
               {/* Roles Breakdown Grid */}
-              <div className="bg-[#03140C] p-4 border-2 border-emerald-900/60 space-y-3">
+              <div className="bg-[#020E08] p-4 rounded-xl border border-emerald-900/60 space-y-3">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-mono font-black uppercase text-emerald-300">
+                  <h3 className="text-xs font-mono font-bold uppercase text-emerald-300">
                     Targeted Discipline Focus for This Operation
                   </h3>
-                  <span className="text-[10px] font-mono text-emerald-400">
+                  <span className="text-[10px] font-mono text-slate-400">
                     {plan.focusRoles.length} Active STEM Sectors
                   </span>
                 </div>
@@ -242,16 +242,16 @@ ${plan.recommendedTopics.map((t, idx) => `
                     return (
                       <div 
                         key={roleKey}
-                        className={`p-3 border-2 border-[#03140C] flex items-center justify-between ${
-                          isFailed ? 'bg-[#1C0D12] border-red-900/80' : 'bg-[#072419]'
+                        className={`p-3 rounded-xl border flex items-center justify-between ${
+                          isFailed ? 'bg-[#1C0D12] border-red-900/60' : 'bg-[#041C12] border-emerald-800/60'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="p-2 border border-[#03140C] bg-[#020B06]" style={{ color: guide?.roleColor || '#10B981' }}>
-                            <RoleIcon className="w-5 h-5" />
+                          <div className="p-2 rounded-lg bg-[#020B06] border border-emerald-900/60" style={{ color: guide?.roleColor || '#10B981' }}>
+                            <RoleIcon className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-xs font-black uppercase text-[#F0FDF4] block">
+                            <span className="text-xs font-bold uppercase text-white block font-game">
                               {guide?.roleName || roleKey}
                             </span>
                             <span className="text-[10px] font-mono text-emerald-300">
@@ -260,10 +260,10 @@ ${plan.recommendedTopics.map((t, idx) => `
                           </div>
                         </div>
 
-                        <span className={`text-[10px] font-mono font-black px-2 py-0.5 uppercase ${
-                          isFailed ? 'bg-red-900 text-white' : 'bg-emerald-900 text-emerald-200'
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase ${
+                          isFailed ? 'bg-red-950 text-red-200 border border-red-800' : 'bg-emerald-950 text-emerald-200 border border-emerald-800'
                         }`}>
-                          {isFailed ? '⚠️ Unsolved Chamber' : '✅ Cleared Gate'}
+                          {isFailed ? '⚠️ Unsolved' : '✅ Cleared'}
                         </span>
                       </div>
                     );
@@ -278,7 +278,7 @@ ${plan.recommendedTopics.map((t, idx) => `
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               
               {/* Left Column: Topic List Selector */}
-              <div className="lg:col-span-5 space-y-2 max-h-[320px] overflow-y-auto pr-1">
+              <div className="lg:col-span-5 space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {plan.recommendedTopics.map((topic) => {
                   const isSelected = selectedTopic?.id === topic.id;
                   const isMastered = !!masteredTopics[topic.id];
@@ -291,16 +291,16 @@ ${plan.recommendedTopics.map((t, idx) => `
                         setSelectedTopicId(topic.id);
                         heistAudio.playKeyClick();
                       }}
-                      className={`w-full p-3 border-2 border-[#03140C] text-left transition-all flex items-center justify-between ${
+                      className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
                         isSelected 
-                          ? 'bg-[#0A3020] border-[#10B981] shadow-[2px_2px_0px_#FBBF24]' 
-                          : 'bg-[#03140C] hover:bg-[#072419]'
+                          ? 'bg-[#0A3020] border-[#10B981] shadow-md' 
+                          : 'bg-[#020E08] border-emerald-900/50 hover:bg-[#072419]'
                       }`}
                     >
                       <div className="flex items-center space-x-2.5">
                         <RoleIcon className="w-4 h-4 flex-shrink-0" style={{ color: topic.roleColor }} />
                         <div>
-                          <span className="text-xs font-bold text-[#F0FDF4] block truncate max-w-[200px]">
+                          <span className="text-xs font-bold text-white block truncate max-w-[190px] font-game">
                             {topic.title}
                           </span>
                           <span className="text-[10px] font-mono text-emerald-300">
@@ -321,24 +321,24 @@ ${plan.recommendedTopics.map((t, idx) => `
               </div>
 
               {/* Right Column: Deep-Dive Card with Formula & Takeaway */}
-              <div className="lg:col-span-7 forest-glass p-4 sm:p-5 border-2 border-[#03140C] bg-[#072419] space-y-4">
+              <div className="lg:col-span-7 p-4 sm:p-5 rounded-xl border border-emerald-800/50 bg-[#041C12] space-y-3.5">
                 {selectedTopic && (
                   <>
                     <div className="flex justify-between items-start border-b border-emerald-800/60 pb-3">
                       <div>
-                        <span className="text-[10px] font-mono font-black uppercase text-[#FBBF24]">
+                        <span className="text-[10px] font-mono font-bold uppercase text-[#FBBF24]">
                           {selectedTopic.roleName}
                         </span>
-                        <h3 className="text-lg font-black text-[#F0FDF4] uppercase">{selectedTopic.title}</h3>
-                        <p className="text-xs text-emerald-200">{selectedTopic.summary}</p>
+                        <h3 className="text-base sm:text-lg font-bold text-white uppercase font-game">{selectedTopic.title}</h3>
+                        <p className="text-xs text-slate-300">{selectedTopic.summary}</p>
                       </div>
 
                       <button
                         onClick={() => handleToggleMastery(selectedTopic.id)}
-                        className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase border border-[#03140C] transition-all flex items-center space-x-1 ${
+                        className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all flex items-center space-x-1 ${
                           masteredTopics[selectedTopic.id]
-                            ? 'bg-[#10B981] text-[#02140D]'
-                            : 'bg-[#020B06] text-emerald-300 hover:bg-[#10B981] hover:text-[#02140D]'
+                            ? 'bg-[#10B981] text-[#02140D] border-emerald-500'
+                            : 'bg-[#020B06] text-emerald-300 border-emerald-800 hover:bg-[#10B981] hover:text-[#02140D]'
                         }`}
                       >
                         <CheckCircle2 className="w-3 h-3" />
@@ -347,40 +347,24 @@ ${plan.recommendedTopics.map((t, idx) => `
                     </div>
 
                     {/* Formula / Rule Box */}
-                    <div className="bg-[#020B06] p-3 border border-emerald-700/60 space-y-1">
+                    <div className="bg-[#020B06] p-3 rounded-lg border border-emerald-800/60 space-y-1">
                       <span className="text-[10px] font-mono text-[#FBBF24] font-bold block uppercase">
-                        📐 Core Mathematical Equation / Syntax Rule
+                        📐 Mathematical Equation / Rule
                       </span>
-                      <code className="text-xs sm:text-sm font-mono font-black text-[#10B981] block">
+                      <code className="text-xs sm:text-sm font-mono font-bold text-[#10B981] block">
                         {selectedTopic.formula}
                       </code>
                     </div>
 
                     {/* Key Takeaway */}
-                    <div className="bg-[#03140C] p-3 border border-emerald-900 space-y-1">
+                    <div className="bg-[#020E08] p-3 rounded-lg border border-emerald-900/60 space-y-1">
                       <span className="text-[10px] font-mono text-emerald-300 font-bold block uppercase">
                         💡 Key Tactical Takeaway
                       </span>
-                      <p className="text-xs text-emerald-100 font-medium leading-relaxed">
+                      <p className="text-xs text-slate-300 font-medium leading-relaxed">
                         {selectedTopic.keyTakeaway}
                       </p>
                     </div>
-
-                    {/* External Learning Resources */}
-                    {selectedTopic.resources && (
-                      <div className="space-y-1 pt-1">
-                        <span className="text-[10px] font-mono text-emerald-400 font-bold block uppercase">
-                          🔗 Curated Learning References
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedTopic.resources.map((res, rIdx) => (
-                            <span key={rIdx} className="text-[10px] font-mono bg-[#020B06] text-emerald-300 px-2 py-0.5 border border-emerald-800">
-                              📖 {res}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
               </div>
@@ -390,12 +374,12 @@ ${plan.recommendedTopics.map((t, idx) => `
 
           {/* TAB 3: INTERACTIVE PRACTICE DRILLS */}
           {activeTab === 'drill' && (
-            <div className="space-y-4">
-              <div className="bg-[#020B06] p-3 border border-emerald-800 text-xs font-mono text-emerald-300">
+            <div className="space-y-3">
+              <div className="bg-[#020B06] p-3 rounded-xl border border-emerald-800/60 text-xs font-mono text-emerald-300">
                 ⚡ Rapid-fire concept verification. Solve these concept checks to solidify your knowledge before re-entering the heist!
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {plan.recommendedTopics.slice(0, 3).map((topic, tIdx) => {
                   const drill = topic.practiceDrill;
                   if (!drill) return null;
@@ -404,7 +388,7 @@ ${plan.recommendedTopics.map((t, idx) => `
                   const isCorrect = currentAnswer === drill.correct;
 
                   return (
-                    <div key={topic.id} className="forest-glass p-4 border-2 border-[#03140C] bg-[#072419] space-y-3">
+                    <div key={topic.id} className="p-4 rounded-xl border border-emerald-800/50 bg-[#041C12] space-y-3">
                       <div className="flex justify-between items-center text-xs font-mono">
                         <span className="text-[#FBBF24] font-bold">
                           DRILL 0{tIdx + 1}: {topic.title}
@@ -412,7 +396,7 @@ ${plan.recommendedTopics.map((t, idx) => `
                         <span className="text-emerald-300">{topic.roleName}</span>
                       </div>
 
-                      <p className="text-xs sm:text-sm font-bold text-[#F0FDF4]">
+                      <p className="text-xs sm:text-sm font-bold text-white">
                         {drill.question}
                       </p>
 
@@ -422,12 +406,12 @@ ${plan.recommendedTopics.map((t, idx) => `
                           const isSelected = currentAnswer === optIdx;
                           const isOptionCorrect = optIdx === drill.correct;
 
-                          let btnStyle = "bg-[#020B06] text-emerald-200 border-emerald-800/80 hover:bg-[#0A3020]";
+                          let btnStyle = "bg-[#020B06] text-slate-300 border-emerald-800/60 hover:bg-[#0A3020]";
                           if (isSubmitted) {
-                            if (isOptionCorrect) btnStyle = "bg-[#10B981] text-[#02140D] font-black border-[#03140C]";
-                            else if (isSelected && !isOptionCorrect) btnStyle = "bg-red-900 text-white border-red-700";
+                            if (isOptionCorrect) btnStyle = "bg-[#10B981] text-[#02140D] font-bold border-emerald-600";
+                            else if (isSelected && !isOptionCorrect) btnStyle = "bg-red-950 text-red-200 border-red-800";
                           } else if (isSelected) {
-                            btnStyle = "bg-[#FBBF24] text-[#02140D] font-black border-[#03140C]";
+                            btnStyle = "bg-[#FBBF24] text-[#02140D] font-bold border-amber-500";
                           }
 
                           return (
@@ -435,7 +419,7 @@ ${plan.recommendedTopics.map((t, idx) => `
                               key={optIdx}
                               onClick={() => handleSelectDrillOption(topic.id, optIdx)}
                               disabled={isSubmitted}
-                              className={`p-2.5 text-xs text-left border transition-all ${btnStyle}`}
+                              className={`p-2.5 text-xs text-left rounded-lg border transition-all ${btnStyle}`}
                             >
                               <span className="font-mono font-bold mr-2">{String.fromCharCode(65 + optIdx)}.</span>
                               <span>{opt}</span>
@@ -445,20 +429,20 @@ ${plan.recommendedTopics.map((t, idx) => `
                       </div>
 
                       {/* Submit / Verification */}
-                      <div className="flex justify-between items-center pt-2">
+                      <div className="flex justify-between items-center pt-1">
                         {isSubmitted ? (
                           <div className="flex items-center space-x-2 text-xs font-mono">
                             {isCorrect ? (
-                              <span className="text-[#10B981] font-black">✅ Correct! {drill.explanation}</span>
+                              <span className="text-[#10B981] font-bold">✅ Correct! {drill.explanation}</span>
                             ) : (
-                              <span className="text-[#FF4D6D] font-black">❌ Incorrect. {drill.explanation}</span>
+                              <span className="text-[#FF4D6D] font-bold">❌ Incorrect. {drill.explanation}</span>
                             )}
                           </div>
                         ) : (
                           <button
                             onClick={() => handleCheckDrill(topic.id, drill.correct)}
                             disabled={currentAnswer === undefined}
-                            className="bg-[#10B981] text-[#02140D] font-black px-4 py-1.5 text-xs uppercase border border-[#03140C] disabled:opacity-50 hover:bg-[#34D399]"
+                            className="bg-[#10B981] text-[#02140D] font-bold px-4 py-1.5 text-xs uppercase rounded-lg border border-emerald-600 disabled:opacity-50 hover:bg-[#34D399] font-game"
                           >
                             Verify Answer
                           </button>
@@ -474,28 +458,28 @@ ${plan.recommendedTopics.map((t, idx) => `
         </div>
 
         {/* FOOTER ACTIONS */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t-2 border-[#03140C] pt-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-emerald-900/60 pt-3">
           <div className="text-xs font-mono text-emerald-300">
             <span>Status: </span>
-            <span className="text-[#FBBF24] font-bold">
-              {masteredCount === plan.recommendedTopics.length ? "✨ Ready for 100% Vault Extraction!" : "Reviewing Key STEM Concepts"}
+            <span className="text-amber-300 font-bold">
+              {masteredCount === plan.recommendedTopics.length ? "✨ Ready for 100% Extraction!" : "Reviewing Key Concepts"}
             </span>
           </div>
 
-          <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <div className="flex items-center space-x-2.5 w-full sm:w-auto">
             <button
               onClick={onClose}
-              className="flex-1 sm:flex-none bg-[#020B06] text-emerald-300 font-mono text-xs px-4 py-2.5 border-2 border-[#03140C] hover:bg-[#072419]"
+              className="flex-1 sm:flex-none bg-[#020B06] text-emerald-300 font-mono text-xs px-4 py-2 rounded-lg border border-emerald-800 hover:bg-[#072419]"
             >
               Close Roadmap
             </button>
             {onRetryWithHints && (
               <button
                 onClick={onRetryWithHints}
-                className="flex-1 sm:flex-none bg-[#10B981] text-[#02140D] font-black text-xs px-5 py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 uppercase flex items-center justify-center space-x-1.5"
+                className="flex-1 sm:flex-none bg-[#10B981] text-[#02140D] font-bold text-xs px-4 py-2 rounded-lg hover:bg-[#34D399] uppercase flex items-center justify-center space-x-1.5 font-game shadow-md shadow-emerald-950"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Retry Mission With Hints</span>
+                <span>Retry Mission</span>
               </button>
             )}
           </div>

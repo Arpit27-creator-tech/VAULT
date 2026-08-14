@@ -14,7 +14,6 @@ export default function CreateCustomHeistModal({
 }) {
   if (!isOpen) return null;
 
-  // Presets
   const presets = [
     {
       title: "The Dark Matter Quantum Core",
@@ -49,7 +48,6 @@ export default function CreateCustomHeistModal({
   const [timeLimit, setTimeLimit] = useState(180);
   const [description, setDescription] = useState("Infiltrate the high-voltage underground facility by solving synchronized academic puzzles across specialized cockpits.");
 
-  // Role Selection toggles
   const [selectedRoles, setSelectedRoles] = useState({
     hacker: true,
     engineer: true,
@@ -57,7 +55,6 @@ export default function CreateCustomHeistModal({
     cryptographer: true
   });
 
-  // Custom puzzle overrides
   const [hackerPrompt, setHackerPrompt] = useState("Write an array slice expression to extract indices 2 through 6 of the security buffer.");
   const [engineerAngleA, setEngineerAngleA] = useState(45);
   const [engineerAngleB, setEngineerAngleB] = useState(135);
@@ -71,7 +68,7 @@ export default function CreateCustomHeistModal({
     heistAudio.playKeyClick();
     const count = Object.values(selectedRoles).filter(Boolean).length;
     if (selectedRoles[roleKey] && count <= 1) {
-      return; // At least one role must remain selected
+      return; 
     }
     setSelectedRoles(prev => ({
       ...prev,
@@ -175,7 +172,6 @@ function extractPayload(buffer) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md overflow-y-auto animate-fade-in">
       <div className="forest-card max-w-4xl w-full p-6 sm:p-8 space-y-6 border-[4px] border-[#03140C] bg-[#051811] shadow-[12px_12px_0px_#020C07] my-8">
         
-        {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-[#03140C] pb-4">
           <div>
             <div className="flex items-center space-x-2">
@@ -199,7 +195,6 @@ function extractPayload(buffer) {
           </button>
         </div>
 
-        {/* Quick Presets */}
         <div className="space-y-2">
           <span className="text-xs font-mono font-bold text-emerald-400">⚡ Quick Mission Presets:</span>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -217,7 +212,6 @@ function extractPayload(buffer) {
           </div>
         </div>
 
-        {/* Section 1: General Mission Parameters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#03140C] p-4 border border-emerald-900/60">
           <div>
             <label className="block text-xs font-mono font-bold text-emerald-300 mb-1">Mission / Vault Title</label>
@@ -287,7 +281,6 @@ function extractPayload(buffer) {
           </div>
         </div>
 
-        {/* Section 2: Role Selection */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-xs font-mono font-bold text-emerald-300 uppercase">
@@ -374,7 +367,6 @@ function extractPayload(buffer) {
           </div>
         </div>
 
-        {/* Section 3: Fine-Tune Selected Role Puzzles */}
         <div className="space-y-3 bg-[#03140C] p-4 border border-emerald-900/60">
           <span className="text-xs font-mono font-bold text-[#FBBF24] uppercase block">
             Custom Puzzle Configuration for Selected Roles:
@@ -382,7 +374,6 @@ function extractPayload(buffer) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
             
-            {/* Hacker Settings */}
             {selectedRoles.hacker && (
               <div className="p-3 bg-[#020B06] border border-[#10B981]/40 space-y-1.5">
                 <span className="text-[#10B981] font-bold flex items-center space-x-1">
@@ -398,7 +389,6 @@ function extractPayload(buffer) {
               </div>
             )}
 
-            {/* Engineer Settings */}
             {selectedRoles.engineer && (
               <div className="p-3 bg-[#020B06] border border-[#FBBF24]/40 space-y-1.5">
                 <span className="text-[#FBBF24] font-bold flex items-center space-x-1">
@@ -428,7 +418,6 @@ function extractPayload(buffer) {
               </div>
             )}
 
-            {/* Scientist Settings */}
             {selectedRoles.scientist && (
               <div className="p-3 bg-[#020B06] border border-[#06B6D4]/40 space-y-1.5">
                 <span className="text-[#06B6D4] font-bold flex items-center space-x-1">
@@ -444,7 +433,6 @@ function extractPayload(buffer) {
               </div>
             )}
 
-            {/* Cryptographer Settings */}
             {selectedRoles.cryptographer && (
               <div className="p-3 bg-[#020B06] border border-[#C084FC]/40 space-y-1.5">
                 <span className="text-[#C084FC] font-bold flex items-center space-x-1">
@@ -474,7 +462,6 @@ function extractPayload(buffer) {
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             type="button"

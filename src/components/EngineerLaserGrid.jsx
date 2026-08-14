@@ -11,7 +11,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
   const reqB = puzzle.requiredAngleB || 135;
 
   useEffect(() => {
-    // Check if user set angles within ±3 degrees of required
     const matchA = Math.abs(angleA - reqA) <= 3;
     const matchB = Math.abs(angleB - reqB) <= 3;
 
@@ -43,11 +42,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
     }
   };
 
-  // Calculate beam coordinates for SVG rendering
-  // Source: (15, 75)
-  // Mirror A: (40, 35)
-  // Mirror B: (70, 70)
-  // Target: (88, 38)
   const mirrorAX = 38;
   const mirrorAY = 35;
   const mirrorBX = 70;
@@ -57,7 +51,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
 
   return (
     <div className="forest-card p-5 sm:p-6 space-y-4 font-sans text-sm border-[3px] border-[#03140C] bg-[#051811]/90 shadow-[6px_6px_0px_#020C07]">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-[#03140C] pb-3">
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 rounded-full bg-[#10B981] animate-ping"></div>
@@ -71,37 +64,30 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
         </span>
       </div>
 
-      {/* Mission Prompt */}
       <div className="bg-[#03140C]/90 p-3 border border-emerald-500/30 text-xs">
         <p className="font-bold text-[#FBBF24]">📐 Applied Geometry & Trajectory Goal:</p>
         <p className="text-emerald-100 mt-0.5">{puzzle.prompt}</p>
       </div>
 
-      {/* SVG Interactive Laser Canvas */}
       <div className="relative w-full h-56 bg-[#020B06] border-2 border-[#03140C] overflow-hidden">
-        {/* Grid pattern */}
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10B981_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {/* Laser Source */}
           <circle cx="12" cy="78" r="3.5" fill="#FF4D6D" stroke="#03140C" strokeWidth="1" />
           <text x="7" y="90" fill="#FF4D6D" fontSize="3.5" fontWeight="bold" fontFamily="monospace">EMITTER</text>
 
-          {/* Mirror A (Pivot) */}
           <g transform={`translate(${mirrorAX}, ${mirrorAY}) rotate(${angleA - 45})`}>
             <line x1="-7" y1="0" x2="7" y2="0" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" />
             <circle cx="0" cy="0" r="1.5" fill="#FFF" />
           </g>
           <text x={mirrorAX - 6} y={mirrorAY - 4} fill="#FBBF24" fontSize="3" fontFamily="monospace">MIRROR A ({angleA}°)</text>
 
-          {/* Mirror B (Pivot) */}
           <g transform={`translate(${mirrorBX}, ${mirrorBY}) rotate(${angleB - 45})`}>
             <line x1="-7" y1="0" x2="7" y2="0" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" />
             <circle cx="0" cy="0" r="1.5" fill="#FFF" />
           </g>
           <text x={mirrorBX - 6} y={mirrorBY + 7} fill="#FBBF24" fontSize="3" fontFamily="monospace">MIRROR B ({angleB}°)</text>
 
-          {/* Target Sensor */}
           <rect 
             x={targetX - 4} 
             y={targetY - 4} 
@@ -115,11 +101,8 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
             SENSOR {isHittingTarget ? "[LOCKED]" : "[OFFLINE]"}
           </text>
 
-          {/* Dynamic Laser Beam Lines */}
-          {/* Segment 1: Source to Mirror A */}
           <line x1="12" y1="78" x2={mirrorAX} y2={mirrorAY} stroke="#FF4D6D" strokeWidth="1.5" opacity="0.9" />
 
-          {/* Segment 2: Mirror A to Mirror B (Appears when Mirror A is close) */}
           {Math.abs(angleA - reqA) <= 12 && (
             <line 
               x1={mirrorAX} 
@@ -133,7 +116,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
             />
           )}
 
-          {/* Segment 3: Mirror B to Sensor */}
           {isHittingTarget && (
             <line 
               x1={mirrorBX} 
@@ -147,7 +129,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
           )}
         </svg>
 
-        {/* Live Alignment HUD */}
         <div className="absolute top-2 right-2 bg-[#020B06]/90 border border-emerald-500/40 px-2 py-1 text-[10px] font-mono text-emerald-300">
           BEAM ALIGNMENT: <span className={isHittingTarget ? "text-[#10B981] font-black" : "text-amber-400"}>
             {isHittingTarget ? "100% (COAXIAL)" : `${Math.max(10, 100 - Math.abs(angleA - reqA) * 2 - Math.abs(angleB - reqB) * 2)}%`}
@@ -155,9 +136,7 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
         </div>
       </div>
 
-      {/* Precision Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Mirror A Slider */}
         <div className="bg-[#03140C] p-3 border border-emerald-900/60 space-y-2">
           <div className="flex justify-between text-xs font-mono">
             <span className="text-[#FBBF24] font-bold">Mirror A Angle (θ₁):</span>
@@ -179,7 +158,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
           </div>
         </div>
 
-        {/* Mirror B Slider */}
         <div className="bg-[#03140C] p-3 border border-emerald-900/60 space-y-2">
           <div className="flex justify-between text-xs font-mono">
             <span className="text-[#FBBF24] font-bold">Mirror B Angle (θ₂):</span>
@@ -202,7 +180,6 @@ export default function EngineerLaserGrid({ puzzle, onSolved, onFail, isSolved }
         </div>
       </div>
 
-      {/* Engagement Action */}
       <div className="flex justify-between items-center pt-2">
         <div>
           {isSolved ? (

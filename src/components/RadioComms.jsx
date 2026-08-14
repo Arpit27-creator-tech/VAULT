@@ -38,7 +38,6 @@ export default function RadioComms({ messages, onSendMessage, activeRole }) {
         </span>
       </div>
 
-      {/* Message Feed */}
       <div className="h-40 overflow-y-auto space-y-2 bg-[#020B06] p-3 rounded-lg border border-emerald-950 font-mono text-[11px]">
         {messages.map((msg, i) => (
           <div key={i} className="leading-snug">
@@ -57,7 +56,6 @@ export default function RadioComms({ messages, onSendMessage, activeRole }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Comms Macros */}
       <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
@@ -75,7 +73,6 @@ export default function RadioComms({ messages, onSendMessage, activeRole }) {
         </button>
       </div>
 
-      {/* Message Input Box */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"

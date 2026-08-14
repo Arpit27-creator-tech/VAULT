@@ -1,7 +1,3 @@
-/**
- * Comprehensive Knowledge Graph for Heist Failure Remediation & Learning Roadmaps
- * Automatically generates personalized study pathways and topic recommendations.
- */
 
 export const roleTopicGuides = {
   hacker: {
@@ -250,10 +246,6 @@ export const roleTopicGuides = {
   }
 };
 
-/**
- * Generates a targeted failure remediation plan based on which roles solved/unsolved
- * and alarm incident telemetry.
- */
 export function generateRemediationPlan(stageData, solvedRoles = {}, failsCount = 0) {
   const activeRoles = stageData?.selectedRoles
     ? Object.keys(stageData.selectedRoles).filter(k => stageData.selectedRoles[k])
@@ -262,7 +254,6 @@ export function generateRemediationPlan(stageData, solvedRoles = {}, failsCount 
   const failedRoles = activeRoles.filter(role => !solvedRoles[role]);
   const passedRoles = activeRoles.filter(role => !!solvedRoles[role]);
 
-  // Determine critical gap topics
   const recommendedTopics = [];
   const focusRoles = failedRoles.length > 0 ? failedRoles : activeRoles;
 
@@ -282,13 +273,11 @@ export function generateRemediationPlan(stageData, solvedRoles = {}, failsCount 
     }
   });
 
-  // Calculate estimated total remediation study time
   const totalMinutes = recommendedTopics.reduce((acc, curr) => {
     const mins = parseInt(curr.duration) || 5;
     return acc + mins;
   }, 0);
 
-  // Remediation Milestones
   const milestones = [
     {
       step: 1,

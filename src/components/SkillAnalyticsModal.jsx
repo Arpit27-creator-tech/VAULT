@@ -32,7 +32,6 @@ export default function SkillAnalyticsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="forest-card max-w-2xl w-full p-6 sm:p-8 space-y-6 border-[4px] border-[#03140C] bg-[#051811] shadow-[12px_12px_0px_#020C07] max-h-[95vh] overflow-y-auto">
-        {/* Banner Header */}
         <div className="text-center space-y-2 border-b-2 border-[#03140C] pb-5">
           <div className="inline-flex items-center justify-center p-3 rounded-none border-2 border-[#03140C] mb-2 bg-[#020B06]">
             {isVictory ? (
@@ -53,7 +52,6 @@ export default function SkillAnalyticsModal({
           </p>
         </div>
 
-        {/* FAILURE REMEDIATION ROADMAP CALLOUT (WHEN FAILED) */}
         {!isVictory && (
           <div className="bg-[#1C0D12] border-[3px] border-[#FF4D6D] p-4 sm:p-5 space-y-3 shadow-[4px_4px_0px_#020C07]">
             <div className="flex items-center space-x-2">
@@ -81,7 +79,6 @@ export default function SkillAnalyticsModal({
           </div>
         )}
 
-        {/* Tactical Performance Telemetry */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div className="bg-[#020B06] p-3 border border-emerald-900/60">
             <span className="text-[10px] font-mono text-emerald-400 uppercase">Time Elapsed</span>
@@ -103,7 +100,6 @@ export default function SkillAnalyticsModal({
           </div>
         </div>
 
-        {/* Cross-Disciplinary Subject Mastery Breakdown */}
         <div className="space-y-3 bg-[#03140C] p-4 border border-emerald-900/60">
           <div className="flex justify-between items-center text-xs font-mono">
             <span className="text-emerald-300 font-black uppercase flex items-center space-x-1.5">
@@ -137,7 +133,6 @@ export default function SkillAnalyticsModal({
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           {isVictory ? (
             <button

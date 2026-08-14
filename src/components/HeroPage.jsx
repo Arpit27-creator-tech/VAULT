@@ -184,10 +184,9 @@ export default function HeroPage({
   const [selectedRoleIdx, setSelectedRoleIdx] = useState(0);
   const [liveRelayStep, setLiveRelayStep] = useState(0);
   const [isSimulatingTransmission, setIsSimulatingTransmission] = useState(false);
-  const [leaderboardType, setLeaderboardType] = useState('PLAYERS'); // 'PLAYERS' | 'TEAMS'
+  const [leaderboardType, setLeaderboardType] = useState('PLAYERS'); 
   const [leaderboardFilter, setLeaderboardFilter] = useState('ALL'); 
 
-  // Simulated live radio chat stream for the hero HUD
   const [liveTransmissions] = useState([
     { id: 1, sender: "Canopy Hacker", role: "hacker", color: "#10B981", text: "Array pointer unlocked at 0x7FF. Sending refractive index n=1.52 to Engineer!" },
     { id: 2, sender: "Woodland Engineer", role: "engineer", color: "#FBBF24", text: "Snell angle calibrated at 45.0°. Deflecting green laser to Bio-Chamber!" },
@@ -455,15 +454,10 @@ export default function HeroPage({
         })}
       </section>
 
-      {/* ========================================================================= */}
-      {/* 4. WORLDWIDE OPERATIVES & TEAMS LEADERBOARD (TRANSLUCENT HORIZONTAL GRID) */}
-      {/* ========================================================================= */}
       <section className="bg-[#03150D]/40 backdrop-blur-md border border-emerald-500/20 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-5 text-left relative overflow-hidden">
         
-        {/* Ambient Glow */}
         <div className="absolute -top-12 -right-12 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top Control Bar: Header + Player / Team Switch Toggle */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-900/60 pb-4 relative z-10">
           <div>
             <div className="inline-flex items-center space-x-2 bg-[#FBBF24] text-[#02140D] font-mono font-bold text-xs px-2.5 py-0.5 rounded uppercase mb-1">
@@ -480,7 +474,6 @@ export default function HeroPage({
             </p>
           </div>
 
-          {/* Primary View Switcher: PLAYERS vs TEAMS */}
           <div className="flex items-center gap-2">
             <div className="bg-[#020B06]/85 p-1 rounded-xl border border-emerald-800/60 flex items-center shadow-inner">
               <button
@@ -516,7 +509,6 @@ export default function HeroPage({
           </div>
         </div>
 
-        {/* Sub-Filters (When in Solo Operatives mode) */}
         {leaderboardType === 'PLAYERS' && (
           <div className="flex flex-wrap gap-1.5 bg-[#020B06]/70 backdrop-blur-sm p-1 rounded-xl border border-emerald-900/60 text-xs font-mono relative z-10">
             {[
@@ -544,7 +536,6 @@ export default function HeroPage({
           </div>
         )}
 
-        {/* VIEW 1: SOLO PLAYERS HORIZONTAL GRID */}
         {leaderboardType === 'PLAYERS' && (
           <div className="space-y-2.5 relative z-10">
             {filteredLeaderboard.map(player => {
@@ -631,7 +622,6 @@ export default function HeroPage({
           </div>
         )}
 
-        {/* VIEW 2: 4-PLAYER SQUAD TEAMS HORIZONTAL GRID */}
         {leaderboardType === 'TEAMS' && (
           <div className="space-y-2.5 relative z-10">
             {GLOBAL_TEAM_LEADERBOARD.map(team => {
@@ -648,7 +638,6 @@ export default function HeroPage({
                       : 'bg-[#041C13]/40 backdrop-blur-md border-emerald-900/40 hover:border-[#10B981]/60 hover:bg-[#06291B]/60'
                   }`}
                 >
-                  {/* Left: Rank + Team Emblem + Team Name & Captain */}
                   <div className="flex items-center space-x-3.5 min-w-[280px]">
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 shadow-sm ${
                       team.rank === 1 ? 'bg-amber-400 text-[#02140D] font-black ring-1 ring-amber-300' :
@@ -676,7 +665,6 @@ export default function HeroPage({
                     </div>
                   </div>
 
-                  {/* Center: Member Rosters Pill */}
                   <div className="flex items-center space-x-1.5">
                     <span className="text-[10px] font-mono text-slate-400 uppercase hidden lg:inline">Roster:</span>
                     <div className="flex flex-wrap gap-1">
@@ -688,7 +676,6 @@ export default function HeroPage({
                     </div>
                   </div>
 
-                  {/* Right: Team Stats */}
                   <div className="flex items-center space-x-4 sm:space-x-6 text-xs font-mono pt-2 md:pt-0 border-t md:border-t-0 border-emerald-950/80">
                     <div className="text-left md:text-center">
                       <span className="text-[9px] text-slate-400 block uppercase font-bold">Crew Vaults</span>

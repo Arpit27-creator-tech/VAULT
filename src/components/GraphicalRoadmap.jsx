@@ -10,11 +10,10 @@ import { toast } from 'sonner';
 
 export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
   const [selectedNodeId, setSelectedNodeId] = useState('cs-1');
-  const [disciplineFilter, setDisciplineFilter] = useState('ALL'); // 'ALL' | 'cs' | 'phys' | 'chem' | 'math'
-  const [activeTabMode, setActiveTabMode] = useState('tree'); // 'tree' | 'simulators' | 'disciplines'
+  const [disciplineFilter, setDisciplineFilter] = useState('ALL'); 
+  const [activeTabMode, setActiveTabMode] = useState('tree'); 
   const [showHowItWorks, setShowHowItWorks] = useState(true);
 
-  // Interactive mini-simulator states
   const [laserAngle, setLaserAngle] = useState(45);
   const [refractiveIndex, setRefractiveIndex] = useState(1.5);
   const [memoryPointerOffset, setMemoryPointerOffset] = useState(2);
@@ -22,9 +21,7 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
   const [cipherShift, setCipherShift] = useState(3);
   const [cipherInput, setCipherInput] = useState('VAULT');
 
-  // User-understandable STEM nodes with plain English analogies
   const roadmapNodes = [
-    // Chapter 1: Core Foundations
     {
       id: 'cs-1',
       category: 'cs',
@@ -106,7 +103,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
       interactiveType: 'cipher'
     },
 
-    // Chapter 2: Applied Relays
     {
       id: 'cs-2',
       category: 'cs',
@@ -188,7 +184,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
       interactiveType: 'cipher'
     },
 
-    // Chapter 3: Mastermind Nexus
     {
       id: 'nexus-final',
       category: 'nexus',
@@ -218,13 +213,11 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
     return node.category === disciplineFilter || node.category === 'nexus';
   });
 
-  // Laser refraction calculation
   const airIndex = 1.0;
   const sinTheta2 = (airIndex * Math.sin((laserAngle * Math.PI) / 180)) / refractiveIndex;
   const clampedSin = Math.max(-1, Math.min(1, sinTheta2));
   const refractedAngleDeg = Math.round((Math.asin(clampedSin) * 180) / Math.PI);
 
-  // Cipher encryption helper
   const encryptCaesar = (str, shift) => {
     return str
       .toUpperCase()
@@ -242,9 +235,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-left">
 
-      {/* ========================================================================= */}
-      {/* 1. TOP HEADER & VIEW MODE SELECTOR */}
-      {/* ========================================================================= */}
       <section className="bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/50 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
@@ -263,7 +253,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
           </p>
         </div>
 
-        {/* Top Actions */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowHowItWorks(!showHowItWorks)}
@@ -283,9 +272,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 2. USER-FRIENDLY "HOW IT WORKS" 3-STEP BANNER */}
-      {/* ========================================================================= */}
       {showHowItWorks && (
         <div className="bg-[#020E08] border border-emerald-800/40 rounded-2xl p-5 shadow-lg space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
@@ -313,9 +299,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 3. DISCIPLINE FILTER BUTTONS */}
-      {/* ========================================================================= */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5 bg-[#020B06] p-1.5 rounded-xl border border-emerald-900/60 font-game text-xs">
           {[
@@ -342,7 +325,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
           ))}
         </div>
 
-        {/* View mode toggle */}
         <div className="flex items-center gap-1 bg-[#020B06] p-1 rounded-xl border border-emerald-900/60 font-game text-xs">
           <button
             onClick={() => setActiveTabMode('tree')}
@@ -363,19 +345,13 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 4. MAIN INTERACTIVE MAP + CONCEPT LAB SPLIT VIEW */}
-      {/* ========================================================================= */}
       {activeTabMode === 'tree' ? (
         <div className="space-y-6">
           
-          {/* Visual SVG Skill Constellation Canvas */}
           <div className="relative bg-[#020E08] border border-emerald-800/60 rounded-2xl p-4 sm:p-6 shadow-2xl overflow-hidden min-h-[360px] flex flex-col justify-between">
             
-            {/* Background Ambient Grid */}
             <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#10B981_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-            {/* Top Phase Header Legend */}
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-emerald-900/60 pb-3 text-xs font-mono">
               <div className="flex items-center space-x-4">
                 <span className="text-[#10B981] font-bold flex items-center space-x-1.5">
@@ -396,7 +372,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
               </span>
             </div>
 
-            {/* SVG Interactive Metro Circuit Track */}
             <div className="relative z-10 my-4 h-60 sm:h-64 w-full">
               <svg className="w-full h-full absolute inset-0 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
                 <defs>
@@ -407,7 +382,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                   </linearGradient>
                 </defs>
 
-                {/* Primary path */}
                 <path
                   d="M 12 35 Q 23 50 34 70 T 45 35 T 56 70 T 67 40 T 78 70 T 88 35 T 96 50"
                   fill="none"
@@ -418,7 +392,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 />
               </svg>
 
-              {/* Node Icons Positioned by Percentage */}
               {filteredNodes.map((node) => {
                 const isSelected = selectedNode.id === node.id;
                 const isCompleted = node.status === 'completed';
@@ -448,13 +421,11 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                     >
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: node.color }} />
 
-                      {/* Status indicator tag */}
                       <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-mono font-bold bg-[#020B06] border border-emerald-800 text-white">
                         {isCompleted ? '✓' : isLocked ? '🔒' : '⚡'}
                       </div>
                     </div>
 
-                    {/* Tooltip Title */}
                     <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-32 text-center pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity">
                       <span className="text-[10px] font-mono font-bold text-white bg-[#020B06]/95 px-1.5 py-0.5 rounded border border-emerald-900 block truncate shadow-sm">
                         {node.title}
@@ -465,7 +436,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
               })}
             </div>
 
-            {/* Bottom Progress Bar */}
             <div className="relative z-10 pt-3 border-t border-emerald-900/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-slate-300">
               <span>Selected Node: <strong className="text-white">{selectedNode.title}</strong></span>
               <span className="text-[#10B981] font-bold">3/9 STEM Concepts Mastered</span>
@@ -473,15 +443,10 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
 
           </div>
 
-          {/* ========================================================================= */}
-          {/* NODE INSPECTOR (LEFT: EASY ANALOGY, RIGHT: LIVE SIMULATOR) */}
-          {/* ========================================================================= */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* Left Column: Plain-English Concept Explanation (5 cols) */}
             <div className="lg:col-span-5 bg-[#051C12]/90 border border-emerald-800/50 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
               
-              {/* Header */}
               <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 rounded-xl bg-[#020B06] border border-emerald-900/60" style={{ color: selectedNode.color }}>
@@ -500,7 +465,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </span>
               </div>
 
-              {/* 1. Simple English Analogy */}
               <div className="bg-[#020E08] p-3.5 rounded-xl border border-emerald-900/60 space-y-1">
                 <span className="text-[10px] font-mono font-bold text-[#FBBF24] flex items-center space-x-1.5 uppercase">
                   <Lightbulb className="w-3.5 h-3.5" />
@@ -511,7 +475,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </p>
               </div>
 
-              {/* 2. Why we use it in the heist */}
               <div className="space-y-1 font-mono text-xs">
                 <span className="text-slate-400 font-bold uppercase text-[10px] block">
                   🎮 How It Works in Co-op Heists:
@@ -521,7 +484,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </p>
               </div>
 
-              {/* 3. Mathematical Formula / Code Rule */}
               <div className="bg-[#020B06] p-3 rounded-xl border border-emerald-800/60 space-y-1 font-mono text-xs">
                 <div className="flex justify-between items-center text-[10px] text-slate-400">
                   <span>REAL-WORLD FORMULA / RULE:</span>
@@ -535,7 +497,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="pt-2 border-t border-emerald-950 flex gap-2">
                 <button
                   onClick={() => onStartHeist(0)}
@@ -548,7 +509,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
 
             </div>
 
-            {/* Right Column: Interactive Sandbox Playground (7 cols) */}
             <div className="lg:col-span-7 bg-[#020E08] border border-emerald-800/60 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3">
                 <div className="flex items-center space-x-2">
@@ -560,7 +520,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 <span className="text-[10px] font-mono text-amber-300 font-bold">Try Moving The Controls 👇</span>
               </div>
 
-              {/* SIMULATOR 1: LASER REFRACTION (PHYSICS) */}
               {selectedNode.interactiveType === 'laser' && (
                 <div className="space-y-4 font-mono text-xs">
                   <div className="bg-[#041C12] p-4 rounded-xl border border-emerald-800/60 space-y-3">
@@ -570,16 +529,13 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                       <span>Bent Exit Angle: <strong className="text-[#34D399]">{refractedAngleDeg}°</strong></span>
                     </div>
 
-                    {/* Graphic Laser SVG Visualizer */}
                     <div className="relative w-full h-36 bg-[#020B06] rounded-xl border border-emerald-900 overflow-hidden flex items-center justify-center">
                       <svg className="w-full h-full" viewBox="0 0 300 120">
-                        {/* Glass medium */}
                         <rect x="150" y="0" width="150" height="120" fill="#063220" opacity="0.6" />
                         <line x1="150" y1="0" x2="150" y2="120" stroke="#10B981" strokeDasharray="3 3" opacity="0.5" />
                         <text x="160" y="20" fill="#34D399" fontSize="10" fontFamily="monospace">Glass Medium (n=1.5)</text>
                         <text x="40" y="20" fill="#FBBF24" fontSize="10" fontFamily="monospace">Air (n=1.0)</text>
 
-                        {/* Incoming laser */}
                         <line 
                           x1={150 - Math.cos((laserAngle * Math.PI) / 180) * 100} 
                           y1={60 - Math.sin((laserAngle * Math.PI) / 180) * 100} 
@@ -590,7 +546,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                           className="drop-shadow-[0_0_6px_#FBBF24]"
                         />
 
-                        {/* Bent refracted laser */}
                         <line 
                           x1="150" 
                           y1="60" 
@@ -623,7 +578,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </div>
               )}
 
-              {/* SIMULATOR 2: MEMORY BUFFER POINTERS (COMPUTER SCIENCE) */}
               {(selectedNode.interactiveType === 'memory' || selectedNode.interactiveType === 'nexus') && (
                 <div className="space-y-4 font-mono text-xs">
                   <div className="bg-[#041C12] p-4 rounded-xl border border-emerald-800/60 space-y-3">
@@ -632,7 +586,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                       <span>Target Pointer: <strong className="text-amber-300">Offset +{memoryPointerOffset}</strong></span>
                     </div>
 
-                    {/* Interactive Memory Blocks */}
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                       {[0, 1, 2, 3, 4, 5].map((idx) => {
                         const isTarget = memoryPointerOffset === idx;
@@ -663,7 +616,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </div>
               )}
 
-              {/* SIMULATOR 3: ACID BUFFER pH LEVEL (CHEMISTRY) */}
               {selectedNode.interactiveType === 'ph' && (
                 <div className="space-y-4 font-mono text-xs">
                   <div className="bg-[#041C12] p-4 rounded-xl border border-emerald-800/60 space-y-3">
@@ -678,7 +630,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                       </span>
                     </div>
 
-                    {/* Gradient bar */}
                     <div className="w-full h-6 rounded-xl bg-gradient-to-r from-red-500 via-emerald-400 to-purple-600 relative overflow-hidden border border-emerald-950 shadow-inner">
                       <div 
                         className="absolute top-0 bottom-0 w-3 bg-white border border-black shadow-md transition-all duration-300"
@@ -705,7 +656,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
                 </div>
               )}
 
-              {/* SIMULATOR 4: MODULO SHIFT CIPHER (DISCRETE MATH) */}
               {selectedNode.interactiveType === 'cipher' && (
                 <div className="space-y-4 font-mono text-xs">
                   <div className="bg-[#041C12] p-4 rounded-xl border border-emerald-800/60 space-y-3">
@@ -757,7 +707,6 @@ export default function GraphicalRoadmap({ onStartHeist, onOpenModal }) {
 
         </div>
       ) : (
-        /* Syllabus Cards View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-200">
           {[
             {

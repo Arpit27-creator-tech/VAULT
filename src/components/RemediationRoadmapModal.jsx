@@ -18,7 +18,7 @@ export default function RemediationRoadmapModal({
   if (!isOpen) return null;
 
   const plan = generateRemediationPlan(stageData, solvedRoles, alarmFails);
-  const [activeTab, setActiveTab] = useState('roadmap'); // 'roadmap', 'topics', 'drill'
+  const [activeTab, setActiveTab] = useState('roadmap'); 
   const [selectedTopicId, setSelectedTopicId] = useState(plan.recommendedTopics[0]?.id || null);
   const [masteredTopics, setMasteredTopics] = useState({});
   const [drillAnswers, setDrillAnswers] = useState({});
@@ -94,7 +94,6 @@ ${plan.recommendedTopics.map((t, idx) => `
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#020B06]/85 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="max-w-5xl w-full p-5 sm:p-7 space-y-5 rounded-2xl border border-emerald-800/50 bg-[#051C12] shadow-2xl max-h-[92vh] flex flex-col justify-between overflow-hidden text-left">
         
-        {/* MODAL HEADER */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-emerald-900/60 pb-4">
           <div className="flex items-center space-x-3">
             <div className="bg-[#10B981] p-2 rounded-xl text-[#02140D] shadow-sm">
@@ -133,7 +132,6 @@ ${plan.recommendedTopics.map((t, idx) => `
           </div>
         </div>
 
-        {/* DIAGNOSTIC BANNER */}
         <div className="bg-[#020E08] border border-emerald-800/40 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center space-x-2.5">
             <Lightbulb className="w-5 h-5 text-[#FBBF24] flex-shrink-0" />
@@ -149,7 +147,6 @@ ${plan.recommendedTopics.map((t, idx) => `
           </div>
         </div>
 
-        {/* VIEW NAVIGATION TABS */}
         <div className="flex bg-[#020B06] p-1 gap-1 rounded-xl border border-emerald-900/60">
           {[
             { id: 'roadmap', label: '🗺️ 4-Phase Pathway', desc: 'Step Progression' },
@@ -174,10 +171,8 @@ ${plan.recommendedTopics.map((t, idx) => `
           ))}
         </div>
 
-        {/* MAIN BODY CONTENT AREA */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-[320px]">
           
-          {/* TAB 1: VISUAL 4-PHASE ROADMAP */}
           {activeTab === 'roadmap' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -222,7 +217,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                 ))}
               </div>
 
-              {/* Roles Breakdown Grid */}
               <div className="bg-[#020E08] p-4 rounded-xl border border-emerald-900/60 space-y-3">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xs font-mono font-bold uppercase text-emerald-300">
@@ -273,11 +267,9 @@ ${plan.recommendedTopics.map((t, idx) => `
             </div>
           )}
 
-          {/* TAB 2: RECOMMENDED TOPICS & FORMULAS */}
           {activeTab === 'topics' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               
-              {/* Left Column: Topic List Selector */}
               <div className="lg:col-span-5 space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {plan.recommendedTopics.map((topic) => {
                   const isSelected = selectedTopic?.id === topic.id;
@@ -320,7 +312,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                 })}
               </div>
 
-              {/* Right Column: Deep-Dive Card with Formula & Takeaway */}
               <div className="lg:col-span-7 p-4 sm:p-5 rounded-xl border border-emerald-800/50 bg-[#041C12] space-y-3.5">
                 {selectedTopic && (
                   <>
@@ -346,7 +337,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                       </button>
                     </div>
 
-                    {/* Formula / Rule Box */}
                     <div className="bg-[#020B06] p-3 rounded-lg border border-emerald-800/60 space-y-1">
                       <span className="text-[10px] font-mono text-[#FBBF24] font-bold block uppercase">
                         📐 Mathematical Equation / Rule
@@ -356,7 +346,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                       </code>
                     </div>
 
-                    {/* Key Takeaway */}
                     <div className="bg-[#020E08] p-3 rounded-lg border border-emerald-900/60 space-y-1">
                       <span className="text-[10px] font-mono text-emerald-300 font-bold block uppercase">
                         💡 Key Tactical Takeaway
@@ -372,7 +361,6 @@ ${plan.recommendedTopics.map((t, idx) => `
             </div>
           )}
 
-          {/* TAB 3: INTERACTIVE PRACTICE DRILLS */}
           {activeTab === 'drill' && (
             <div className="space-y-3">
               <div className="bg-[#020B06] p-3 rounded-xl border border-emerald-800/60 text-xs font-mono text-emerald-300">
@@ -400,7 +388,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                         {drill.question}
                       </p>
 
-                      {/* Options Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {drill.options.map((opt, optIdx) => {
                           const isSelected = currentAnswer === optIdx;
@@ -428,7 +415,6 @@ ${plan.recommendedTopics.map((t, idx) => `
                         })}
                       </div>
 
-                      {/* Submit / Verification */}
                       <div className="flex justify-between items-center pt-1">
                         {isSubmitted ? (
                           <div className="flex items-center space-x-2 text-xs font-mono">
@@ -457,7 +443,6 @@ ${plan.recommendedTopics.map((t, idx) => `
 
         </div>
 
-        {/* FOOTER ACTIONS */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-emerald-900/60 pt-3">
           <div className="text-xs font-mono text-emerald-300">
             <span>Status: </span>

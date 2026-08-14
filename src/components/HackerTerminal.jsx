@@ -5,7 +5,7 @@ import { heistAudio } from './HeistAudioEngine';
 export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
   const [code, setCode] = useState(puzzle?.initialCode || '');
   const [output, setOutput] = useState('');
-  const [status, setStatus] = useState('idle'); // 'idle', 'running', 'success', 'error'
+  const [status, setStatus] = useState('idle'); 
 
   useEffect(() => {
     if (puzzle?.initialCode) {
@@ -22,8 +22,6 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
 
     setTimeout(() => {
       try {
-        // Safe evaluation of the user's function
-        // The function name is dynamically detected
         const userFunc = new Function(`${code}\nreturn typeof extractPayload !== 'undefined' ? extractPayload : typeof filterPrimeNodes !== 'undefined' ? filterPrimeNodes : typeof reverseToken !== 'undefined' ? reverseToken : null;`)();
 
         if (typeof userFunc !== 'function') {
@@ -65,7 +63,6 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
 
   return (
     <div className="forest-card p-5 sm:p-6 space-y-4 font-mono text-sm border-[3px] border-[#03140C] bg-[#051811]/90 shadow-[6px_6px_0px_#020C07]">
-      {/* Terminal Title Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-[#03140C] pb-3">
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 rounded-full bg-[#FF4D6D]"></div>
@@ -81,13 +78,11 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
         </span>
       </div>
 
-      {/* Mission Objective */}
       <div className="bg-[#03140C]/90 p-3 border border-emerald-500/30 text-xs">
         <p className="font-bold text-[#34D399]">🎯 Operational Objective:</p>
         <p className="text-emerald-100 mt-0.5">{puzzle.prompt}</p>
       </div>
 
-      {/* Code Editor Area */}
       <div className="space-y-1.5">
         <div className="flex justify-between items-center text-xs text-emerald-400">
           <span>sandbox.js (JavaScript REPL)</span>
@@ -110,7 +105,6 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
         />
       </div>
 
-      {/* Console Output Log */}
       <div className="space-y-1">
         <span className="text-[11px] font-bold text-emerald-400">Terminal Telemetry:</span>
         <pre className={`p-3 text-xs rounded-none border border-[#03140C] font-mono overflow-x-auto min-h-[64px] whitespace-pre-wrap ${
@@ -124,7 +118,6 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
         </pre>
       </div>
 
-      {/* Actions */}
       <div className="flex justify-between items-center pt-2">
         <div className="text-xs">
           {isSolved ? (

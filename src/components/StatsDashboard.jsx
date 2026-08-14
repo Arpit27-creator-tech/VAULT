@@ -28,7 +28,7 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
     ]
   });
 
-  const [friendsFilter, setFriendsFilter] = useState('ALL'); // 'ALL' | 'ONLINE' | 'IN_HEIST'
+  const [friendsFilter, setFriendsFilter] = useState('ALL'); 
   const [newFriendCallsign, setNewFriendCallsign] = useState('');
   const [inGameFriends, setInGameFriends] = useState([
     {
@@ -72,7 +72,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
   if (!currentUser) {
     return (
       <div className="bg-[#051C12] p-8 sm:p-12 rounded-2xl border border-emerald-800/40 text-center space-y-6 max-w-xl mx-auto shadow-2xl relative">
-        {/* Top-Left Back Button */}
         <button
           onClick={() => {
             onNavigate('home');
@@ -183,13 +182,9 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
   return (
     <div className="space-y-8 sm:space-y-12 pb-16 w-full max-w-7xl mx-auto">
 
-      {/* ========================================================================= */}
-      {/* 1. OPERATIVE DOSSIER IDENTITY HERO BANNER */}
-      {/* ========================================================================= */}
       <section className="bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           
-          {/* Avatar + Callout info */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
             <div className="relative p-1 rounded-2xl bg-[#020B06] border border-emerald-700/60 shadow-md flex-shrink-0">
               <img 
@@ -222,14 +217,12 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
             </div>
           </div>
 
-          {/* XP Progression Card + Quick Actions */}
           <div className="w-full lg:w-80 p-4 bg-[#020E08] border border-emerald-800/40 rounded-xl space-y-2.5 font-mono text-left">
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-400 font-bold uppercase">Season XP</span>
               <span className="text-[#10B981] font-bold">{currentUser.xp} XP</span>
             </div>
 
-            {/* Progress bar */}
             <div>
               <div className="flex justify-between text-[10px] text-slate-400 font-bold mb-1">
                 <span>LVL {currentUser.level}</span>
@@ -268,12 +261,8 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 2. SQUAD TEAM MANAGEMENT & INVITE LINK HUB */}
-      {/* ========================================================================= */}
       <section className="bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6 text-left">
         
-        {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-900/60 pb-4">
           <div>
             <div className="inline-flex items-center space-x-2 bg-[#FBBF24] text-[#02140D] font-mono font-bold text-xs px-2.5 py-0.5 rounded uppercase mb-1">
@@ -299,7 +288,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </div>
         </div>
 
-        {/* Create Team Form Modal Box */}
         {isCreatingTeam && (
           <div className="p-5 bg-[#020E08] border border-[#10B981]/50 rounded-xl space-y-4 animate-in fade-in duration-200">
             <h3 className="text-base font-bold text-white uppercase font-game flex items-center space-x-2">
@@ -347,7 +335,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </div>
         )}
 
-        {/* Current Squad Info + Shareable Invite Link Bar */}
         <div className="bg-[#020E08] p-5 rounded-xl border border-emerald-900/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
             <div className="w-12 h-12 rounded-xl bg-[#041C12] border border-emerald-800 flex items-center justify-center text-2xl flex-shrink-0">
@@ -364,7 +351,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
             </div>
           </div>
 
-          {/* Quick Copy Link Box */}
           <div className="flex items-center space-x-2 w-full md:w-auto">
             <div className="flex-1 md:flex-initial bg-[#041C12] px-3 py-2 rounded-lg border border-emerald-800/60 font-mono text-xs text-slate-300 select-all truncate max-w-xs">
               https://vault.learning/join?team={myTeam.inviteCode}
@@ -379,7 +365,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </div>
         </div>
 
-        {/* 4-Operative Team Roster Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {[0, 1, 2, 3].map((slotIdx) => {
             const member = myTeam.members[slotIdx];
@@ -429,9 +414,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
 
       </section>
 
-      {/* ========================================================================= */}
-      {/* 3. IN-GAME FRIENDS & LIVE ACTIVITY RADAR */}
-      {/* ========================================================================= */}
       <section className="bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6 text-left">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-900/60 pb-4">
@@ -448,7 +430,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
             </p>
           </div>
 
-          {/* Activity Filters */}
           <div className="flex items-center gap-1.5 bg-[#020B06] p-1 rounded-xl border border-emerald-900/60 text-xs font-mono">
             {[
               { id: 'ALL', label: `All (${inGameFriends.length})` },
@@ -473,7 +454,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </div>
         </div>
 
-        {/* Add Friend Input Strip */}
         <form onSubmit={handleAddFriend} className="flex gap-2 max-w-md">
           <input 
             type="text"
@@ -491,7 +471,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </button>
         </form>
 
-        {/* Friends List Horizontal Strips */}
         <div className="space-y-2.5">
           {filteredFriends.map(friend => {
             const isOnline = friend.status === 'ONLINE';
@@ -502,7 +481,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
                 key={friend.id}
                 className="p-3.5 sm:p-4 bg-[#041C12]/70 border border-emerald-900/50 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#10B981]/60 hover:bg-[#07281A] transition-all group"
               >
-                {/* Left: Avatar + Callsign + Role + Status Indicator */}
                 <div className="flex items-center space-x-3.5 min-w-[240px]">
                   <div className="relative">
                     <img 
@@ -510,7 +488,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
                       alt={friend.callsign} 
                       className="w-10 h-10 rounded-xl object-cover border border-emerald-800"
                     />
-                    {/* Activity Indicator Dot */}
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#020B06] ${
                       isInHeist ? 'bg-amber-400 animate-pulse' :
                       isOnline ? 'bg-[#10B981]' :
@@ -531,7 +508,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
                   </div>
                 </div>
 
-                {/* Center: Live Activity Status Pill */}
                 <div className="flex items-center space-x-2 font-mono text-xs">
                   <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
                     isInHeist ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
@@ -543,7 +519,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
                   <span className="text-xs text-slate-300">{friend.activity}</span>
                 </div>
 
-                {/* Right: Actions */}
                 <div className="flex items-center space-x-2 self-end sm:self-auto">
                   <button
                     onClick={() => handleInviteFriend(friend)}
@@ -575,9 +550,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
 
       </section>
 
-      {/* ========================================================================= */}
-      {/* 4. 4 STEM DISCIPLINE MASTERY GAUGES */}
-      {/* ========================================================================= */}
       <section className="bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6 text-left">
         
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-emerald-900/60 pb-4">
@@ -667,12 +639,8 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
 
       </section>
 
-      {/* ========================================================================= */}
-      {/* 5. RECENT OPERATIONS LOG & MEDALS */}
-      {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
         
-        {/* Recent Operations Log (8 cols) */}
         <div className="lg:col-span-8 bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3">
             <div>
@@ -718,7 +686,6 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           </div>
         </div>
 
-        {/* Syndicate Medals Cabinet (4 cols) */}
         <div className="lg:col-span-4 bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 shadow-xl space-y-4">
           <div className="border-b border-emerald-900/60 pb-3">
             <div className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-amber-300 uppercase">

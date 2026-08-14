@@ -1,7 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 @layer base {
   :root {
     --background: 154 50% 6%;
@@ -25,7 +24,6 @@
     --ring: 158 80% 45%;
     --radius: 10px;
   }
-
   html, body {
     background-color: #051811;
     color: #F0FDF4;
@@ -33,19 +31,14 @@
     letter-spacing: 0.02em;
     overflow-x: clip;
   }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Chakra Petch', 'Rajdhani', sans-serif;
     letter-spacing: 0.03em;
   }
-
-  /* Universal slightly curved edges for all interactive controls */
   button, input, select, textarea {
     border-radius: 8px;
   }
 }
-
-/* Sylvan Forest Neo-Brutalist & Glassmorphic Utilities with Slightly Curved Edges */
 .forest-glass {
   background: rgba(7, 30, 20, 0.78);
   backdrop-filter: blur(12px);
@@ -54,7 +47,6 @@
   border-radius: 12px;
   box-shadow: 4px 4px 0px #020C07, 0 0 15px rgba(16, 185, 129, 0.12);
 }
-
 .forest-card {
   background: rgba(10, 38, 27, 0.82);
   backdrop-filter: blur(10px);
@@ -64,56 +56,44 @@
   box-shadow: 5px 5px 0px #020C07;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .forest-card:hover {
   transform: translate(-2px, -2px);
   box-shadow: 7px 7px 0px #10B981, 0 0 20px rgba(16, 185, 129, 0.2);
 }
-
 .neo-btn-emerald {
   border: 3px solid #03140C;
   border-radius: 9px;
   box-shadow: 3px 3px 0px #03140C;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .neo-btn-emerald:hover {
   transform: translate(-1px, -1px);
   box-shadow: 4px 4px 0px #10B981;
 }
-
 .neo-btn-emerald:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px #03140C;
 }
-
-/* Slightly curved corners for UI badges, containers & boxes */
 .badge-curved, [class*="border-2"], [class*="border-[3px]"], [class*="border-[2.5px]"], [class*="border-[3.5px]"] {
   border-radius: 10px;
 }
-
 table tr, table td, table th {
   border-radius: 0px !important;
 }
-
-/* Custom Forest Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: #051811;
   border-left: 2px solid #03140C;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #10B981;
   border: 2px solid #03140C;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #34D399;
 }

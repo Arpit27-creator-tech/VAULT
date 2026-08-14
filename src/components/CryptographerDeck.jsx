@@ -28,7 +28,6 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
     heistAudio.playKeyClick();
     setShiftValue(shift);
     
-    // Auto-calculate sample shifted preview
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const preview = puzzle.ciphertext.split('').map(char => {
       const idx = chars.indexOf(char.toUpperCase());
@@ -62,7 +61,6 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
 
   return (
     <div className="forest-card p-5 sm:p-6 space-y-4 font-sans text-sm border-[3px] border-[#03140C] bg-[#051811]/90 shadow-[6px_6px_0px_#020C07]">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-[#03140C] pb-3">
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 rounded-full bg-[#A855F7] animate-pulse"></div>
@@ -76,13 +74,11 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
         </span>
       </div>
 
-      {/* Goal Prompt */}
       <div className="bg-[#03140C]/90 p-3 border border-emerald-500/30 text-xs">
         <p className="font-bold text-[#C084FC]">📻 Signal Intercept & Cipher Goal:</p>
         <p className="text-emerald-100 mt-0.5">{puzzle.prompt}</p>
       </div>
 
-      {/* Radio Frequency Tuner */}
       <div className="bg-[#020B06] p-4 border-2 border-[#03140C] space-y-3">
         <div className="flex justify-between items-center text-xs font-mono">
           <span className="text-emerald-400 flex items-center space-x-1.5 font-bold">
@@ -116,7 +112,6 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
         </div>
       </div>
 
-      {/* Intercepted Cipher & Decoder Shift Controls */}
       <div className="bg-[#03140C] p-4 border border-emerald-900/60 space-y-3">
         <div className="flex justify-between items-center text-xs font-mono">
           <span className="text-emerald-400 font-bold">Intercepted Ciphertext:</span>
@@ -131,7 +126,6 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
           </p>
         </div>
 
-        {/* Caesar shift helper buttons if applicable */}
         {puzzle.cipherType.includes('Caesar') && isFreqLocked && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-[11px] font-mono text-emerald-400 mr-1">Shift Dial:</span>
@@ -153,7 +147,6 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
         )}
       </div>
 
-      {/* Decryption Input & Submission */}
       <form onSubmit={handleVerifyDecryption} className="space-y-3">
         <div className="space-y-1">
           <label className="block text-xs font-mono font-bold text-emerald-300">Decrypted Plaintext Phrase:</label>

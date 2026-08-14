@@ -6,14 +6,12 @@ import {
 import { toast } from 'sonner';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
-  const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'register'
+  const [authMode, setAuthMode] = useState('signin'); 
   
-  // Sign In fields
-  const [identifier, setIdentifier] = useState(''); // email or username
+  const [identifier, setIdentifier] = useState(''); 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Register fields (ONLY: User Name, Email, Password)
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -113,17 +111,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
       
-      {/* Solid Cartoon Card Container with bold borders & chunky drop shadow */}
       <div className="bg-[#0A2E1E] border-[4px] border-[#03140C] rounded-[2rem] p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0px_#020C07] relative space-y-5 animate-in zoom-in-95 duration-200 text-[#F0FDF4] my-auto">
         
-        {/* Playful Top Mascot Badge */}
         <div className="absolute -top-10 left-1/2 -translate-x-1/2">
           <div className="w-20 h-20 bg-[#10B981] border-[3.5px] border-[#03140C] rounded-full shadow-[4px_4px_0px_#020C07] flex items-center justify-center text-3xl select-none animate-bounce">
             {authMode === 'signin' ? '🦊' : '🚀'}
           </div>
         </div>
 
-        {/* Top Left: Back Button */}
         <button 
           type="button"
           onClick={onClose}
@@ -134,7 +129,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           <span>Back</span>
         </button>
 
-        {/* Top Right: Close Button */}
         <button 
           type="button"
           onClick={onClose}
@@ -145,7 +139,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           <X className="w-5 h-5 stroke-[3]" />
         </button>
 
-        {/* Cartoon Header Title */}
         <div className="text-center pt-6 space-y-1">
           <div className="inline-flex items-center space-x-1.5 bg-[#FBBF24] text-[#02140D] font-mono font-black text-xs uppercase px-3 py-1 border-2 border-[#03140C] rounded-full shadow-[2px_2px_0px_#020C07] rotate-[-2deg]">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
@@ -160,7 +153,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </p>
         </div>
 
-        {/* Cartoon Bouncy Tab Switcher */}
         <div className="flex bg-[#03140C] p-1.5 rounded-2xl border-2 border-[#020B06] shadow-inner font-game text-xs gap-1.5">
           <button
             type="button"
@@ -189,13 +181,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </button>
         </div>
 
-        {/* ========================================================================= */}
-        {/* 1. SIGN IN MODE */}
-        {/* ========================================================================= */}
         {authMode === 'signin' && (
           <div className="space-y-4 animate-in fade-in duration-150">
             <form onSubmit={handleLogin} className="space-y-3.5 text-left">
-              {/* Email / Username */}
               <div className="space-y-1">
                 <label className="block text-xs font-black uppercase text-emerald-200 font-game">
                   Email ID or Username
@@ -215,7 +203,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* Password */}
               <div className="space-y-1">
                 <label className="block text-xs font-black uppercase text-emerald-200 font-game">
                   Password
@@ -243,7 +230,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* Cartoon 3D Action Button */}
               <button
                 type="submit"
                 className="w-full bg-[#10B981] text-[#02140D] font-black py-3.5 rounded-2xl border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#34D399] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-wider flex items-center justify-center space-x-2 font-game mt-2"
@@ -266,14 +252,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* 2. REGISTER MODE (ONLY: User Name, Email, Password) */}
-        {/* ========================================================================= */}
         {authMode === 'register' && (
           <div className="space-y-4 animate-in fade-in duration-150">
             <form onSubmit={handleRegister} className="space-y-3.5 text-left">
               
-              {/* 1. User Name */}
               <div className="space-y-1">
                 <label className="block text-xs font-black uppercase text-emerald-200 font-game">
                   User Name
@@ -293,7 +275,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* 2. Email */}
               <div className="space-y-1">
                 <label className="block text-xs font-black uppercase text-emerald-200 font-game">
                   Email
@@ -313,7 +294,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* 3. Password */}
               <div className="space-y-1">
                 <label className="block text-xs font-black uppercase text-emerald-200 font-game">
                   Password
@@ -341,7 +321,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* Cartoon 3D Action Button */}
               <button
                 type="submit"
                 className="w-full bg-[#FBBF24] text-[#02140D] font-black py-3.5 rounded-2xl border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-wider flex items-center justify-center space-x-2 font-game mt-2"

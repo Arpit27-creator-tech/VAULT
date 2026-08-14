@@ -43,7 +43,6 @@ export default function App() {
   const [isEndHeistModalOpen, setIsEndHeistModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Operative Authentication State
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('vault_current_user');
@@ -73,24 +72,20 @@ export default function App() {
     }
   });
 
-  // Squad Lobby Voice Chat State
   const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(true);
   const [isLobbyMicMuted, setIsLobbyMicMuted] = useState(false);
   const [isLobbyDeafened, setIsLobbyDeafened] = useState(false);
   const [speakingPlayerSlot, setSpeakingPlayerSlot] = useState(1);
 
-  // Sound & Ambient Video Controls
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [bgVideoActive, setBgVideoActive] = useState(true);
-  const [bgDimMode, setBgDimMode] = useState('vivid'); // 'cinema' (0.08), 'vivid' (0.22), 'focus' (0.45)
+  const [bgDimMode, setBgDimMode] = useState('vivid'); 
   const videoRef = useRef(null);
 
-  // Custom Heist Builder & Remediation Roadmap state
   const [isCustomHeistModalOpen, setIsCustomHeistModalOpen] = useState(false);
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState(false);
   const [allStages, setAllStages] = useState(heistStages);
 
-  // Live Multi-Role Heist Engine State
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
   const [activeCockpitRole, setActiveCockpitRole] = useState('hacker');
   const [stageSolvedRoles, setStageSolvedRoles] = useState({
@@ -105,7 +100,7 @@ export default function App() {
     3: {},
     99: {}
   });
-  const [alarmLevel, setAlarmLevel] = useState('LOW_SECURITY'); // 'LOW_SECURITY', 'MEDIUM_ALERT', 'HIGH_LOCKDOWN', 'BUSTED'
+  const [alarmLevel, setAlarmLevel] = useState('LOW_SECURITY'); 
   const [alarmFails, setAlarmFails] = useState(0);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -131,7 +126,6 @@ export default function App() {
       heistAudio.playKeyClick();
       return;
     }
-    // Only lock private operational zones (Stats Dossier, Custom Forge) behind login
     const protectedTabs = ['stats', 'builder'];
     if (!currentUser && protectedTabs.includes(newTab)) {
       setIsAuthModalOpen(true);
@@ -190,7 +184,6 @@ export default function App() {
         alarmsTripped: alarmFails
       });
 
-      // Update logged in user stats automatically
       if (currentUser) {
         const gainedXp = solvedCount > 0 ? 450 : 150;
         const newRecord = {
@@ -218,7 +211,6 @@ export default function App() {
         localStorage.setItem('vault_current_user', JSON.stringify(updatedUser));
       }
 
-      // Reset timer, alarm state, and fail counters back to clean initial state
       setTimeLeft(defaultTime);
       setAlarmLevel('LOW_SECURITY');
       setAlarmFails(0);
@@ -227,7 +219,6 @@ export default function App() {
       toast.success("📊 Operation Concluded. Generating Tactical Debrief & Skill Analytics.");
     } else {
       heistAudio.playRadioSquelch();
-      // Full reset of timer, security level, and alarms
       setTimeLeft(defaultTime);
       setAlarmLevel('LOW_SECURITY');
       setAlarmFails(0);
@@ -251,19 +242,16 @@ export default function App() {
     toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
   };
 
-  // Waitlist state
   const [emailInput, setEmailInput] = useState('');
   const [crewNameInput, setCrewNameInput] = useState('');
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
-  // Join Lobby Modal state
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [targetSlotId, setTargetSlotId] = useState(null);
   const [joinPlayerName, setJoinPlayerName] = useState('');
   const [joinRole, setJoinRole] = useState('Canopy Hacker');
   const [joinCharacterId, setJoinCharacterId] = useState('c1');
 
-  // Interactive Room Map state
   const [unlockedRooms, setUnlockedRooms] = useState(() => {
     const saved = localStorage.getItem('kh_unlocked_rooms_sylvan');
     return saved ? JSON.parse(saved) : [1];
@@ -302,12 +290,10 @@ export default function App() {
     answer: '' 
   });
 
-  // Sound toggle sync
   useEffect(() => {
     heistAudio.toggleSound(soundEnabled);
   }, [soundEnabled]);
 
-  // Save to localStorage
   useEffect(() => {
     localStorage.setItem('kh_missions_subject_v4', JSON.stringify(missions));
   }, [missions]);
@@ -332,7 +318,6 @@ export default function App() {
     localStorage.setItem('kh_streak_sylvan', streak.toString());
   }, [streak]);
 
-  // Live Heist Timer & Tension Sound Loop
   useEffect(() => {
     let interval = null;
     if (isTimerRunning && timeLeft > 0) {
@@ -342,7 +327,6 @@ export default function App() {
             handleHeistTimeout();
             return 0;
           }
-          // Dynamic alarm escalation based on time left
           if (prev <= 30 && alarmLevel !== 'HIGH_LOCKDOWN') {
             setAlarmLevel('HIGH_LOCKDOWN');
             heistAudio.startTensionBeat('HIGH_LOCKDOWN');
@@ -439,21 +423,18 @@ export default function App() {
     const stage = allStages[currentStageIdx] || heistStages[0];
     const stageId = stage.stageId;
     
-    // Update solved state
     setStageSolvedRoles(prev => {
       const current = { ...(prev[stageId] || {}) };
       current[role] = true;
       return { ...prev, [stageId]: current };
     });
 
-    // Update clues
     setStageRoleClues(prev => {
       const current = { ...(prev[stageId] || {}) };
       current[role] = clue;
       return { ...prev, [stageId]: current };
     });
 
-    // Radio chatter
     const roleNames = {
       scientist: "Scientist Rostova",
       engineer: "Engineer Chen",
@@ -472,7 +453,6 @@ export default function App() {
 
     toast.success(`🔓 ${role.toUpperCase()} LOCK BYPASSED! Clue dispatched.`);
 
-    // Check if all active roles in current stage are solved
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
       : ['hacker', 'engineer', 'scientist', 'cryptographer'];
@@ -487,7 +467,6 @@ export default function App() {
     const newFails = alarmFails + 1;
     setAlarmFails(newFails);
     
-    // Penalty time deduction (-12 seconds)
     setTimeLeft(prev => Math.max(5, prev - 12));
 
     let nextAlert = 'LOW_SECURITY';
@@ -674,7 +653,6 @@ export default function App() {
     <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
       <Toaster position="top-right" richColors />
 
-      {/* BACKGROUND VIDEO LAYER */}
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         {bgVideoActive && (
           <video
@@ -687,7 +665,6 @@ export default function App() {
             className="w-full h-full object-cover scale-105 filter brightness-105 saturate-110 contrast-105 transition-opacity duration-1000"
           />
         )}
-        {/* Translucent Dimmer Overlay */}
         <div 
           className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
           style={{
@@ -695,23 +672,18 @@ export default function App() {
             opacity: 0.22
           }}
         />
-        {/* Alarm lockdown flasher overlay */}
         {alarmLevel === 'HIGH_LOCKDOWN' && (
           <div className="absolute inset-0 bg-red-900/25 pointer-events-none animate-pulse" />
         )}
       </div>
 
-      {/* FOREGROUND APPLICATION (z-10) */}
       <div className="relative z-10 flex flex-col min-h-screen">
 
-        {/* STICKY TOP MENU BAR */}
         <header className="sticky top-0 z-50 bg-[#071E14]/95 backdrop-blur-xl border-b-[3px] border-[#03140C] px-3 sm:px-6 py-2.5 sm:py-3 shadow-[0_4px_25px_rgba(0,0,0,0.6)]">
           <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
             
-            {/* Left: If Logged In -> Back, Home, Sidebar Toggles, Brand Logo; If Visitor -> Brand Logo */}
             <div className="flex items-center space-x-1.5 sm:space-x-2.5">
               
-              {/* TOP-LEFT BACK BUTTON (When Logged In) */}
               {currentUser && (
                 <button 
                   onClick={handleGoBack}
@@ -729,7 +701,6 @@ export default function App() {
                 </button>
               )}
 
-              {/* MENU BAR HOME SECTION BUTTON (When Logged In) */}
               {currentUser && (
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
@@ -753,7 +724,6 @@ export default function App() {
                 </motion.button>
               )}
 
-              {/* Mobile Sidebar Menu Toggle (When Logged In) */}
               {currentUser && (
                 <button 
                   onClick={() => {
@@ -768,7 +738,6 @@ export default function App() {
                 </button>
               )}
 
-              {/* Desktop Sidebar Collapse Toggle (When Logged In) */}
               {currentUser && (
                 <button 
                   onClick={() => {
@@ -788,7 +757,6 @@ export default function App() {
                 </button>
               )}
 
-              {/* Brand Logo */}
               <div 
                 className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group" 
                 onClick={() => {
@@ -816,10 +784,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right: Actions & Operative Authentication Controls */}
             <div className="flex items-center space-x-1.5 sm:space-x-2.5">
               
-              {/* If in liveheist: Show End Heist Quick Button in Top Bar */}
               {activeTab === 'liveheist' && (
                 <button
                   onClick={() => setIsEndHeistModalOpen(true)}
@@ -832,7 +798,6 @@ export default function App() {
                 </button>
               )}
 
-              {/* Sound Toggle */}
               <button 
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className="p-1.5 sm:p-2 border-[2px] border-[#03140C] bg-[#0A261B] text-[#34D399] font-black shadow-[2px_2px_0px_#020C07] hover:bg-[#0E3526]"
@@ -841,7 +806,6 @@ export default function App() {
                 {soundEnabled ? <Volume2 className="w-4 h-4 text-[#10B981]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
               </button>
 
-              {/* Operative Login / Profile Button */}
               {currentUser ? (
                 <div className="flex items-center space-x-2">
                   <button
@@ -867,7 +831,6 @@ export default function App() {
                     </div>
                   </button>
 
-                  {/* Create Custom Heist Action */}
                   <button
                     onClick={() => {
                       setIsCustomHeistModalOpen(true);
@@ -881,7 +844,6 @@ export default function App() {
                     <span className="sm:hidden">HEIST</span>
                   </button>
 
-                  {/* Start Expedition Action (when not in liveheist) */}
                   {activeTab !== 'liveheist' && (
                     <button
                       onClick={() => handleStartHeistStage(0)}
@@ -894,7 +856,6 @@ export default function App() {
                   )}
                 </div>
               ) : (
-                /* Visitor Mode: Clean Standard Sign In Button */
                 <button
                   onClick={() => {
                     setIsAuthModalOpen(true);
@@ -912,10 +873,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* WORKSPACE LAYOUT: SIDEBAR (WHEN AUTHENTICATED) + MAIN CONTENT */}
         <div className="flex flex-1 relative min-h-[calc(100vh-65px)]">
 
-          {/* MOBILE SIDEBAR BACKDROP */}
           {currentUser && sidebarOpen && (
             <div 
               className="fixed inset-0 z-30 bg-black/75 backdrop-blur-sm md:hidden transition-opacity"
@@ -923,7 +882,6 @@ export default function App() {
             />
           )}
 
-          {/* SIDEBAR UNDER MENU BAR (LOCKED/HIDDEN UNTIL AUTHENTICATED) */}
           {currentUser && (
             <aside className={`
               fixed md:sticky top-[58px] sm:top-[65px] z-40 md:z-20
@@ -940,10 +898,8 @@ export default function App() {
               }
             `}>
             
-            {/* Top Section / Syndicate Deck Header & Nav items */}
             <div className="flex-1 w-72 md:w-60 lg:w-64">
               
-              {/* Syndicate Menu Header */}
               <div className="p-3.5 border-b-2 border-[#03140C] bg-[#04160E]/80 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
@@ -955,7 +911,6 @@ export default function App() {
                   <span className="text-[10px] font-mono bg-[#0A261B] text-[#FBBF24] px-2 py-0.5 border border-[#03140C] font-bold">
                     10 OPS
                   </span>
-                  {/* Quick minimize button inside sidebar */}
                   <button
                     onClick={() => {
                       setSidebarCollapsed(true);
@@ -969,7 +924,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Navigation Options List */}
               <nav className="p-2.5 sm:p-3 space-y-1.5">
                 {[
                   { id: 'home', label: 'Home HQ', icon: Home, badge: 'HOME', sub: 'Platform Overview' },
@@ -1051,9 +1005,7 @@ export default function App() {
 
             </div>
 
-            {/* Bottom Section / Tactical Status in Sidebar */}
             <div className="p-3 border-t-2 border-[#03140C] bg-[#04160E]/90 space-y-2.5 w-72 md:w-60 lg:w-64">
-              {/* Radar Live Status */}
               <div className="p-2 bg-[#020B06] border border-[#03140C] flex items-center justify-between text-[11px] font-mono font-bold">
                 <div className="flex items-center space-x-1.5 text-[#34D399]">
                   <Radio className="w-3.5 h-3.5 text-[#10B981] animate-pulse" />
@@ -1062,7 +1014,6 @@ export default function App() {
                 <span className="text-[#FBBF24] text-[10px]">4.8K CO-OP</span>
               </div>
 
-              {/* Fast Stage Action */}
               <button
                 onClick={() => {
                   handleStartHeistStage(0);
@@ -1078,10 +1029,8 @@ export default function App() {
           </aside>
           )}
 
-          {/* MAIN CONTENT AREA */}
           <div className="flex-1 min-w-0 flex flex-col">
 
-        {/* HERO BANNER */}
         {activeTab === 'missions' && (
           <section className="bg-gradient-to-r from-[#062417]/85 via-[#093522]/80 to-[#052115]/85 backdrop-blur-md text-white border-b-[3px] border-[#03140C] py-12 sm:py-16 px-6 relative overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10B981_1px,transparent_1px)] [background-size:20px_20px]"></div>
@@ -1159,11 +1108,9 @@ export default function App() {
           </section>
         )}
 
-        {/* MAIN CONTAINER */}
         <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-14 w-full">
           <AnimatePresence mode="wait" initial={false}>
 
-          {/* TAB 0: MISSION HQ HERO PAGE */}
           {activeTab === 'home' && (
             <motion.div
               key="home"
@@ -1192,7 +1139,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 1: LIVE HEIST COCKPIT & OPERATION ENGINE */}
           {activeTab === 'liveheist' && (
             <motion.div
               key="liveheist"
@@ -1203,7 +1149,6 @@ export default function App() {
               className="space-y-5 max-w-7xl mx-auto"
             >
               
-              {/* Mission Stage Header */}
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
@@ -1220,10 +1165,8 @@ export default function App() {
                   <p className="text-xs text-slate-300 max-w-2xl">{currentStageData.description}</p>
                 </div>
 
-                {/* Tactical Status Counters */}
                 <div className="flex flex-wrap items-center gap-2.5 font-mono text-xs self-stretch lg:self-auto justify-between lg:justify-end">
                   
-                  {/* Countdown Timer */}
                   <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 ${
                     timeLeft <= 30 
                       ? 'bg-red-950/80 border-red-500 text-red-200 animate-pulse' 
@@ -1238,7 +1181,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Security Alert Level */}
                   <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 ${
                     alarmLevel === 'HIGH_LOCKDOWN' 
                       ? 'bg-red-950 border-red-500 text-red-200 animate-pulse' 
@@ -1255,7 +1197,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Stage Switcher Pills */}
                   <div className="flex bg-[#020B06] rounded-lg p-1 border border-emerald-900/60">
                     {allStages.map((stg, sIdx) => (
                       <button
@@ -1272,7 +1213,6 @@ export default function App() {
                     ))}
                   </div>
 
-                  {/* Restart Button */}
                   <button
                     onClick={() => {
                       handleStartHeistStage(currentStageIdx);
@@ -1285,7 +1225,6 @@ export default function App() {
                     <RefreshCw className="w-4 h-4" />
                   </button>
 
-                  {/* End Heist Button */}
                   <button
                     onClick={() => setIsEndHeistModalOpen(true)}
                     className="bg-[#FF4D6D] text-white font-bold text-xs px-3 py-2 rounded-lg hover:bg-[#FF3366] transition-colors flex items-center space-x-1.5"
@@ -1298,14 +1237,12 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Interdependence Pipeline Matrix */}
               <InterdependenceMatrix
                 stageData={currentStageData}
                 solvedRoles={currentStageSolved}
                 roleClues={currentStageClues}
               />
 
-              {/* Role Cockpit Switcher Tabs */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
                   { id: 'hacker', name: 'The Hacker', icon: Terminal, color: '#10B981', discipline: 'Data Structures' },
@@ -1347,10 +1284,8 @@ export default function App() {
                 })}
               </div>
 
-              {/* Cockpit Workspace & Walkie-Talkie Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 
-                {/* Left 8 Cols: Active Role Cockpit Interactive Component */}
                 <div className="lg:col-span-8 space-y-4">
                   {activeCockpitRole === 'hacker' && (
                     <HackerTerminal
@@ -1389,7 +1324,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Right 4 Cols: Squad Radio Comms & Bot Simulation Tools */}
                 <div className="lg:col-span-4 space-y-4">
                   <RadioComms
                     messages={radioMessages}
@@ -1397,7 +1331,6 @@ export default function App() {
                     onSendMessage={handleSendMessage}
                   />
 
-                  {/* Co-Op Helper / Bot Simulator */}
                   <div className="bg-[#051C12] p-4 rounded-xl border border-emerald-800/40 space-y-2.5 shadow-md">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="w-4 h-4 text-[#FBBF24]" />
@@ -1422,7 +1355,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 2: EXPEDITIONS / MISSIONS */}
           {activeTab === 'missions' && (
             <motion.div
               key="missions"
@@ -1432,7 +1364,6 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="space-y-6 max-w-7xl mx-auto"
             >
-              {/* Clean Header Bar */}
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                 <div>
                   <div className="flex items-center space-x-2">
@@ -1465,7 +1396,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Clean Mission Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {missions.map((mission, mIdx) => (
                   <div
@@ -1473,7 +1403,6 @@ export default function App() {
                     className="bg-[#051C12] border border-emerald-800/40 rounded-xl overflow-hidden shadow-md flex flex-col justify-between hover:border-[#10B981]/70 hover:bg-[#072418] transition-all group"
                   >
                     <div>
-                      {/* Mission Thumbnail */}
                       <div className="relative h-44 overflow-hidden bg-[#020B06]">
                         <img 
                           src={mission.image} 
@@ -1495,7 +1424,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Content */}
                       <div className="p-5 space-y-2 text-left">
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-lg text-white group-hover:text-[#10B981] transition-colors font-game">
@@ -1512,7 +1440,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
                     <div className="p-5 pt-0">
                       <button
                         onClick={() => {
@@ -1534,7 +1461,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 3: SQUAD LOBBY WITH VOICE CHAT */}
           {activeTab === 'lobby' && (
             <motion.div
               key="lobby"
@@ -1544,7 +1470,6 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="space-y-6 max-w-7xl mx-auto text-left"
             >
-              {/* Lobby Header Card */}
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-900/60 pb-5">
                   <div className="space-y-1">
@@ -1587,11 +1512,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* ========================================================================= */}
-                {/* SQUAD LIVE VOICE CHAT COMMS DECK */}
-                {/* ========================================================================= */}
                 <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left: Radio Frequency & Live Waveform */}
                   <div className="flex items-center space-x-3.5">
                     <div className={`p-2.5 rounded-xl border transition-all ${
                       isLobbyVoiceConnected
@@ -1620,7 +1541,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Middle: Live Audio Equalizer Waves */}
                   {isLobbyVoiceConnected && !isLobbyMicMuted && (
                     <div className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#020B06] rounded-lg border border-emerald-900/60">
                       <span className="text-[10px] font-mono text-emerald-400 mr-2">MIC AUDIO:</span>
@@ -1634,9 +1554,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Right: Interactive Voice Controls */}
                   <div className="flex items-center space-x-2">
-                    {/* Microphone Mute Toggle */}
                     <button
                       onClick={() => {
                         setIsLobbyMicMuted(!isLobbyMicMuted);
@@ -1654,7 +1572,6 @@ export default function App() {
                       <span>{isLobbyMicMuted ? 'Muted' : 'Mic On'}</span>
                     </button>
 
-                    {/* Headphone Deafen Toggle */}
                     <button
                       onClick={() => {
                         setIsLobbyDeafened(!isLobbyDeafened);
@@ -1672,7 +1589,6 @@ export default function App() {
                       <span>{isLobbyDeafened ? 'Deafened' : 'Sound'}</span>
                     </button>
 
-                    {/* Test Radio Transmission Ping */}
                     <button
                       onClick={() => {
                         heistAudio.playRadioSquelch();
@@ -1685,7 +1601,6 @@ export default function App() {
                       <span>Radio Ping</span>
                     </button>
 
-                    {/* Connect / Disconnect Voice */}
                     <button
                       onClick={() => {
                         setIsLobbyVoiceConnected(!isLobbyVoiceConnected);
@@ -1704,7 +1619,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 4 Ranger Slots Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {lobby.players.map((slot) => {
                     const char = characters.find(c => c.id === slot.characterId);
@@ -1727,7 +1641,6 @@ export default function App() {
                               SLOT 0{slot.slotId}
                             </span>
                             
-                            {/* Voice Status Pill */}
                             {slot.playerName && isLobbyVoiceConnected && (
                               <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
                                 isSpeaking
@@ -1812,7 +1725,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 4: ROLES & RANGERS */}
           {activeTab === 'characters' && (
             <motion.div
               key="characters"
@@ -1884,7 +1796,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 5: DISCIPLINES & GRAPHICAL LEARNING ROADMAP */}
           {activeTab === 'topics' && (
             <motion.div
               key="topics"
@@ -1901,7 +1812,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 6: CANOPY ROOM MAP / MIND MAP */}
           {activeTab === 'map' && (
             <motion.div
               key="map"
@@ -1911,7 +1821,6 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="space-y-6 max-w-7xl mx-auto text-left"
             >
-              {/* Header Bar */}
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
@@ -1942,7 +1851,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 4 Chamber Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { num: 1, name: "Roots of Logic", discipline: "Computer Science", color: "#10B981" },
@@ -1967,7 +1875,6 @@ export default function App() {
                       }`}
                     >
                       <div className="space-y-3">
-                        {/* Status Header */}
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#020B06] border border-emerald-900" style={{ color: chamber.color }}>
                             CHAMBER 0{roomNum}
@@ -2002,12 +1909,10 @@ export default function App() {
                           <p className="text-[11px] font-mono text-emerald-400">{chamber.discipline}</p>
                         </div>
 
-                        {/* Question Text */}
                         <p className="text-xs text-slate-200 leading-relaxed font-sans pt-1">
                           {q?.question}
                         </p>
 
-                        {/* Options Buttons */}
                         <div className="space-y-1.5 pt-2">
                           {q?.options.map((opt, oIdx) => {
                             const isCorrectOpt = isDone && oIdx === q.correct;
@@ -2043,7 +1948,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Footer info */}
                       <div className="pt-3 mt-3 border-t border-emerald-950 flex items-center justify-between text-[10px] font-mono text-slate-400">
                         <span>Bounty: +250 XP</span>
                         {isDone ? (
@@ -2061,7 +1965,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 7: ARCHITECT WORKSHOP / MISSION BUILDER */}
           {activeTab === 'builder' && (
             <motion.div
               key="builder"
@@ -2179,7 +2082,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 8: SYNDICATE PASS / WAITLIST */}
           {activeTab === 'waitlist' && (
             <motion.div 
               key="waitlist"
@@ -2231,7 +2133,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* TAB 9: OPERATIVE STATS DOSSIER */}
           {activeTab === 'stats' && (
             <motion.div
               key="stats"
@@ -2261,7 +2162,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* JOIN LOBBY SLOT MODAL */}
       {isJoinModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/80 backdrop-blur-sm animate-fade-in">
           <div className="forest-card max-w-md w-full p-6 space-y-5 border-[4px] border-[#03140C] bg-[#051811] shadow-[8px_8px_0px_#020C07]">
@@ -2317,7 +2217,6 @@ export default function App() {
         </div>
       )}
 
-      {/* CREATE CUSTOM HEIST MODAL */}
       <CreateCustomHeistModal
         isOpen={isCustomHeistModalOpen}
         onClose={() => setIsCustomHeistModalOpen(false)}
@@ -2325,7 +2224,6 @@ export default function App() {
         onLaunchCustomHeist={handleLaunchCustomHeist}
       />
 
-      {/* SKILL ANALYTICS DEBRIEF MODAL */}
       <SkillAnalyticsModal
         isOpen={analyticsModalOpen}
         isVictory={isMatchVictory}
@@ -2351,7 +2249,6 @@ export default function App() {
         }}
       />
 
-      {/* TARGETED FAILURE REMEDIATION & TOPICS ROADMAP MODAL */}
       <RemediationRoadmapModal
         isOpen={isRoadmapModalOpen}
         onClose={() => setIsRoadmapModalOpen(false)}
@@ -2367,7 +2264,6 @@ export default function App() {
         }}
       />
 
-      {/* END HEIST CONFIRMATION MODAL */}
       {isEndHeistModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in">
           <div className="forest-card max-w-md w-full p-6 space-y-5 border-[4px] border-[#03140C] bg-[#051811] shadow-[10px_10px_0px_#020C07]">
@@ -2389,7 +2285,6 @@ export default function App() {
             </p>
 
             <div className="space-y-3 font-mono">
-              {/* Action 1: Conclude & View Analytics */}
               <button
                 onClick={() => handleConcludeHeist('debrief')}
                 className="w-full bg-[#10B981] text-[#02140D] font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
@@ -2401,7 +2296,6 @@ export default function App() {
                 <span className="text-[10px] bg-[#02140D] text-[#FBBF24] px-1.5 py-0.5 border border-[#02140D]">CLAIM DEBRIEF</span>
               </button>
 
-              {/* Action 2: Emergency Abort / Return HQ */}
               <button
                 onClick={() => handleConcludeHeist('abort')}
                 className="w-full bg-[#FF4D6D] text-white font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
@@ -2413,7 +2307,6 @@ export default function App() {
                 <span className="text-[10px] bg-black/40 text-white px-1.5 py-0.5">RETURN HQ</span>
               </button>
 
-              {/* Action 3: Cancel and Resume */}
               <button
                 onClick={() => setIsEndHeistModalOpen(false)}
                 className="w-full bg-[#0A261B] text-emerald-200 font-bold p-2.5 border-2 border-[#03140C] hover:bg-[#0E3526] text-xs uppercase"
@@ -2424,7 +2317,6 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* AUTHENTICATION / LOGIN MODAL */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

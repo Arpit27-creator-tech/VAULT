@@ -30,7 +30,6 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
     setIsReacting(true);
 
     setTimeout(() => {
-      // Check if all coefficients match required
       const allMatched = reagents.every(r => r.currentCoeff === r.requiredCoeff);
       const phOk = Math.abs(ph - (puzzle.targetPh || 7.0)) <= 0.8;
 
@@ -51,7 +50,6 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
 
   return (
     <div className="forest-card p-5 sm:p-6 space-y-4 font-sans text-sm border-[3px] border-[#03140C] bg-[#051811]/90 shadow-[6px_6px_0px_#020C07]">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-[#03140C] pb-3">
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 rounded-full bg-[#06B6D4] animate-pulse"></div>
@@ -65,13 +63,11 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
         </span>
       </div>
 
-      {/* Goal Prompt */}
       <div className="bg-[#03140C]/90 p-3 border border-emerald-500/30 text-xs">
         <p className="font-bold text-[#06B6D4]">🧪 Chemical Stoichiometry & Synthesis Goal:</p>
         <p className="text-emerald-100 mt-0.5">{puzzle.prompt}</p>
       </div>
 
-      {/* Chemical Equation Target Display */}
       <div className="bg-[#020B06] p-4 border-2 border-[#03140C] text-center space-y-2">
         <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
           Target Reaction Formulation
@@ -81,7 +77,6 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
         </p>
       </div>
 
-      {/* Reagent Coefficients Tuning Grid */}
       <div className="space-y-2.5">
         <span className="text-xs font-mono font-bold text-emerald-300">Adjust Reagent Molar Quantities:</span>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -115,7 +110,6 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
         </div>
       </div>
 
-      {/* pH Buffer Slider */}
       <div className="bg-[#03140C] p-3 border border-emerald-900/60 space-y-2">
         <div className="flex justify-between text-xs font-mono">
           <span className="text-[#06B6D4] font-bold flex items-center space-x-1">
@@ -141,7 +135,6 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
         </div>
       </div>
 
-      {/* Action */}
       <div className="flex justify-between items-center pt-2">
         <div>
           {isSolved ? (

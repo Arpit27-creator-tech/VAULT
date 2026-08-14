@@ -1,4 +1,3 @@
-// Interactive Role Puzzle Data & Interdependence Chains
 
 export const heistStages = [
   {
@@ -6,7 +5,7 @@ export const heistStages = [
     title: "Stage 1: Perimeter Breach",
     subtitle: "Parallel Security Tasks & Chemical Bypass",
     description: "Breach the outer canopy perimeter by neutralizing the cryogenic acid lock and aligning the optical laser sensor.",
-    timeLimit: 180, // 3 minutes
+    timeLimit: 180, 
     targetFacility: "Canopy Security Station A",
     puzzles: {
       scientist: {
@@ -123,7 +122,7 @@ function filterPrimeNodes(nodes) {
         discipline: "Historical Cryptography",
         prompt: "Tune frequency to 98.4 MHz and decrypt using keyword 'OAK'.",
         targetFrequency: 98.4,
-        ciphertext: "CZWJS", // with key OAK -> BOTANY
+        ciphertext: "CZWJS", 
         solution: "BOTANY",
         cipherType: "Vigenère (Key: OAK)",
         clueRevealed: "Relay Cipher Unlocked: Core Terminal Deactivated!"
@@ -182,7 +181,7 @@ function reverseToken(str) {
         discipline: "Ancient Chronology & Runes",
         prompt: "Tune frequency to 108.0 MHz and decode the final glyph message.",
         targetFrequency: 108.0,
-        ciphertext: "NQRZOHGJH LV IUHHGRP", // Caesar +3
+        ciphertext: "NQRZOHGJH LV IUHHGRP", 
         solution: "KNOWLEDGE IS FREEDOM",
         cipherType: "Caesar (+3)",
         clueRevealed: "Extraction Complete! World Tree Secured."

@@ -1,4 +1,3 @@
-// Procedural Web Audio API Engine for The Knowledge Heist
 class HeistAudioEngine {
   constructor() {
     this.ctx = null;
@@ -58,7 +57,6 @@ class HeistAudioEngine {
     if (!this.ctx) return;
 
     try {
-      // Noise burst for radio static
       const bufferSize = this.ctx.sampleRate * 0.08;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const output = buffer.getChannelData(0);
@@ -135,7 +133,7 @@ class HeistAudioEngine {
   }
 
   playSuccessChime() {
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    const notes = [523.25, 659.25, 783.99, 1046.50]; 
     notes.forEach((freq, idx) => {
       setTimeout(() => {
         this.playBeep(freq, 0.25, 'sine', 0.08);

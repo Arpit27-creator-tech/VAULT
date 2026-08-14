@@ -120,7 +120,8 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
   const progressPercent = Math.min(100, Math.round((currentXpInLevel / 1000) * 100));
 
   const handleCopyInviteLink = () => {
-    const inviteUrl = `https://vault.learning/join?team=${myTeam.inviteCode}`;
+    const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://vault.vercel.app';
+    const inviteUrl = `${origin}/#join?team=${myTeam.inviteCode}`;
     navigator.clipboard?.writeText(inviteUrl);
     setCopiedLink(true);
     heistAudio.playKeyClick();
@@ -353,7 +354,7 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
 
           <div className="flex items-center space-x-2 w-full md:w-auto">
             <div className="flex-1 md:flex-initial bg-[#041C12] px-3 py-2 rounded-lg border border-emerald-800/60 font-mono text-xs text-slate-300 select-all truncate max-w-xs">
-              https://vault.learning/join?team={myTeam.inviteCode}
+              {(typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://vault.vercel.app')}#join?team={myTeam.inviteCode}
             </div>
             <button
               onClick={handleCopyInviteLink}

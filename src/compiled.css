@@ -2189,6 +2189,11 @@ button, input, select, textarea {
   background-color: rgb(2 20 13 / var(--tw-bg-opacity, 1));
 }
 
+.bg-\[\#02180E\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(2 24 14 / var(--tw-bg-opacity, 1));
+}
+
 .bg-\[\#031209\] {
   --tw-bg-opacity: 1;
   background-color: rgb(3 18 9 / var(--tw-bg-opacity, 1));
@@ -4547,6 +4552,12 @@ table tr, table td, table th {
 
 .active\:translate-y-1:active {
   --tw-translate-y: 0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.active\:scale-95:active {
+  --tw-scale-x: .95;
+  --tw-scale-y: .95;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 

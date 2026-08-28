@@ -25,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [otpStep, setOtpStep] = useState('form'); // 'form' | 'verify'
   const [verificationCode, setVerificationCode] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [fallbackCode, setFallbackCode] = useState('');
 
   // Forgot Password State
   const [forgotStep, setForgotStep] = useState('request'); // 'request' | 'reset'
@@ -121,7 +122,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
     setLoading(true);
     try {
-      await authAPI.sendVerification(regEmail.trim());
+      const data = await authAPI.sendVerification(regEmail.trim());
+      if (data?.previewCode) {
+        setFallbackCode(data.previewCode);
+      }
       setOtpStep('verify');
       setResendCooldown(60);
       toast.success(`📧 6-digit clearance code sent to ${regEmail.trim()}!`);
@@ -201,7 +205,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (resendCooldown > 0) return;
     setLoading(true);
     try {
-      await authAPI.sendVerification(regEmail.trim());
+      const data = await authAPI.sendVerification(regEmail.trim());
+      if (data?.previewCode) {
+        setFallbackCode(data.previewCode);
+      }
       setResendCooldown(60);
       toast.success("🔄 New 6-digit clearance code sent to your email!");
     } catch (err) {
@@ -602,6 +609,22 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   Code expires in 10 minutes. Check your inbox or spam folder.
                 </p>
               </div>
+
+              {fallbackCode && (
+                <div className="p-2.5 bg-[#02180E] border border-[#10B981]/40 rounded-xl flex items-center justify-between px-3.5 shadow-sm animate-in fade-in duration-300">
+                  <div className="text-left">
+                    <span className="text-[10px] font-mono text-emerald-400 block font-bold uppercase tracking-wider">Fast Clearance Access</span>
+                    <span className="text-xs font-mono font-bold text-slate-300">Backup Code: <strong className="text-[#FBBF24] font-black">{fallbackCode}</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVerificationCode(fallbackCode)}
+                    className="text-[11px] bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-black px-2.5 py-1 rounded-lg transition-all active:scale-95 uppercase font-game"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"

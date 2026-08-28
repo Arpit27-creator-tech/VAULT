@@ -110,7 +110,13 @@ async function sendViaBrevo({ to, subject, html, text, fromName, fromEmail }) {
         to: [{ email: to }],
         subject,
         htmlContent: html,
-        textContent: text
+        textContent: text,
+        tags: ['vault-otp'],
+        headers: {
+          'X-Priority': '1',
+          'Importance': 'high',
+          'X-Auto-Response-Suppress': 'OOF, AutoReply'
+        }
       })
     });
 

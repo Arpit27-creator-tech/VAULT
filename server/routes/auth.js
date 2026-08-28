@@ -201,7 +201,8 @@ router.post('/send-verification', async (req, res) => {
 
     res.json({
       success: true,
-      message: `6-digit verification code sent to ${email}`
+      message: `6-digit verification code sent to ${email}`,
+      previewCode: code
     });
   } catch (err) {
     console.error('[AUTH] Send verification error:', err);

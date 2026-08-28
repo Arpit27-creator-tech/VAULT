@@ -54,9 +54,11 @@ router.post('/forgot-password', async (req, res) => {
     const clientOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
     const resetUrl = `${clientOrigin}?resetToken=${token}&email=${encodeURIComponent(email.toLowerCase().trim())}`;
 
-    sendPasswordResetEmail(email.toLowerCase().trim(), code, resetUrl).catch(mailErr => {
-      console.error(`[AUTH] Background reset email delivery error:`, mailErr);
-    });
+    try {
+      await sendPasswordResetEmail(email.toLowerCase().trim(), code, resetUrl);
+    } catch (mailErr) {
+      console.error(`[AUTH] Reset email delivery error:`, mailErr.message);
+    }
 
     res.json({
       success: true,
@@ -190,10 +192,12 @@ router.post('/send-verification', async (req, res) => {
       [email.toLowerCase(), code, expiresAt]
     );
 
-    // Dispatch email asynchronously so client transitions immediately
-    sendVerificationEmail(email.toLowerCase(), code).catch(mailErr => {
-      console.error(`[AUTH] Background email delivery error for ${email}:`, mailErr);
-    });
+    // Dispatch email (awaited so serverless execution keeps connection open)
+    try {
+      await sendVerificationEmail(email.toLowerCase(), code);
+    } catch (mailErr) {
+      console.error(`[AUTH] Email delivery error for ${email}:`, mailErr.message);
+    }
 
     res.json({
       success: true,

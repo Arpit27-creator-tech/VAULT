@@ -71,11 +71,19 @@ routeList.forEach(([path, router]) => {
 const healthHandler = async (req, res) => {
   try {
     const dbConnected = await testConnection().catch(() => false);
+    const emailProvider = process.env.BREVO_API_KEY 
+      ? 'brevo' 
+      : process.env.RESEND_API_KEY 
+      ? 'resend' 
+      : process.env.SMTP_HOST 
+      ? 'smtp' 
+      : 'none';
     res.json({
       status: 'ok',
       service: 'V.A.U.L.T Serverless API',
       version: '1.0.0',
       database: dbConnected ? 'connected' : 'disconnected',
+      emailProvider,
       timestamp: new Date().toISOString()
     });
   } catch (err) {

@@ -3,10 +3,13 @@
 // Manages active heist timers, puzzle validation, alarm states
 // ============================================================
 
-import { query, transaction } from '../db/index.js';
-
 // In-memory active heist state
 const activeHeists = new Map();
+const heistTimers = new Map();
+
+function normCode(code) {
+  return (code || '').toString().trim().toUpperCase();
+}
 
 /**
  * Setup heist game engine socket events.
@@ -20,35 +23,38 @@ export function setupHeistEngine(io, socket) {
   // ─────────────────────────────────────────────────────────
   socket.on('heist:start', async (data, callback) => {
     try {
-      const { roomCode, stageIdx, timeLimit, puzzles, selectedRoles } = data;
-
-      const heistRoom = `heist:${roomCode}`;
+      const roomCode = normCode(data.roomCode);
+      const stageIdx = data.stageIdx || 0;
+      const timeLimit = data.timeLimit || 180;
+      const selectedRoles = data.selectedRoles || { hacker: true, engineer: true, scientist: true, cryptographer: true };
 
       const state = {
         roomCode,
-        stageIdx: stageIdx || 0,
-        timeLimit: timeLimit || 180,
-        timeLeft: timeLimit || 180,
+        stageIdx,
+        timeLimit,
+        timeLeft: timeLimit,
         alarmLevel: 'LOW_SECURITY',
         alarmFails: 0,
         solvedRoles: {},
         clues: {},
-        selectedRoles: selectedRoles || { hacker: true, engineer: true, scientist: true, cryptographer: true },
+        selectedRoles,
         startedAt: Date.now(),
         status: 'active'
       };
 
       activeHeists.set(roomCode, state);
 
-      // Join all socket members to the heist room
-      socket.join(heistRoom);
+      // Join socket to heist room
+      socket.join(`heist:${roomCode}`);
+      socket.join(`lobby:${roomCode}`);
 
       // Start server-authoritative timer
       startHeistTimer(io, roomCode);
 
       console.log(`[HEIST] Heist started: ${roomCode} (Stage ${stageIdx}, ${timeLimit}s)`);
 
-      io.to(heistRoom).emit('heist:state', state);
+      io.to(`heist:${roomCode}`).emit('heist:state', state);
+      io.to(`lobby:${roomCode}`).emit('heist:state', state);
 
       callback?.({ success: true, state });
 
@@ -62,8 +68,9 @@ export function setupHeistEngine(io, socket) {
   // heist:join-room — Player joins the heist room for updates
   // ─────────────────────────────────────────────────────────
   socket.on('heist:join-room', (data) => {
-    const { roomCode } = data;
+    const roomCode = normCode(data.roomCode);
     socket.join(`heist:${roomCode}`);
+    socket.join(`lobby:${roomCode}`);
 
     const state = activeHeists.get(roomCode);
     if (state) {
@@ -72,11 +79,53 @@ export function setupHeistEngine(io, socket) {
   });
 
   // ─────────────────────────────────────────────────────────
+  // heist:sync-stage — Advance to next stage in multiplayer
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:sync-stage', (data) => {
+    const roomCode = normCode(data.roomCode);
+    const stageIdx = data.stageIdx || 0;
+    const timeLimit = data.timeLimit || 180;
+
+    let state = activeHeists.get(roomCode);
+    if (state) {
+      state.stageIdx = stageIdx;
+      state.timeLimit = timeLimit;
+      state.timeLeft = timeLimit;
+      state.alarmLevel = 'LOW_SECURITY';
+      state.alarmFails = 0;
+      state.solvedRoles = {};
+      state.clues = {};
+      state.startedAt = Date.now();
+      state.status = 'active';
+    } else {
+      state = {
+        roomCode,
+        stageIdx,
+        timeLimit,
+        timeLeft: timeLimit,
+        alarmLevel: 'LOW_SECURITY',
+        alarmFails: 0,
+        solvedRoles: {},
+        clues: {},
+        selectedRoles: data.selectedRoles || { hacker: true, engineer: true, scientist: true, cryptographer: true },
+        startedAt: Date.now(),
+        status: 'active'
+      };
+      activeHeists.set(roomCode, state);
+    }
+
+    startHeistTimer(io, roomCode);
+
+    io.to(`heist:${roomCode}`).emit('heist:stage-synced', state);
+    io.to(`lobby:${roomCode}`).emit('heist:stage-synced', state);
+  });
+
+  // ─────────────────────────────────────────────────────────
   // heist:submit-answer — Player submits a puzzle answer
-  // Server validates and broadcasts result
   // ─────────────────────────────────────────────────────────
   socket.on('heist:submit-answer', (data, callback) => {
-    const { roomCode, role, answer, puzzleType } = data;
+    const roomCode = normCode(data.roomCode);
+    const { role, answer, puzzleType } = data;
     const state = activeHeists.get(roomCode);
 
     if (!state || state.status !== 'active') {
@@ -87,62 +136,69 @@ export function setupHeistEngine(io, socket) {
       return callback?.({ error: `${role} puzzle is already solved` });
     }
 
-    // Validate the answer based on puzzle type
     const isCorrect = validatePuzzleAnswer(puzzleType, answer, data.expected);
 
     if (isCorrect) {
-      handlePuzzleSolved(io, roomCode, role, data.clue || `${role} puzzle solved!`, socket);
+      handlePuzzleSolved(io, roomCode, role, data.clue || `${role} puzzle solved!`, socket, data.solvedBy);
       callback?.({ success: true, correct: true });
     } else {
-      handlePuzzleFailed(io, roomCode, role, data.reason || 'Incorrect answer', socket);
+      handlePuzzleFailed(io, roomCode, role, data.reason || 'Incorrect answer', socket, data.failedBy);
       callback?.({ success: true, correct: false });
     }
   });
 
   // ─────────────────────────────────────────────────────────
-  // heist:puzzle-solved — Direct solve notification (trusted client)
-  // Used when puzzle validation happens client-side (code execution, etc.)
+  // heist:puzzle-solved — Direct solve notification (client validated)
   // ─────────────────────────────────────────────────────────
   socket.on('heist:puzzle-solved', (data) => {
-    const { roomCode, role, clue } = data;
-    handlePuzzleSolved(io, roomCode, role, clue, socket);
+    const roomCode = normCode(data.roomCode);
+    const { role, clue, solvedBy } = data;
+    handlePuzzleSolved(io, roomCode, role, clue, socket, solvedBy);
   });
 
   // ─────────────────────────────────────────────────────────
   // heist:puzzle-failed — Direct fail notification
   // ─────────────────────────────────────────────────────────
   socket.on('heist:puzzle-failed', (data) => {
-    const { roomCode, role, reason } = data;
-    handlePuzzleFailed(io, roomCode, role, reason, socket);
+    const roomCode = normCode(data.roomCode);
+    const { role, reason, failedBy } = data;
+    handlePuzzleFailed(io, roomCode, role, reason, socket, failedBy);
   });
 
   // ─────────────────────────────────────────────────────────
   // heist:radio-message — Broadcast a chat message to squad
   // ─────────────────────────────────────────────────────────
   socket.on('heist:radio-message', (data) => {
-    const { roomCode, text, role } = data;
+    const roomCode = normCode(data.roomCode);
+    const { text, role, sender } = data;
     const state = activeHeists.get(roomCode);
-    if (!state) return;
 
-    const timeElapsed = Math.floor((Date.now() - state.startedAt) / 1000);
-    const timeStr = `${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`;
+    let timeStr;
+    if (state?.startedAt) {
+      const timeElapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+      timeStr = `${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`;
+    } else {
+      const now = new Date();
+      timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
 
     const message = {
-      sender: `${socket.username} (${role.toUpperCase()})`,
-      role,
+      sender: sender || `${socket.username} (${(role || 'OPERATIVE').toUpperCase()})`,
+      role: role || 'hacker',
       text,
       time: timeStr,
       userId: socket.userId
     };
 
     io.to(`heist:${roomCode}`).emit('heist:radio-message', message);
+    io.to(`lobby:${roomCode}`).emit('heist:radio-message', message);
   });
 
   // ─────────────────────────────────────────────────────────
   // heist:abort — Abort the current heist
   // ─────────────────────────────────────────────────────────
   socket.on('heist:abort', (data) => {
-    const { roomCode } = data;
+    const roomCode = normCode(data.roomCode);
     const state = activeHeists.get(roomCode);
     if (!state) return;
 
@@ -150,6 +206,9 @@ export function setupHeistEngine(io, socket) {
     clearHeistTimer(roomCode);
 
     io.to(`heist:${roomCode}`).emit('heist:aborted', {
+      message: `Heist aborted by ${socket.username}`
+    });
+    io.to(`lobby:${roomCode}`).emit('heist:aborted', {
       message: `Heist aborted by ${socket.username}`
     });
 
@@ -161,7 +220,7 @@ export function setupHeistEngine(io, socket) {
   // heist:conclude — End the heist with a debrief
   // ─────────────────────────────────────────────────────────
   socket.on('heist:conclude', (data) => {
-    const { roomCode } = data;
+    const roomCode = normCode(data.roomCode);
     const state = activeHeists.get(roomCode);
     if (!state) return;
 
@@ -169,6 +228,10 @@ export function setupHeistEngine(io, socket) {
     clearHeistTimer(roomCode);
 
     io.to(`heist:${roomCode}`).emit('heist:concluded', {
+      state,
+      message: 'Heist concluded — generating debrief.'
+    });
+    io.to(`lobby:${roomCode}`).emit('heist:concluded', {
       state,
       message: 'Heist concluded — generating debrief.'
     });
@@ -180,10 +243,8 @@ export function setupHeistEngine(io, socket) {
 // ─────────────────────────────────────────────────────────────
 // Timer Management
 // ─────────────────────────────────────────────────────────────
-const heistTimers = new Map();
 
 function startHeistTimer(io, roomCode) {
-  // Clear any existing timer
   clearHeistTimer(roomCode);
 
   const interval = setInterval(() => {
@@ -202,9 +263,17 @@ function startHeistTimer(io, roomCode) {
         alarmLevel: 'HIGH_LOCKDOWN',
         timeLeft: state.timeLeft
       });
+      io.to(`lobby:${roomCode}`).emit('heist:alarm-update', {
+        alarmLevel: 'HIGH_LOCKDOWN',
+        timeLeft: state.timeLeft
+      });
     } else if (state.timeLeft <= 60 && state.alarmLevel === 'LOW_SECURITY') {
       state.alarmLevel = 'MEDIUM_ALERT';
       io.to(`heist:${roomCode}`).emit('heist:alarm-update', {
+        alarmLevel: 'MEDIUM_ALERT',
+        timeLeft: state.timeLeft
+      });
+      io.to(`lobby:${roomCode}`).emit('heist:alarm-update', {
         alarmLevel: 'MEDIUM_ALERT',
         timeLeft: state.timeLeft
       });
@@ -212,6 +281,10 @@ function startHeistTimer(io, roomCode) {
 
     // Broadcast tick
     io.to(`heist:${roomCode}`).emit('heist:timer-tick', {
+      timeLeft: state.timeLeft,
+      alarmLevel: state.alarmLevel
+    });
+    io.to(`lobby:${roomCode}`).emit('heist:timer-tick', {
       timeLeft: state.timeLeft,
       alarmLevel: state.alarmLevel
     });
@@ -238,24 +311,43 @@ function clearHeistTimer(roomCode) {
 // Game Logic Handlers
 // ─────────────────────────────────────────────────────────────
 
-function handlePuzzleSolved(io, roomCode, role, clue, socket) {
-  const state = activeHeists.get(roomCode);
-  if (!state) return;
+function handlePuzzleSolved(io, roomCode, role, clue, socket, solvedByName) {
+  let state = activeHeists.get(roomCode);
+  if (!state) {
+    state = {
+      roomCode,
+      stageIdx: 0,
+      timeLimit: 180,
+      timeLeft: 180,
+      alarmLevel: 'LOW_SECURITY',
+      alarmFails: 0,
+      solvedRoles: {},
+      clues: {},
+      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
+      startedAt: Date.now(),
+      status: 'active'
+    };
+    activeHeists.set(roomCode, state);
+  }
 
   state.solvedRoles[role] = true;
   state.clues[role] = clue;
 
   const timeElapsed = Math.floor((Date.now() - state.startedAt) / 1000);
   const timeStr = `${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`;
+  const solver = solvedByName || socket.username || 'Specialist';
 
   // Broadcast to all squad members
-  io.to(`heist:${roomCode}`).emit('heist:puzzle-solved', {
+  const payload = {
     role,
     clue,
-    solvedBy: socket.username,
+    solvedBy: solver,
     time: timeStr,
     solvedRoles: state.solvedRoles
-  });
+  };
+
+  io.to(`heist:${roomCode}`).emit('heist:puzzle-solved', payload);
+  io.to(`lobby:${roomCode}`).emit('heist:puzzle-solved', payload);
 
   // Check if all active roles are solved
   const activeRoles = Object.keys(state.selectedRoles).filter(k => state.selectedRoles[k]);
@@ -266,12 +358,28 @@ function handlePuzzleSolved(io, roomCode, role, clue, socket) {
   }
 }
 
-function handlePuzzleFailed(io, roomCode, role, reason, socket) {
-  const state = activeHeists.get(roomCode);
-  if (!state) return;
+function handlePuzzleFailed(io, roomCode, role, reason, socket, failedByName) {
+  let state = activeHeists.get(roomCode);
+  if (!state) {
+    state = {
+      roomCode,
+      stageIdx: 0,
+      timeLimit: 180,
+      timeLeft: 180,
+      alarmLevel: 'LOW_SECURITY',
+      alarmFails: 0,
+      solvedRoles: {},
+      clues: {},
+      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
+      startedAt: Date.now(),
+      status: 'active'
+    };
+    activeHeists.set(roomCode, state);
+  }
 
   state.alarmFails += 1;
   state.timeLeft = Math.max(5, state.timeLeft - 12); // -12s penalty
+  const failer = failedByName || socket.username || 'Specialist';
 
   // Escalate alarm
   if (state.alarmFails >= 4) {
@@ -280,15 +388,18 @@ function handlePuzzleFailed(io, roomCode, role, reason, socket) {
     state.alarmLevel = 'MEDIUM_ALERT';
   }
 
-  io.to(`heist:${roomCode}`).emit('heist:puzzle-failed', {
+  const payload = {
     role,
     reason,
-    failedBy: socket.username,
+    failedBy: failer,
     alarmFails: state.alarmFails,
     alarmLevel: state.alarmLevel,
     timeLeft: state.timeLeft,
     penalty: 12
-  });
+  };
+
+  io.to(`heist:${roomCode}`).emit('heist:puzzle-failed', payload);
+  io.to(`lobby:${roomCode}`).emit('heist:puzzle-failed', payload);
 
   // 6+ failures = auto-bust
   if (state.alarmFails >= 6) {
@@ -306,13 +417,16 @@ function handleStageVictory(io, roomCode) {
   const totalTime = Math.floor((Date.now() - state.startedAt) / 1000);
   const timeStr = `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`;
 
-  io.to(`heist:${roomCode}`).emit('heist:stage-complete', {
+  const payload = {
     stageIdx: state.stageIdx,
     timeElapsed: timeStr,
     alarmFails: state.alarmFails,
     solvedRoles: state.solvedRoles,
     clues: state.clues
-  });
+  };
+
+  io.to(`heist:${roomCode}`).emit('heist:stage-complete', payload);
+  io.to(`lobby:${roomCode}`).emit('heist:stage-complete', payload);
 
   activeHeists.delete(roomCode);
   console.log(`[HEIST] Stage victory: ${roomCode} (${timeStr})`);
@@ -326,11 +440,14 @@ function handleHeistTimeout(io, roomCode) {
   state.alarmLevel = 'BUSTED';
   clearHeistTimer(roomCode);
 
-  io.to(`heist:${roomCode}`).emit('heist:timeout', {
+  const payload = {
     message: 'FACILITY LOCKDOWN! Time limit expired.',
     alarmFails: state.alarmFails,
     solvedRoles: state.solvedRoles
-  });
+  };
+
+  io.to(`heist:${roomCode}`).emit('heist:timeout', payload);
+  io.to(`lobby:${roomCode}`).emit('heist:timeout', payload);
 
   activeHeists.delete(roomCode);
   console.log(`[HEIST] Timeout: ${roomCode}`);
@@ -343,32 +460,27 @@ function handleHeistTimeout(io, roomCode) {
 function validatePuzzleAnswer(puzzleType, answer, expected) {
   switch (puzzleType) {
     case 'scientist-reagents': {
-      // Check if all coefficients match
       if (!Array.isArray(answer) || !Array.isArray(expected)) return false;
       return answer.every((val, idx) => val === expected[idx]);
     }
 
     case 'engineer-laser': {
-      // Check if angles match required
       const { angleA, angleB } = answer;
       return angleA === expected.angleA && angleB === expected.angleB;
     }
 
     case 'hacker-code': {
-      // Compare output arrays/strings
       const ansStr = JSON.stringify(answer);
       const expStr = JSON.stringify(expected);
       return ansStr === expStr;
     }
 
     case 'cryptographer-cipher': {
-      // Compare decrypted text (case insensitive, trimmed)
       if (typeof answer !== 'string' || typeof expected !== 'string') return false;
       return answer.trim().toUpperCase() === expected.trim().toUpperCase();
     }
 
     default:
-      // Generic equality check
       return JSON.stringify(answer) === JSON.stringify(expected);
   }
 }

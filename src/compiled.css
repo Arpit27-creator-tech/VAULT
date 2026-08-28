@@ -626,8 +626,16 @@ button, input, select, textarea {
   bottom: -0.125rem;
 }
 
+.-bottom-1\.5 {
+  bottom: -0.375rem;
+}
+
 .-bottom-2 {
   bottom: -0.5rem;
+}
+
+.-left-1\.5 {
+  left: -0.375rem;
 }
 
 .-left-4 {
@@ -766,6 +774,10 @@ button, input, select, textarea {
   z-index: 50;
 }
 
+.z-\[100\] {
+  z-index: 100;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -774,6 +786,11 @@ button, input, select, textarea {
 .my-4 {
   margin-top: 1rem;
   margin-bottom: 1rem;
+}
+
+.my-6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .my-8 {
@@ -1109,6 +1126,10 @@ button, input, select, textarea {
   width: 1.5rem;
 }
 
+.w-64 {
+  width: 16rem;
+}
+
 .w-7 {
   width: 1.75rem;
 }
@@ -1184,6 +1205,10 @@ button, input, select, textarea {
 
 .max-w-\[90px\] {
   max-width: 90px;
+}
+
+.max-w-lg {
+  max-width: 32rem;
 }
 
 .max-w-md {
@@ -1796,6 +1821,15 @@ button, input, select, textarea {
   border-color: rgb(180 83 9 / 0.5);
 }
 
+.border-amber-700\/60 {
+  border-color: rgb(180 83 9 / 0.6);
+}
+
+.border-amber-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(146 64 14 / var(--tw-border-opacity, 1));
+}
+
 .border-amber-900\/60 {
   border-color: rgb(120 53 15 / 0.6);
 }
@@ -1847,6 +1881,10 @@ button, input, select, textarea {
 
 .border-emerald-700\/60 {
   border-color: rgb(4 120 87 / 0.6);
+}
+
+.border-emerald-700\/80 {
+  border-color: rgb(4 120 87 / 0.8);
 }
 
 .border-emerald-800 {
@@ -2214,6 +2252,10 @@ button, input, select, textarea {
   background-color: rgb(69 26 3 / var(--tw-bg-opacity, 1));
 }
 
+.bg-amber-950\/80 {
+  background-color: rgb(69 26 3 / 0.8);
+}
+
 .bg-black\/40 {
   background-color: rgb(0 0 0 / 0.4);
 }
@@ -2323,6 +2365,10 @@ button, input, select, textarea {
 
 .bg-\[radial-gradient\(\#10B981_1px\2c transparent_1px\)\] {
   background-image: radial-gradient(#10B981 1px,transparent 1px);
+}
+
+.bg-\[radial-gradient\(\#10b98115_1px\2c transparent_1px\)\] {
+  background-image: radial-gradient(#10b98115 1px,transparent 1px);
 }
 
 .bg-gradient-to-br {
@@ -2602,6 +2648,10 @@ button, input, select, textarea {
   padding-bottom: 0.5rem;
 }
 
+.pb-2\.5 {
+  padding-bottom: 0.625rem;
+}
+
 .pb-20 {
   padding-bottom: 5rem;
 }
@@ -2695,6 +2745,11 @@ button, input, select, textarea {
 .text-4xl {
   font-size: 2.25rem;
   line-height: 2.5rem;
+}
+
+.text-9xl {
+  font-size: 8rem;
+  line-height: 1;
 }
 
 .text-\[10px\] {
@@ -2996,6 +3051,16 @@ button, input, select, textarea {
 .antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.placeholder-emerald-800::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(6 95 70 / var(--tw-placeholder-opacity, 1));
+}
+
+.placeholder-emerald-800::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(6 95 70 / var(--tw-placeholder-opacity, 1));
 }
 
 .placeholder-slate-500::-moz-placeholder {
@@ -3310,6 +3375,11 @@ button, input, select, textarea {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
+.drop-shadow-\[0_0_35px_\#10B981aa\] {
+  --tw-drop-shadow: drop-shadow(0 0 35px #10B981aa);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 .drop-shadow-\[0_0_6px_\#FBBF24\] {
   --tw-drop-shadow: drop-shadow(0 0 6px #FBBF24);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -3332,6 +3402,11 @@ button, input, select, textarea {
 
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.backdrop-blur-lg {
+  --tw-backdrop-blur: blur(16px);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .backdrop-blur-md {
@@ -3405,6 +3480,10 @@ button, input, select, textarea {
 
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ease-linear {
+  transition-timing-function: linear;
 }
 
 .\[background-size\:16px_16px\] {
@@ -3779,6 +3858,24 @@ table tr, table td, table th {
 
 .hover\:bg-amber-950\/40:hover {
   background-color: rgb(69 26 3 / 0.4);
+}
+
+.hover\:bg-amber-950\/60:hover {
+  background-color: rgb(69 26 3 / 0.6);
+}
+
+.hover\:bg-emerald-800:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(6 95 70 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-emerald-950:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(2 44 34 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-emerald-950\/60:hover {
+  background-color: rgb(2 44 34 / 0.6);
 }
 
 .hover\:bg-red-900\/60:hover {

@@ -100,6 +100,9 @@ export function setupPresenceManager(io, socket) {
  */
 async function broadcastPresenceToFriends(io, userId, status, activity) {
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (!isUuid) return; // Guest user — no DB friend relationships to query
+
     const friendsResult = await query(
       `SELECT 
          CASE 

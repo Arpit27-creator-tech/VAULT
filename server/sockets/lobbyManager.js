@@ -3,10 +3,15 @@
 // Handles lobby creation, joining, ready states, role selection
 // ============================================================
 
-import { query } from '../db/index.js';
-
 // In-memory lobby state (backed by DB for persistence)
 const activeLobbies = new Map();
+
+/**
+ * Helper to normalize room codes
+ */
+function normCode(code) {
+  return (code || '').toString().trim().toUpperCase();
+}
 
 /**
  * Setup lobby-related socket events.
@@ -20,32 +25,71 @@ export function setupLobbyManager(io, socket) {
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:create', async (data, callback) => {
     try {
-      const { heistId, roomCode } = data;
-
-      if (!heistId || !roomCode) {
-        return callback?.({ error: 'heistId and roomCode are required' });
-      }
+      const roomCode = normCode(data.roomCode || `HEIST-${Math.floor(100 + Math.random() * 900)}`);
+      const heistId = data.heistId || 'm1';
+      const missionTitle = data.missionTitle || 'The Quantum Core Strike Squad';
+      const role = data.role || 'hacker';
+      const characterId = data.characterId || 'c1';
 
       const lobbyRoom = `lobby:${roomCode}`;
 
-      // Initialize in-memory lobby state
-      activeLobbies.set(roomCode, {
+      const initialLobby = {
         heistId,
         roomCode,
+        code: roomCode,
+        name: missionTitle,
         hostId: socket.userId,
-        players: [{
-          userId: socket.userId,
-          username: socket.username,
-          socketId: socket.id,
-          slotId: 1,
-          role: 'hacker',
-          isHost: true,
-          isReady: true,
-          voiceState: { connected: true, muted: false, deafened: false }
-        }],
+        players: [
+          {
+            userId: socket.userId,
+            username: socket.username,
+            socketId: socket.id,
+            slotId: 1,
+            role,
+            characterId,
+            isHost: true,
+            isReady: true,
+            voiceState: { connected: true, muted: false, deafened: false }
+          },
+          {
+            userId: null,
+            username: '',
+            socketId: null,
+            slotId: 2,
+            role: 'engineer',
+            characterId: 'c2',
+            isHost: false,
+            isReady: false,
+            voiceState: { connected: false, muted: false, deafened: false }
+          },
+          {
+            userId: null,
+            username: '',
+            socketId: null,
+            slotId: 3,
+            role: 'scientist',
+            characterId: 'c3',
+            isHost: false,
+            isReady: false,
+            voiceState: { connected: false, muted: false, deafened: false }
+          },
+          {
+            userId: null,
+            username: '',
+            socketId: null,
+            slotId: 4,
+            role: 'cryptographer',
+            characterId: 'c4',
+            isHost: false,
+            isReady: false,
+            voiceState: { connected: false, muted: false, deafened: false }
+          }
+        ],
         status: 'waiting',
         createdAt: Date.now()
-      });
+      };
+
+      activeLobbies.set(roomCode, initialLobby);
 
       // Join the Socket.io room
       socket.join(lobbyRoom);
@@ -54,11 +98,11 @@ export function setupLobbyManager(io, socket) {
 
       callback?.({
         success: true,
-        lobby: activeLobbies.get(roomCode)
+        lobby: initialLobby
       });
 
       // Broadcast lobby state
-      io.to(lobbyRoom).emit('lobby:state', activeLobbies.get(roomCode));
+      io.to(lobbyRoom).emit('lobby:state', initialLobby);
 
     } catch (err) {
       console.error('[LOBBY] Create error:', err);
@@ -67,54 +111,134 @@ export function setupLobbyManager(io, socket) {
   });
 
   // ─────────────────────────────────────────────────────────
+  // lobby:get — Fetch current lobby state
+  // ─────────────────────────────────────────────────────────
+  socket.on('lobby:get', (data, callback) => {
+    const roomCode = normCode(data.roomCode);
+    const lobby = activeLobbies.get(roomCode);
+    if (!lobby) {
+      return callback?.({ error: `Lobby ${roomCode} not found` });
+    }
+    socket.join(`lobby:${roomCode}`);
+    callback?.({ success: true, lobby });
+    socket.emit('lobby:state', lobby);
+  });
+
+  // ─────────────────────────────────────────────────────────
   // lobby:join — Player joins an existing lobby by room code
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:join', async (data, callback) => {
     try {
-      const { roomCode, role } = data;
+      const roomCode = normCode(data.roomCode);
+      const role = data.role || 'engineer';
+      const characterId = data.characterId || 'c2';
+      const playerName = data.playerName || socket.username;
 
-      const lobby = activeLobbies.get(roomCode);
+      let lobby = activeLobbies.get(roomCode);
+
+      // If lobby doesn't exist yet, create a fresh lobby with this code
       if (!lobby) {
-        return callback?.({ error: 'Lobby not found or has expired' });
+        lobby = {
+          heistId: data.heistId || 'm1',
+          roomCode,
+          name: data.missionTitle || 'The Quantum Core Strike Squad',
+          hostId: socket.userId,
+          players: [
+            {
+              userId: socket.userId,
+              username: playerName,
+              socketId: socket.id,
+              slotId: 1,
+              role: role || 'hacker',
+              characterId: characterId || 'c1',
+              isHost: true,
+              isReady: true,
+              voiceState: { connected: true, muted: false, deafened: false }
+            },
+            {
+              userId: null,
+              username: '',
+              socketId: null,
+              slotId: 2,
+              role: 'engineer',
+              characterId: 'c2',
+              isHost: false,
+              isReady: false,
+              voiceState: { connected: false, muted: false, deafened: false }
+            },
+            {
+              userId: null,
+              username: '',
+              socketId: null,
+              slotId: 3,
+              role: 'scientist',
+              characterId: 'c3',
+              isHost: false,
+              isReady: false,
+              voiceState: { connected: false, muted: false, deafened: false }
+            },
+            {
+              userId: null,
+              username: '',
+              socketId: null,
+              slotId: 4,
+              role: 'cryptographer',
+              characterId: 'c4',
+              isHost: false,
+              isReady: false,
+              voiceState: { connected: false, muted: false, deafened: false }
+            }
+          ],
+          status: 'waiting',
+          createdAt: Date.now()
+        };
+        activeLobbies.set(roomCode, lobby);
       }
-
-      if (lobby.players.length >= 4) {
-        return callback?.({ error: 'Lobby is full (4/4 players)' });
-      }
-
-      if (lobby.players.find(p => p.userId === socket.userId)) {
-        return callback?.({ error: 'You are already in this lobby' });
-      }
-
-      const takenSlots = lobby.players.map(p => p.slotId);
-      const nextSlot = [1, 2, 3, 4].find(s => !takenSlots.includes(s));
-
-      const player = {
-        userId: socket.userId,
-        username: socket.username,
-        socketId: socket.id,
-        slotId: nextSlot,
-        role: role || 'hacker',
-        isHost: false,
-        isReady: false,
-        voiceState: { connected: true, muted: false, deafened: false }
-      };
-
-      lobby.players.push(player);
 
       const lobbyRoom = `lobby:${roomCode}`;
       socket.join(lobbyRoom);
 
-      console.log(`[LOBBY] ${socket.username} joined lobby ${roomCode} (slot ${nextSlot})`);
+      // Check if player is already seated in a slot
+      const existingPlayer = lobby.players.find(p => p.userId === socket.userId);
+      if (existingPlayer) {
+        existingPlayer.socketId = socket.id;
+        existingPlayer.username = playerName;
+        if (role) existingPlayer.role = role;
+        if (characterId) existingPlayer.characterId = characterId;
 
-      callback?.({ success: true, slotId: nextSlot });
+        console.log(`[LOBBY] ${socket.username} re-joined lobby ${roomCode} (slot ${existingPlayer.slotId})`);
+
+        callback?.({ success: true, slotId: existingPlayer.slotId, lobby });
+        io.to(lobbyRoom).emit('lobby:state', lobby);
+        return;
+      }
+
+      // Find first empty slot
+      const emptySlot = lobby.players.find(p => !p.userId || !p.username);
+      if (!emptySlot) {
+        return callback?.({ error: 'Squad is full (4/4 operatives assembled)' });
+      }
+
+      // Assign to slot
+      emptySlot.userId = socket.userId;
+      emptySlot.username = playerName;
+      emptySlot.socketId = socket.id;
+      emptySlot.role = role;
+      emptySlot.characterId = characterId;
+      emptySlot.isHost = false;
+      emptySlot.isReady = true;
+      emptySlot.voiceState = { connected: true, muted: false, deafened: false };
+
+      console.log(`[LOBBY] ${socket.username} joined lobby ${roomCode} (slot ${emptySlot.slotId}, role ${role})`);
+
+      callback?.({ success: true, slotId: emptySlot.slotId, lobby });
 
       // Broadcast updated lobby to all members
       io.to(lobbyRoom).emit('lobby:state', lobby);
       io.to(lobbyRoom).emit('lobby:player-joined', {
-        username: socket.username,
-        slotId: nextSlot,
-        role: player.role
+        username: playerName,
+        slotId: emptySlot.slotId,
+        role: emptySlot.role
       });
 
     } catch (err) {
@@ -127,7 +251,8 @@ export function setupLobbyManager(io, socket) {
   // lobby:ready — Player toggles ready state
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:ready', (data) => {
-    const { roomCode, isReady } = data;
+    const roomCode = normCode(data.roomCode);
+    const isReady = !!data.isReady;
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) return;
 
@@ -139,7 +264,7 @@ export function setupLobbyManager(io, socket) {
     const lobbyRoom = `lobby:${roomCode}`;
     io.to(lobbyRoom).emit('lobby:state', lobby);
     io.to(lobbyRoom).emit('lobby:player-ready', {
-      username: socket.username,
+      username: player.username,
       slotId: player.slotId,
       isReady
     });
@@ -149,96 +274,99 @@ export function setupLobbyManager(io, socket) {
   // lobby:select-role — Player picks a heist role
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:select-role', (data) => {
-    const { roomCode, role } = data;
+    const roomCode = normCode(data.roomCode);
+    const role = data.role;
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) return;
 
     const player = lobby.players.find(p => p.userId === socket.userId);
     if (!player) return;
 
-    // Check if role is already taken by another player
-    const roleTaken = lobby.players.find(p => p.role === role && p.userId !== socket.userId);
-    if (roleTaken) {
-      socket.emit('lobby:error', { message: `Role "${role}" is already taken by ${roleTaken.username}` });
-      return;
-    }
-
     player.role = role;
 
     const lobbyRoom = `lobby:${roomCode}`;
     io.to(lobbyRoom).emit('lobby:state', lobby);
     io.to(lobbyRoom).emit('lobby:role-changed', {
-      username: socket.username,
+      username: player.username,
       slotId: player.slotId,
       role
     });
   });
 
   // ─────────────────────────────────────────────────────────
-  // lobby:kick — Host kicks a player
+  // lobby:kick — Host kicks a player from slot
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:kick', (data) => {
-    const { roomCode, targetSlotId } = data;
+    const roomCode = normCode(data.roomCode);
+    const targetSlotId = parseInt(data.targetSlotId, 10);
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) return;
 
     // Only host can kick
     if (lobby.hostId !== socket.userId) {
-      socket.emit('lobby:error', { message: 'Only the host can kick players' });
+      socket.emit('lobby:error', { message: 'Only the squad host can dismiss operatives' });
       return;
     }
 
-    const targetIdx = lobby.players.findIndex(p => p.slotId === targetSlotId);
-    if (targetIdx === -1) return;
+    const targetSlot = lobby.players.find(p => p.slotId === targetSlotId);
+    if (!targetSlot || !targetSlot.userId) return;
 
-    const kicked = lobby.players.splice(targetIdx, 1)[0];
+    const kickedName = targetSlot.username;
+    const kickedSocketId = targetSlot.socketId;
 
-    // Remove kicked player from socket room
-    const kickedSocket = io.sockets.sockets.get(kicked.socketId);
-    if (kickedSocket) {
-      kickedSocket.leave(`lobby:${roomCode}`);
-      kickedSocket.emit('lobby:kicked', { message: 'You have been removed from the lobby by the host.' });
+    // Reset slot
+    targetSlot.userId = null;
+    targetSlot.username = '';
+    targetSlot.socketId = null;
+    targetSlot.isReady = false;
+
+    // Notify kicked player
+    if (kickedSocketId) {
+      const kickedSocket = io.sockets.sockets.get(kickedSocketId);
+      if (kickedSocket) {
+        kickedSocket.leave(`lobby:${roomCode}`);
+        kickedSocket.emit('lobby:kicked', { message: 'You have been removed from the squad by the host.' });
+      }
     }
 
     const lobbyRoom = `lobby:${roomCode}`;
     io.to(lobbyRoom).emit('lobby:state', lobby);
-    io.to(lobbyRoom).emit('lobby:player-left', { username: kicked.username, slotId: targetSlotId });
+    io.to(lobbyRoom).emit('lobby:player-left', { username: kickedName, slotId: targetSlotId });
   });
 
   // ─────────────────────────────────────────────────────────
-  // lobby:start — Host starts the heist (all must be ready)
+  // lobby:start — Host starts the heist (synchronized countdown)
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:start', (data, callback) => {
-    const { roomCode } = data;
+    const roomCode = normCode(data.roomCode);
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) {
       return callback?.({ error: 'Lobby not found' });
     }
 
     if (lobby.hostId !== socket.userId) {
-      return callback?.({ error: 'Only the host can start the heist' });
-    }
-
-    const allReady = lobby.players.every(p => p.isReady);
-    if (!allReady) {
-      return callback?.({ error: 'All players must be ready before starting' });
+      return callback?.({ error: 'Only the squad host can launch the heist' });
     }
 
     lobby.status = 'starting';
 
     const lobbyRoom = `lobby:${roomCode}`;
+    const activePlayers = lobby.players.filter(p => p.userId && p.username);
+
+    // Broadcast synchronized countdown
     io.to(lobbyRoom).emit('lobby:starting', {
       countdown: 3,
       heistId: lobby.heistId,
-      players: lobby.players
+      roomCode,
+      players: activePlayers
     });
 
-    // After countdown, emit the heist start
+    // After countdown, emit live heist start
     setTimeout(() => {
       lobby.status = 'active';
       io.to(lobbyRoom).emit('heist:started', {
         heistId: lobby.heistId,
-        players: lobby.players,
+        players: activePlayers,
         roomCode
       });
     }, 3000);
@@ -250,7 +378,8 @@ export function setupLobbyManager(io, socket) {
   // lobby:voice-state — Sync mic/deafen status
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:voice-state', (data) => {
-    const { roomCode, connected, muted, deafened } = data;
+    const roomCode = normCode(data.roomCode);
+    const { connected, muted, deafened } = data;
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) return;
 
@@ -261,24 +390,54 @@ export function setupLobbyManager(io, socket) {
 
     io.to(`lobby:${roomCode}`).emit('lobby:voice-update', {
       userId: socket.userId,
-      username: socket.username,
+      username: player.username,
+      slotId: player.slotId,
       voiceState: player.voiceState
     });
+    io.to(`lobby:${roomCode}`).emit('lobby:state', lobby);
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // lobby:radio-message — Chat in the lobby
+  // ─────────────────────────────────────────────────────────
+  socket.on('lobby:radio-message', (data) => {
+    const roomCode = normCode(data.roomCode);
+    const { text, role } = data;
+    const lobby = activeLobbies.get(roomCode);
+    if (!lobby) return;
+
+    const player = lobby.players.find(p => p.userId === socket.userId);
+    const sender = player ? `${player.username} (${(player.role || role || 'OPERATIVE').toUpperCase()})` : socket.username;
+
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const message = {
+      sender,
+      role: player?.role || role || 'hacker',
+      text,
+      time: timeStr,
+      userId: socket.userId
+    };
+
+    io.to(`lobby:${roomCode}`).emit('lobby:radio-message', message);
+    io.to(`lobby:${roomCode}`).emit('heist:radio-message', message);
+    io.to(`heist:${roomCode}`).emit('heist:radio-message', message);
   });
 
   // ─────────────────────────────────────────────────────────
   // lobby:leave — Player leaves the lobby
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:leave', (data) => {
-    const { roomCode } = data;
+    const roomCode = normCode(data.roomCode);
     handlePlayerLeave(io, socket, roomCode);
   });
 
   // Handle disconnect — clean up lobbies
   socket.on('disconnect', () => {
     for (const [roomCode, lobby] of activeLobbies) {
-      const playerIdx = lobby.players.findIndex(p => p.userId === socket.userId);
-      if (playerIdx !== -1) {
+      const player = lobby.players.find(p => p.userId === socket.userId || p.socketId === socket.id);
+      if (player) {
         handlePlayerLeave(io, socket, roomCode);
       }
     }
@@ -292,33 +451,45 @@ function handlePlayerLeave(io, socket, roomCode) {
   const lobby = activeLobbies.get(roomCode);
   if (!lobby) return;
 
-  const playerIdx = lobby.players.findIndex(p => p.userId === socket.userId);
-  if (playerIdx === -1) return;
+  const player = lobby.players.find(p => p.userId === socket.userId || p.socketId === socket.id);
+  if (!player || !player.userId) return;
 
-  const player = lobby.players.splice(playerIdx, 1)[0];
+  const leavingName = player.username;
+  const leavingSlotId = player.slotId;
+  const wasHost = player.isHost;
+
+  // Reset this slot
+  player.userId = null;
+  player.username = '';
+  player.socketId = null;
+  player.isHost = false;
+  player.isReady = false;
+
   socket.leave(`lobby:${roomCode}`);
 
-  // If the host left, assign a new host or close the lobby
-  if (player.isHost && lobby.players.length > 0) {
-    lobby.players[0].isHost = true;
-    lobby.hostId = lobby.players[0].userId;
-    io.to(`lobby:${roomCode}`).emit('lobby:host-changed', {
-      newHost: lobby.players[0].username
-    });
-  }
+  const activePlayers = lobby.players.filter(p => p.userId && p.username);
 
-  // If lobby is now empty, delete it
-  if (lobby.players.length === 0) {
+  // If no players left, clean up lobby
+  if (activePlayers.length === 0) {
     activeLobbies.delete(roomCode);
     console.log(`[LOBBY] Lobby ${roomCode} deleted (empty)`);
     return;
   }
 
+  // If host left, reassign host to first active player
+  if (wasHost && activePlayers.length > 0) {
+    activePlayers[0].isHost = true;
+    lobby.hostId = activePlayers[0].userId;
+    io.to(`lobby:${roomCode}`).emit('lobby:host-changed', {
+      newHost: activePlayers[0].username
+    });
+  }
+
   io.to(`lobby:${roomCode}`).emit('lobby:state', lobby);
   io.to(`lobby:${roomCode}`).emit('lobby:player-left', {
-    username: socket.username,
-    slotId: player.slotId
+    username: leavingName,
+    slotId: leavingSlotId
   });
 
-  console.log(`[LOBBY] ${socket.username} left lobby ${roomCode}`);
+  console.log(`[LOBBY] ${socket.username} vacated slot ${leavingSlotId} in lobby ${roomCode}`);
 }

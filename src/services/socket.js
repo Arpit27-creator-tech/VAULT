@@ -6,7 +6,22 @@
 import { io } from 'socket.io-client';
 import { authAPI } from './api.js';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+// Resolve socket URL dynamically (local dev vs production)
+const getDefaultSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5001';
+    }
+    return window.location.origin;
+  }
+  return 'http://localhost:5001';
+};
+
+const SOCKET_URL = getDefaultSocketUrl();
 
 let socket = null;
 let eventHandlers = {};
@@ -16,32 +31,54 @@ let eventHandlers = {};
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Connect to the Socket.io server with JWT auth.
+ * Connect to the Socket.io server with JWT auth or Guest profile.
+ * @param {object} [overrideAuth]
  * @returns {import('socket.io-client').Socket} the socket instance
  */
-export function connectSocket() {
+export function connectSocket(overrideAuth = {}) {
   if (socket?.connected) {
     return socket;
   }
 
   const token = authAPI.getToken();
-  if (!token) {
-    console.warn('[SOCKET] Cannot connect: No auth token');
-    return null;
+  let currentUser = null;
+  try {
+    currentUser = JSON.parse(localStorage.getItem('vault_current_user') || 'null');
+  } catch (e) {
+    currentUser = null;
   }
 
+  let guestId = localStorage.getItem('vault_guest_id');
+  if (!guestId) {
+    guestId = 'guest_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('vault_guest_id', guestId);
+  }
+
+  let guestName = localStorage.getItem('vault_guest_name');
+  if (!guestName) {
+    guestName = `Ranger_${Math.floor(100 + Math.random() * 900)}`;
+    localStorage.setItem('vault_guest_name', guestName);
+  }
+
+  const authPayload = {
+    token: token || undefined,
+    userId: currentUser?.id || overrideAuth.userId || guestId,
+    username: currentUser?.username || currentUser?.callsign || overrideAuth.username || guestName,
+    ...overrideAuth
+  };
+
   socket = io(SOCKET_URL, {
-    auth: { token },
+    auth: authPayload,
     transports: ['websocket', 'polling'],
     reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1500,
     timeout: 10000
   });
 
   // ─── Connection Events ──────────────────────────────────
   socket.on('connect', () => {
-    console.log('[SOCKET] Connected to V.A.U.L.T server');
+    console.log(`[SOCKET] Connected to V.A.U.L.T server (ID: ${socket.id})`);
     triggerHandler('connected', { socketId: socket.id });
   });
 
@@ -70,6 +107,7 @@ export function connectSocket() {
   // ─── Heist Events ──────────────────────────────────────
   socket.on('heist:started', (data) => triggerHandler('heistStarted', data));
   socket.on('heist:state', (data) => triggerHandler('heistState', data));
+  socket.on('heist:stage-synced', (data) => triggerHandler('heistStageSynced', data));
   socket.on('heist:timer-tick', (data) => triggerHandler('heistTimerTick', data));
   socket.on('heist:alarm-update', (data) => triggerHandler('heistAlarmUpdate', data));
   socket.on('heist:puzzle-solved', (data) => triggerHandler('heistPuzzleSolved', data));
@@ -155,12 +193,16 @@ function triggerHandler(event, data) {
 // Lobby Emitters
 // ─────────────────────────────────────────────────────────────
 export const lobbySocket = {
-  create(heistId, roomCode, callback) {
-    socket?.emit('lobby:create', { heistId, roomCode }, callback);
+  create(heistId, roomCode, missionTitle, role, characterId, callback) {
+    socket?.emit('lobby:create', { heistId, roomCode, missionTitle, role, characterId }, callback);
   },
 
-  join(roomCode, role, callback) {
-    socket?.emit('lobby:join', { roomCode, role }, callback);
+  join(roomCode, role, characterId, playerName, callback) {
+    socket?.emit('lobby:join', { roomCode, role, characterId, playerName }, callback);
+  },
+
+  get(roomCode, callback) {
+    socket?.emit('lobby:get', { roomCode }, callback);
   },
 
   setReady(roomCode, isReady) {
@@ -183,6 +225,10 @@ export const lobbySocket = {
     socket?.emit('lobby:voice-state', { roomCode, connected, muted, deafened });
   },
 
+  sendRadioMessage(roomCode, text, role) {
+    socket?.emit('lobby:radio-message', { roomCode, text, role });
+  },
+
   leave(roomCode) {
     socket?.emit('lobby:leave', { roomCode });
   }
@@ -200,20 +246,24 @@ export const heistSocket = {
     socket?.emit('heist:join-room', { roomCode });
   },
 
-  submitAnswer(roomCode, role, answer, expected, puzzleType, clue, reason, callback) {
-    socket?.emit('heist:submit-answer', { roomCode, role, answer, expected, puzzleType, clue, reason }, callback);
+  submitAnswer(roomCode, role, answer, expected, puzzleType, clue, reason, solvedBy, callback) {
+    socket?.emit('heist:submit-answer', { roomCode, role, answer, expected, puzzleType, clue, reason, solvedBy }, callback);
   },
 
-  puzzleSolved(roomCode, role, clue) {
-    socket?.emit('heist:puzzle-solved', { roomCode, role, clue });
+  puzzleSolved(roomCode, role, clue, solvedBy) {
+    socket?.emit('heist:puzzle-solved', { roomCode, role, clue, solvedBy });
   },
 
-  puzzleFailed(roomCode, role, reason) {
-    socket?.emit('heist:puzzle-failed', { roomCode, role, reason });
+  puzzleFailed(roomCode, role, reason, failedBy) {
+    socket?.emit('heist:puzzle-failed', { roomCode, role, reason, failedBy });
   },
 
-  sendRadioMessage(roomCode, text, role) {
-    socket?.emit('heist:radio-message', { roomCode, text, role });
+  sendRadioMessage(roomCode, text, role, sender) {
+    socket?.emit('heist:radio-message', { roomCode, text, role, sender });
+  },
+
+  syncStage(roomCode, stageIdx, timeLimit, selectedRoles) {
+    socket?.emit('heist:sync-stage', { roomCode, stageIdx, timeLimit, selectedRoles });
   },
 
   abort(roomCode) {

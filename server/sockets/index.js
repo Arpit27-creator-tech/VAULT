@@ -18,7 +18,10 @@ import { setupPresenceManager } from './presenceManager.js';
 export function initializeSocketIO(httpServer) {
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: (origin, callback) => {
+        // Allow all origins for dev/production flex (web, mobile, tunnels)
+        callback(null, true);
+      },
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -26,30 +29,37 @@ export function initializeSocketIO(httpServer) {
     pingInterval: 25000
   });
 
-  // ─── JWT Authentication Middleware ─────────────────────────
+  // ─── Authentication Middleware (JWT + Guest Support) ──────
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
 
-    if (!token) {
-      return next(new Error('Authentication required: No token provided'));
+    if (token) {
+      const decoded = verifyToken(token);
+      if (decoded) {
+        // Authenticated user from JWT
+        socket.userId = decoded.id;
+        socket.userEmail = decoded.email;
+        socket.username = decoded.username || decoded.callsign || 'Operative';
+        socket.isGuest = false;
+        return next();
+      }
     }
 
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return next(new Error('Authentication failed: Invalid or expired token'));
-    }
+    // Guest / Anonymous operative fallback
+    const guestUsername = socket.handshake.auth?.username || socket.handshake.query?.username || `Ranger_${Math.floor(100 + Math.random() * 900)}`;
+    const guestId = socket.handshake.auth?.userId || socket.handshake.query?.userId || `guest_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Attach user info to socket
-    socket.userId = decoded.id;
-    socket.userEmail = decoded.email;
-    socket.username = decoded.username;
+    socket.userId = guestId;
+    socket.userEmail = `${guestUsername.toLowerCase().replace(/\s+/g, '')}@guest.vault`;
+    socket.username = guestUsername;
+    socket.isGuest = true;
 
     next();
   });
 
   // ─── Connection Handler ───────────────────────────────────
   io.on('connection', (socket) => {
-    console.log(`[SOCKET] User connected: ${socket.username} (${socket.userId})`);
+    console.log(`[SOCKET] User connected: ${socket.username} (${socket.userId})${socket.isGuest ? ' [GUEST]' : ''}`);
 
     // Join a personal room for direct messages
     socket.join(`user:${socket.userId}`);
@@ -70,6 +80,6 @@ export function initializeSocketIO(httpServer) {
     });
   });
 
-  console.log('[SOCKET] Socket.io initialized with JWT auth');
+  console.log('[SOCKET] Socket.io initialized with JWT auth & Guest support');
   return io;
 }

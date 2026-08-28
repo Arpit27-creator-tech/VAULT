@@ -390,14 +390,17 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('vault_current_user');
+    localStorage.removeItem('vault_guest_id');
+    localStorage.removeItem('vault_guest_name');
     authAPI.logout();
     disconnectSocket();
     setActiveTab('home');
     setTabHistory([]);
+    setIsAuthModalOpen(false);
     toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
   };
 
-  // Auto-login from JWT token on mount
+  // Auto-login from JWT token on mount if returning user
   useEffect(() => {
     if (!currentUser && authAPI.isAuthenticated()) {
       authAPI.getMe().then(data => {
@@ -800,13 +803,17 @@ export default function App() {
       toast.info("🔴 Disconnected from Squad Voice Channel");
     } else {
       try {
-        const currentSocket = getSocket() || activeSocket || connectSocket();
+        let currentSocket = getSocket();
+        if (!currentSocket || !currentSocket.connected) {
+          currentSocket = connectSocket();
+        }
         await voiceEngine.startVoice(currentSocket, roomCode);
         setIsLobbyVoiceConnected(true);
         lobbySocket.updateVoiceState(roomCode, true, isLobbyMicMuted, isLobbyDeafened);
         toast.success("🎙️ Voice Channel Live (Opus HD Audio Mesh)");
       } catch (err) {
-        toast.error("Microphone access denied or unavailable");
+        console.error('[VOICE] Toggle voice error:', err);
+        toast.error(err?.message || "Microphone access denied or unavailable");
         setIsLobbyVoiceConnected(false);
       }
     }

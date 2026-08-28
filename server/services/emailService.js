@@ -1,6 +1,6 @@
 // ============================================================
 // V.A.U.L.T — Email Verification Service
-// Optimized with Anti-Spam Headers & Deliverability Best Practices
+// High-Speed Pooled Transporter with Anti-Spam Headers
 // ============================================================
 
 import nodemailer from 'nodemailer';
@@ -8,38 +8,35 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+let cachedTransporter = null;
+
 /**
- * Configure Nodemailer transport.
+ * Configure or return singleton pooled Nodemailer transport.
  */
-const createTransporter = async () => {
+const getTransporter = () => {
+  if (cachedTransporter) return cachedTransporter;
+
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
+    cachedTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '465', 10),
       secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      rateLimit: 14,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
+    return cachedTransporter;
   }
 
-  // Fallback test account
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-  } catch (err) {
-    console.warn('[EMAIL] Could not create fallback test account:', err.message);
-    return null;
-  }
+  return null;
 };
 
 /**
@@ -54,10 +51,10 @@ export const generateVerificationCode = () => {
  * Send an email verification code with inbox-optimized HTML and plain-text fallback.
  * @param {string} toEmail - Recipient email address
  * @param {string} code - 6-digit OTP
- * @returns {Promise<{ success: boolean, previewCode?: string, previewUrl?: string }>}
+ * @returns {Promise<{ success: boolean }>}
  */
 export const sendVerificationEmail = async (toEmail, code) => {
-  const transporter = await createTransporter();
+  const transporter = getTransporter();
 
   const plainText = `Welcome to VAULT!
 
@@ -116,9 +113,16 @@ If you did not request this code, you can safely ignore this email.
   const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
   const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
 
+  // Log in terminal immediately for instant developer/admin verification
+  console.log(`\n══════════════════════════════════════════════════`);
+  console.log(`📧 [EMAIL VERIFICATION CODE FOR ${toEmail}]`);
+  console.log(`🔑 6-DIGIT CODE: ${code}`);
+  console.log(`⏱️  EXPIRES IN: 10 minutes`);
+  console.log(`══════════════════════════════════════════════════\n`);
+
   if (transporter) {
     try {
-      const info = await transporter.sendMail({
+      await transporter.sendMail({
         from: senderFrom,
         to: toEmail,
         replyTo: senderEmail,
@@ -133,33 +137,12 @@ If you did not request this code, you can safely ignore this email.
           'X-Mailer': 'VAULT-AuthService/1.0',
         }
       });
-
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-
-      console.log(`\n══════════════════════════════════════════════════`);
-      console.log(`📧 [EMAIL DISPATCHED TO: ${toEmail}]`);
-      console.log(`🔑 6-DIGIT CODE: ${code}`);
-      if (previewUrl) {
-        console.log(`🔗 PREVIEW URL: ${previewUrl}`);
-      }
-      console.log(`══════════════════════════════════════════════════\n`);
-
-      return { 
-        success: true, 
-        previewCode: code, 
-        previewUrl: previewUrl || undefined 
-      };
+      console.log(`[EMAIL] SMTP dispatch succeeded to ${toEmail}`);
+      return { success: true, previewCode: code };
     } catch (err) {
-      console.error(`[EMAIL] SMTP dispatch failed:`, err.message);
+      console.error(`[EMAIL] SMTP dispatch failed for ${toEmail}:`, err.message);
     }
   }
-
-  // Console Fallback
-  console.log(`\n══════════════════════════════════════════════════`);
-  console.log(`📧 [EMAIL VERIFICATION CODE FOR ${toEmail}]`);
-  console.log(`🔑 CODE: ${code}`);
-  console.log(`⏱️  EXPIRES IN: 10 minutes`);
-  console.log(`══════════════════════════════════════════════════\n`);
 
   return { success: true, previewCode: code };
 };
@@ -171,7 +154,7 @@ If you did not request this code, you can safely ignore this email.
  * @param {string} resetUrl - Direct reset URL
  */
 export const sendPasswordResetEmail = async (toEmail, code, resetUrl) => {
-  const transporter = await createTransporter();
+  const transporter = getTransporter();
 
   const plainText = `Password Reset Request — V.A.U.L.T
 
@@ -235,6 +218,8 @@ If you did not request a password reset, please secure your account immediately.
   const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
   const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
 
+  console.log(`\n🔑 [PASSWORD RESET CODE FOR ${toEmail}]: ${code}\n🔗 URL: ${resetUrl}\n`);
+
   if (transporter) {
     try {
       await transporter.sendMail({
@@ -259,6 +244,5 @@ If you did not request a password reset, please secure your account immediately.
     }
   }
 
-  console.log(`\n🔑 [PASSWORD RESET CODE FOR ${toEmail}]: ${code}\n🔗 URL: ${resetUrl}\n`);
   return { success: true };
 };

@@ -13,8 +13,10 @@ const getDefaultSocketUrl = () => {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:5001';
+    const protocol = window.location.protocol;
+    // When running locally on dev server ports, connect directly to backend port 5001
+    if (window.location.port === '3000' || window.location.port === '5173') {
+      return `${protocol}//${host}:5001`;
     }
     return window.location.origin;
   }

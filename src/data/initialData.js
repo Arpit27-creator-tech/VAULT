@@ -158,33 +158,37 @@ export const initialLobby = {
   players: [
     {
       slotId: 1,
-      playerName: "Alex Vance (Hacker)",
+      playerName: "",
+      username: "",
       role: "The Hacker",
       characterId: "c1",
-      isReady: true,
-      isHost: true
+      isReady: false,
+      isHost: false
     },
     {
       slotId: 2,
-      playerName: "Dr. Rostova (Scientist)",
-      role: "The Scientist",
-      characterId: "c3",
-      isReady: true,
+      playerName: "",
+      username: "",
+      role: "The Engineer",
+      characterId: "c2",
+      isReady: false,
       isHost: false
     },
     {
       slotId: 3,
       playerName: "",
-      role: "",
-      characterId: "",
+      username: "",
+      role: "The Scientist",
+      characterId: "c3",
       isReady: false,
       isHost: false
     },
     {
       slotId: 4,
       playerName: "",
-      role: "",
-      characterId: "",
+      username: "",
+      role: "The Cryptographer",
+      characterId: "c4",
       isReady: false,
       isHost: false
     }

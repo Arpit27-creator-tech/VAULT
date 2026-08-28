@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: vault-server
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 465
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        value: vault.game.hq@gmail.com
+      - key: SMTP_PASS
+        value: khylflgndhozdfss
+      - key: SMTP_FROM
+        value: "V.A.U.L.T HQ <vault.game.hq@gmail.com>"
+      - key: CORS_ORIGIN
+        value: https://virtualacademic.vercel.app
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_DsTC0q5dyYJX@ep-plain-surf-ay9xi450-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - key: JWT_SECRET
+        value: vault-dev-secret-key-2024-change-in-production

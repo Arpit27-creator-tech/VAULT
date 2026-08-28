@@ -27,6 +27,8 @@ services:
         value: "V.A.U.L.T HQ <vault.game.hq@gmail.com>"
       - key: CORS_ORIGIN
         value: https://virtualacademic.vercel.app
+      - key: RESEND_API_KEY
+        sync: false
       - key: DATABASE_URL
         value: postgresql://neondb_owner:npg_DsTC0q5dyYJX@ep-plain-surf-ay9xi450-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require
       - key: JWT_SECRET

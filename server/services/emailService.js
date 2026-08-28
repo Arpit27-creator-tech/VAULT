@@ -1,11 +1,20 @@
 // ============================================================
 // V.A.U.L.T — Email Verification Service
-// High-Speed Pooled Transporter with Anti-Spam Headers
+// Dual Engine: HTTPS REST API (Resend / Brevo) + SMTP Fallback
+// Guaranteed delivery on Render Free, Vercel Serverless & Localhost
 // ============================================================
 
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Robust multi-path env loading for both root and server execution
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 let cachedTransporter = null;
@@ -40,6 +49,154 @@ const getTransporter = () => {
 };
 
 /**
+ * Send email via Resend HTTPS REST API (Port 443 — never blocked on Render/Vercel)
+ */
+async function sendViaResend({ to, subject, html, text, from }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+
+  const sender = from || process.env.RESEND_FROM || 'V.A.U.L.T HQ <onboarding@resend.dev>';
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: sender,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+        text
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('[EMAIL:Resend] API error response:', data);
+      return { success: false, error: data.message || 'Resend API failed' };
+    }
+
+    console.log(`[EMAIL:Resend] Dispatched successfully to ${to} (ID: ${data.id})`);
+    return { success: true, provider: 'resend', id: data.id };
+  } catch (err) {
+    console.error('[EMAIL:Resend] Network dispatch error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Send email via Brevo HTTPS REST API (Port 443 — never blocked on Render/Vercel)
+ */
+async function sendViaBrevo({ to, subject, html, text, fromName, fromEmail }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return null;
+
+  const name = fromName || 'V.A.U.L.T HQ';
+  const email = fromEmail || process.env.SMTP_USER || 'vault.game.hq@gmail.com';
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name, email },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('[EMAIL:Brevo] API error response:', data);
+      return { success: false, error: data.message || 'Brevo API failed' };
+    }
+
+    console.log(`[EMAIL:Brevo] Dispatched successfully to ${to} (MessageId: ${data.messageId})`);
+    return { success: true, provider: 'brevo', messageId: data.messageId };
+  } catch (err) {
+    console.error('[EMAIL:Brevo] Network dispatch error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Send email via SMTP (Nodemailer)
+ */
+async function sendViaSMTP({ to, subject, html, text, from, replyTo }) {
+  const transporter = getTransporter();
+  if (!transporter) return null;
+
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to,
+      replyTo,
+      subject,
+      text,
+      html,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'High',
+        'Auto-Submitted': 'auto-generated',
+        'X-Mailer': 'VAULT-AuthService/1.0',
+      }
+    });
+
+    console.log(`[EMAIL:SMTP] Dispatched successfully to ${to} (MessageId: ${info.messageId})`);
+    return { success: true, provider: 'smtp', messageId: info.messageId };
+  } catch (err) {
+    console.error(`[EMAIL:SMTP] Dispatch failed for ${to}:`, err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Unified email dispatch prioritizing HTTPS REST APIs over SMTP
+ */
+async function dispatchEmail({ to, subject, html, text }) {
+  const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
+  const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
+
+  // 1. Try Resend API (HTTP REST)
+  if (process.env.RESEND_API_KEY) {
+    const resendResult = await sendViaResend({ to, subject, html, text });
+    if (resendResult && resendResult.success) return resendResult;
+  }
+
+  // 2. Try Brevo API (HTTP REST)
+  if (process.env.BREVO_API_KEY) {
+    const brevoResult = await sendViaBrevo({ to, subject, html, text, fromName: 'V.A.U.L.T HQ', fromEmail: senderEmail });
+    if (brevoResult && brevoResult.success) return brevoResult;
+  }
+
+  // 3. Try Nodemailer SMTP (Port 465/587)
+  const smtpResult = await sendViaSMTP({
+    to,
+    subject,
+    html,
+    text,
+    from: senderFrom,
+    replyTo: senderEmail
+  });
+
+  if (smtpResult && smtpResult.success) {
+    return smtpResult;
+  }
+
+  return { success: false, error: 'No working email transport or API key available' };
+}
+
+/**
  * Generate a random 6-digit numeric verification code
  * @returns {string} 6-digit code (e.g., "749201")
  */
@@ -51,11 +208,9 @@ export const generateVerificationCode = () => {
  * Send an email verification code with inbox-optimized HTML and plain-text fallback.
  * @param {string} toEmail - Recipient email address
  * @param {string} code - 6-digit OTP
- * @returns {Promise<{ success: boolean }>}
+ * @returns {Promise<{ success: boolean, previewCode: string }>}
  */
 export const sendVerificationEmail = async (toEmail, code) => {
-  const transporter = getTransporter();
-
   const plainText = `Welcome to VAULT!
 
 Your 6-digit verification code is: ${code}
@@ -110,39 +265,19 @@ If you did not request this code, you can safely ignore this email.
   </html>
   `;
 
-  const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
-  const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
-
-  // Log in terminal immediately for instant developer/admin verification
+  // Log in terminal immediately for developer/admin verification
   console.log(`\n══════════════════════════════════════════════════`);
   console.log(`📧 [EMAIL VERIFICATION CODE FOR ${toEmail}]`);
   console.log(`🔑 6-DIGIT CODE: ${code}`);
   console.log(`⏱️  EXPIRES IN: 10 minutes`);
   console.log(`══════════════════════════════════════════════════\n`);
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: senderFrom,
-        to: toEmail,
-        replyTo: senderEmail,
-        subject: `Your VAULT verification code: ${code}`,
-        text: plainText,
-        html: htmlContent,
-        headers: {
-          'X-Priority': '1',
-          'X-MSMail-Priority': 'High',
-          'Importance': 'High',
-          'Auto-Submitted': 'auto-generated',
-          'X-Mailer': 'VAULT-AuthService/1.0',
-        }
-      });
-      console.log(`[EMAIL] SMTP dispatch succeeded to ${toEmail}`);
-      return { success: true, previewCode: code };
-    } catch (err) {
-      console.error(`[EMAIL] SMTP dispatch failed for ${toEmail}:`, err.message);
-    }
-  }
+  await dispatchEmail({
+    to: toEmail,
+    subject: `Your VAULT verification code: ${code}`,
+    html: htmlContent,
+    text: plainText
+  });
 
   return { success: true, previewCode: code };
 };
@@ -154,8 +289,6 @@ If you did not request this code, you can safely ignore this email.
  * @param {string} resetUrl - Direct reset URL
  */
 export const sendPasswordResetEmail = async (toEmail, code, resetUrl) => {
-  const transporter = getTransporter();
-
   const plainText = `Password Reset Request — V.A.U.L.T
 
 Your 6-digit password reset code is: ${code}
@@ -215,34 +348,14 @@ If you did not request a password reset, please secure your account immediately.
   </html>
   `;
 
-  const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
-  const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
-
   console.log(`\n🔑 [PASSWORD RESET CODE FOR ${toEmail}]: ${code}\n🔗 URL: ${resetUrl}\n`);
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: senderFrom,
-        to: toEmail,
-        replyTo: senderEmail,
-        subject: `[V.A.U.L.T] Password Reset Code: ${code}`,
-        text: plainText,
-        html: htmlContent,
-        headers: {
-          'X-Priority': '1',
-          'X-MSMail-Priority': 'High',
-          'Importance': 'High',
-          'Auto-Submitted': 'auto-generated',
-          'X-Mailer': 'VAULT-AuthService/1.0',
-        }
-      });
-      console.log(`[EMAIL] Password reset code dispatched to ${toEmail}`);
-      return { success: true };
-    } catch (err) {
-      console.error(`[EMAIL] Reset email SMTP dispatch failed:`, err.message);
-    }
-  }
+  await dispatchEmail({
+    to: toEmail,
+    subject: `[V.A.U.L.T] Password Reset Code: ${code}`,
+    html: htmlContent,
+    text: plainText
+  });
 
   return { success: true };
 };

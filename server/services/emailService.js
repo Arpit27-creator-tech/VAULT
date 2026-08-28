@@ -17,6 +17,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
+console.log('[DEBUG] BREVO_API_KEY raw:', JSON.stringify(process.env.BREVO_API_KEY));
+console.log('[DEBUG] BREVO_API_KEY length:', process.env.BREVO_API_KEY?.length);
+
 let cachedTransporter = null;
 
 /**

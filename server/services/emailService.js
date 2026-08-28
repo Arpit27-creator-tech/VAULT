@@ -95,7 +95,7 @@ async function sendViaBrevo({ to, subject, html, text, fromName, fromEmail }) {
   if (!apiKey) return null;
 
   const name = fromName || process.env.BREVO_SENDER_NAME || 'V.A.U.L.T HQ';
-  const email = fromEmail || process.env.BREVO_SENDER_EMAIL || 'arpi85222707@gmail.com';
+  const email = fromEmail || process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || 'vault.game.hq@gmail.com';
 
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -164,7 +164,7 @@ async function sendViaSMTP({ to, subject, html, text, from, replyTo }) {
  * Unified email dispatch prioritizing HTTPS REST APIs over SMTP
  */
 async function dispatchEmail({ to, subject, html, text }) {
-  const brevoSender = process.env.BREVO_SENDER_EMAIL || 'arpi85222707@gmail.com';
+  const brevoSender = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || 'vault.game.hq@gmail.com';
   const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
   const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
 

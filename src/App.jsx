@@ -140,6 +140,90 @@ export default function App() {
     alarmsTripped: 0
   });
 
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [isJoinRoomModalOpen, setIsJoinRoomModalOpen] = useState(false);
+  const [joinRoomCodeInput, setJoinRoomCodeInput] = useState('');
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [createRoomTitleInput, setCreateRoomTitleInput] = useState('');
+  const [isLaunchingCountdown, setIsLaunchingCountdown] = useState(false);
+  const [launchCountdown, setLaunchCountdown] = useState(3);
+  const [lobbyRadioInput, setLobbyRadioInput] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const [emailInput, setEmailInput] = useState('');
+  const [crewNameInput, setCrewNameInput] = useState('');
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [targetSlotId, setTargetSlotId] = useState(null);
+  const [joinPlayerName, setJoinPlayerName] = useState('');
+  const [joinRole, setJoinRole] = useState('The Hacker');
+  const [joinCharacterId, setJoinCharacterId] = useState('c1');
+
+  const [unlockedRooms, setUnlockedRooms] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_unlocked_rooms_sylvan');
+      return saved ? JSON.parse(saved) : [1];
+    } catch {
+      return [1];
+    }
+  });
+  const [activeRoom, setActiveRoom] = useState(1);
+  const [roomSolved, setRoomSolved] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_room_solved_sylvan');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [xp, setXp] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_xp_sylvan');
+      return saved ? parseInt(saved, 10) : 1200;
+    } catch {
+      return 1200;
+    }
+  });
+  const [streak, setStreak] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_streak_sylvan');
+      return saved ? parseInt(saved, 10) : 3;
+    } catch {
+      return 3;
+    }
+  });
+  const [leaderboard, setLeaderboard] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_leaderboard_sylvan');
+      return saved ? JSON.parse(saved) : [
+        { name: 'You (Explorer)', xp: 1200, streak: 3 },
+        { name: 'Captain Bramble', xp: 2450, streak: 5 },
+        { name: 'Dr. Cleo', xp: 1900, streak: 4 },
+        { name: 'Shadow Nyx', xp: 1720, streak: 3 }
+      ];
+    } catch {
+      return [
+        { name: 'You (Explorer)', xp: 1200, streak: 3 },
+        { name: 'Captain Bramble', xp: 2450, streak: 5 },
+        { name: 'Dr. Cleo', xp: 1900, streak: 4 },
+        { name: 'Shadow Nyx', xp: 1720, streak: 3 }
+      ];
+    }
+  });
+  const [showFinale, setShowFinale] = useState(false);
+  const [builderSaving, setBuilderSaving] = useState(false);
+  const [builder, setBuilder] = useState({ 
+    title: '', 
+    category: 'Forest Botany & Lore', 
+    difficulty: 'Medium', 
+    reward: '5,000 XP & Leaf Star', 
+    description: '', 
+    question: '', 
+    answer: '' 
+  });
+
   const navigateToTab = (newTab) => {
     if (newTab === 'login') {
       setIsAuthModalOpen(true);
@@ -294,8 +378,22 @@ export default function App() {
     return () => window.removeEventListener('vault:auth-expired', handleAuthExpired);
   }, []);
 
-  // Real-Time Socket Event Subscriptions & Data Hydration
+  // Real-Time Socket Event Subscriptions & Live Room Sync
   useEffect(() => {
+    // Check for room parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      const code = roomParam.trim().toUpperCase();
+      lobbySocket.get(code, (res) => {
+        if (res?.lobby) {
+          setLobby(res.lobby);
+          setActiveTab('lobby');
+          toast.success(`Joined squad room ${code}!`);
+        }
+      });
+    }
+
     // Hydrate missions from REST API if available
     missionAPI.list().then(data => {
       if (data?.missions && data.missions.length > 0) {
@@ -303,7 +401,87 @@ export default function App() {
       }
     }).catch(() => { /* offline fallback */ });
 
-    // Handle incoming real-time puzzle solved by teammate
+    // Socket Connection Status
+    const handleConnected = () => {
+      setIsSocketConnected(true);
+      if (lobby?.code) {
+        lobbySocket.get(lobby.code, (res) => {
+          if (res?.lobby) setLobby(res.lobby);
+        });
+      }
+    };
+
+    const handleDisconnected = () => {
+      setIsSocketConnected(false);
+    };
+
+    // Lobby Events
+    const handleLobbyState = (newLobby) => {
+      if (newLobby && Array.isArray(newLobby.players)) {
+        setLobby(newLobby);
+      }
+    };
+
+    const handleLobbyPlayerJoined = (data) => {
+      toast.success(`Operative ${data.username} joined slot 0${data.slotId} (${data.role})!`);
+      heistAudio.playSuccessChime();
+    };
+
+    const handleLobbyPlayerLeft = (data) => {
+      toast.info(`Operative ${data.username} vacated slot 0${data.slotId}`);
+    };
+
+    const handleLobbyPlayerReady = (data) => {
+      toast.info(`${data.username} is ${data.isReady ? 'READY' : 'NOT READY'}`);
+    };
+
+    const handleLobbyRoleChanged = (data) => {
+      toast.info(`${data.username} switched role to ${data.role}`);
+    };
+
+    const handleLobbyHostChanged = (data) => {
+      toast.info(`Squad host reassigned to ${data.newHost}`);
+    };
+
+    const handleLobbyKicked = (data) => {
+      toast.error(data.message || 'You have been removed from the squad.');
+      setActiveTab('home');
+    };
+
+    const handleLobbyStarting = (data) => {
+      setIsLaunchingCountdown(true);
+      setLaunchCountdown(data.countdown || 3);
+      heistAudio.playRadioSquelch();
+      let cnt = data.countdown || 3;
+      const cntInterval = setInterval(() => {
+        cnt -= 1;
+        if (cnt > 0) {
+          setLaunchCountdown(cnt);
+          heistAudio.playKeyClick();
+        } else {
+          clearInterval(cntInterval);
+        }
+      }, 1000);
+    };
+
+    const handleLobbyError = (data) => {
+      if (data?.message) toast.error(data.message);
+    };
+
+    // Live Heist Events
+    const handleHeistStarted = (data) => {
+      setIsLaunchingCountdown(false);
+      toast.success("🚀 Squad launch confirmed! Entering live cockpit.");
+      
+      const currentLobby = data?.lobby || lobby;
+      const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+      const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
+      const mySlot = currentLobby?.players?.find(p => (p.userId && p.userId === myId) || (myName && p.username === myName));
+      const assignedRole = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
+      
+      handleStartHeistStage(0, false, assignedRole);
+    };
+
     const handleRemotePuzzleSolved = (data) => {
       if (data?.role) {
         const stage = allStages[currentStageIdx] || heistStages[0];
@@ -323,7 +501,16 @@ export default function App() {
       }
     };
 
-    // Handle incoming radio messages
+    const handleRemotePuzzleFailed = (data) => {
+      if (data) {
+        if (data.alarmFails !== undefined) setAlarmFails(data.alarmFails);
+        if (data.alarmLevel) setAlarmLevel(data.alarmLevel);
+        if (data.timeLeft !== undefined) setTimeLeft(data.timeLeft);
+        heistAudio.playAlarmChime();
+        toast.error(`🚨 ALARM ESCALATED by ${data.failedBy || 'teammate'}: ${data.reason}`);
+      }
+    };
+
     const handleRemoteRadioMessage = (msg) => {
       if (msg?.text) {
         setRadioMessages(prev => [...prev, msg]);
@@ -331,23 +518,37 @@ export default function App() {
       }
     };
 
-    // Handle server timer tick
     const handleTimerTick = (data) => {
       if (data?.timeLeft !== undefined) setTimeLeft(data.timeLeft);
       if (data?.alarmLevel) setAlarmLevel(data.alarmLevel);
     };
 
-    // Handle remote squad launch
-    const handleHeistStarted = (data) => {
-      toast.success("🚀 Squad launch confirmed! Entering live cockpit.");
-      handleStartHeistStage(0);
+    const handleRemoteStageSynced = (data) => {
+      if (data) {
+        setCurrentStageIdx(data.stageIdx || 0);
+        setTimeLeft(data.timeLimit || 180);
+        setAlarmLevel('LOW_SECURITY');
+        setAlarmFails(0);
+        toast.success(`Advancing to Stage ${(data.stageIdx || 0) + 1} synchronously!`);
+      }
     };
 
+    onSocketEvent('connected', handleConnected);
+    onSocketEvent('disconnected', handleDisconnected);
+    onSocketEvent('lobbyState', handleLobbyState);
+    onSocketEvent('lobbyPlayerJoined', handleLobbyPlayerJoined);
+    onSocketEvent('lobbyPlayerLeft', handleLobbyPlayerLeft);
+    onSocketEvent('lobbyPlayerReady', handleLobbyPlayerReady);
+    onSocketEvent('lobbyRoleChanged', handleLobbyRoleChanged);
+    onSocketEvent('lobbyHostChanged', handleLobbyHostChanged);
+    onSocketEvent('lobbyKicked', handleLobbyKicked);
+    onSocketEvent('lobbyStarting', handleLobbyStarting);
+    onSocketEvent('lobbyError', handleLobbyError);
+    onSocketEvent('heistStarted', handleHeistStarted);
     onSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
+    onSocketEvent('heistPuzzleFailed', handleRemotePuzzleFailed);
     onSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
     onSocketEvent('heistTimerTick', handleTimerTick);
-    onSocketEvent('heistStarted', handleHeistStarted);
-
     onSocketEvent('heistStageSynced', handleRemoteStageSynced);
 
     return () => {

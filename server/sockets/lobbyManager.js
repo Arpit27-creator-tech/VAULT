@@ -111,6 +111,40 @@ export function setupLobbyManager(io, socket) {
   });
 
   // ─────────────────────────────────────────────────────────
+  // lobby:list-recruiting — List all active squads recruiting members
+  // ─────────────────────────────────────────────────────────
+  socket.on('lobby:list-recruiting', (callback) => {
+    try {
+      const list = [];
+      for (const [code, lobby] of activeLobbies) {
+        if (lobby.status === 'waiting' || !lobby.status) {
+          const host = lobby.players.find(p => p.isHost && p.userId) || lobby.players[0];
+          const filled = lobby.players.filter(p => p.userId && p.username);
+          const openSlots = lobby.players.filter(p => !p.userId || !p.username);
+
+          list.push({
+            roomCode: lobby.roomCode || code,
+            name: lobby.name || 'Syndicate Co-op Operation',
+            heistId: lobby.heistId || 'm1',
+            hostName: host?.username || 'Squad Leader',
+            hostRole: host?.role || 'hacker',
+            totalMembers: filled.length,
+            maxMembers: 4,
+            openRoles: openSlots.map(s => s.role),
+            filledRoles: filled.map(s => ({ role: s.role, username: s.username })),
+            voiceActive: true,
+            createdAt: lobby.createdAt || Date.now()
+          });
+        }
+      }
+      callback?.({ success: true, squads: list });
+    } catch (err) {
+      console.error('[LOBBY] List recruiting error:', err);
+      callback?.({ error: 'Failed to list recruiting squads' });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────
   // lobby:get — Fetch current lobby state
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:get', (data, callback) => {
@@ -423,6 +457,71 @@ export function setupLobbyManager(io, socket) {
     io.to(`lobby:${roomCode}`).emit('lobby:radio-message', message);
     io.to(`lobby:${roomCode}`).emit('heist:radio-message', message);
     io.to(`heist:${roomCode}`).emit('heist:radio-message', message);
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // WebRTC Multi-Peer Real-Time Voice Signaling
+  // ─────────────────────────────────────────────────────────
+  socket.on('voice:join', (data, callback) => {
+    try {
+      const roomCode = normCode(data.roomCode);
+      if (!roomCode) return callback?.({ error: 'Room code required' });
+
+      socket.join(`voice:${roomCode}`);
+
+      // Find other active players in this lobby
+      const lobby = activeLobbies.get(roomCode);
+      const otherSockets = [];
+
+      if (lobby) {
+        lobby.players.forEach(p => {
+          if (p.socketId && p.socketId !== socket.id && p.userId) {
+            otherSockets.push({
+              socketId: p.socketId,
+              userId: p.userId,
+              username: p.username
+            });
+          }
+        });
+      }
+
+      // Notify others in voice room that a new peer has linked
+      socket.to(`voice:${roomCode}`).emit('voice:user-joined', {
+        socketId: socket.id,
+        userId: socket.userId,
+        username: socket.username
+      });
+
+      callback?.({
+        success: true,
+        peers: otherSockets
+      });
+    } catch (err) {
+      console.error('[VOICE] Join error:', err);
+      callback?.({ error: 'Failed to join voice channel' });
+    }
+  });
+
+  socket.on('voice:signal', (data) => {
+    const { to, signal } = data;
+    if (to && signal) {
+      io.to(to).emit('voice:signal', {
+        from: socket.id,
+        signal,
+        username: socket.username
+      });
+    }
+  });
+
+  socket.on('voice:leave', (data) => {
+    const roomCode = normCode(data?.roomCode);
+    if (roomCode) {
+      socket.leave(`voice:${roomCode}`);
+      socket.to(`voice:${roomCode}`).emit('voice:user-left', {
+        socketId: socket.id,
+        userId: socket.userId
+      });
+    }
   });
 
   // ─────────────────────────────────────────────────────────

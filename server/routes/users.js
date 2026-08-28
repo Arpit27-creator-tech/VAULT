@@ -8,6 +8,153 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
+const getAgentId = (user) => {
+  const shortId = (user.id || '').replace(/-/g, '').substring(0, 8).toUpperCase() || '77418902';
+  return user.agent_id || `VAULT-${shortId}`;
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/search — Search operatives by Unique ID, username, or callsign
+// ─────────────────────────────────────────────────────────────
+router.get('/search', async (req, res) => {
+  try {
+    const q = (req.query.q || req.query.query || '').trim().toLowerCase();
+    if (!q) {
+      // Return top 15 operatives if query is empty
+      const result = await query(
+        `SELECT u.id, u.username, u.callsign, u.avatar_url, u.role, u.level, u.xp, u.rank, u.badges,
+                s.missions_completed, s.vaults_cracked, s.alarms_tripped, s.win_rate
+         FROM users u
+         LEFT JOIN user_stats s ON s.user_id = u.id
+         ORDER BY u.xp DESC
+         LIMIT 15`
+      );
+
+      return res.json({
+        users: result.rows.map(u => ({
+          id: u.id,
+          agentId: getAgentId(u),
+          username: u.username,
+          callsign: u.callsign,
+          avatar: u.avatar_url,
+          role: u.role,
+          level: u.level,
+          xp: u.xp,
+          rank: u.rank,
+          badges: u.badges,
+          stats: {
+            missionsCompleted: u.missions_completed || 0,
+            vaultsCracked: u.vaults_cracked || 0,
+            winRate: u.win_rate || 100
+          }
+        }))
+      });
+    }
+
+    const cleanHex = q.replace(/^vault-|^agent-|^op-/i, '').replace(/[^a-f0-9]/gi, '');
+    const pattern = `%${q}%`;
+    const hexPattern = cleanHex ? `%${cleanHex}%` : '%';
+
+    const result = await query(
+      `SELECT u.id, u.username, u.callsign, u.avatar_url, u.role, u.level, u.xp, u.rank, u.badges,
+              s.missions_completed, s.vaults_cracked, s.alarms_tripped, s.win_rate
+       FROM users u
+       LEFT JOIN user_stats s ON s.user_id = u.id
+       WHERE LOWER(u.username) LIKE $1
+          OR LOWER(u.callsign) LIKE $1
+          OR REPLACE(LOWER(u.id::text), '-', '') LIKE $2
+          OR LOWER('vault-' || SUBSTRING(REPLACE(u.id::text, '-', ''), 1, 6)) LIKE $1
+       ORDER BY u.xp DESC
+       LIMIT 20`,
+      [pattern, hexPattern]
+    );
+
+    res.json({
+      users: result.rows.map(u => ({
+        id: u.id,
+        agentId: getAgentId(u),
+        username: u.username,
+        callsign: u.callsign,
+        avatar: u.avatar_url,
+        role: u.role,
+        level: u.level,
+        xp: u.xp,
+        rank: u.rank,
+        badges: u.badges,
+        stats: {
+          missionsCompleted: u.missions_completed || 0,
+          vaultsCracked: u.vaults_cracked || 0,
+          winRate: u.win_rate || 100
+        }
+      }))
+    });
+
+  } catch (err) {
+    console.error('[USERS] Search error:', err);
+    res.status(500).json({ error: 'Search operation failed' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/tag/:agentId — Get user by unique Agent ID (e.g. VAULT-9482)
+// ─────────────────────────────────────────────────────────────
+router.get('/tag/:agentId', async (req, res) => {
+  try {
+    const rawTag = req.params.agentId.trim().toUpperCase();
+    const hexCode = rawTag.replace(/^VAULT-|^AGENT-|^OP-/i, '').toLowerCase();
+
+    const result = await query(
+      `SELECT u.id, u.username, u.callsign, u.avatar_url, u.role, u.level, u.xp, u.rank, u.badges, u.created_at,
+              s.missions_completed, s.vaults_cracked, s.alarms_tripped, s.win_rate,
+              s.fastest_time, s.cs_mastery, s.physics_mastery, s.chem_mastery, s.math_mastery, s.crypto_mastery
+       FROM users u
+       LEFT JOIN user_stats s ON s.user_id = u.id
+       WHERE REPLACE(LOWER(u.id::text), '-', '') LIKE $1
+          OR LOWER(u.username) = LOWER($2)
+       LIMIT 1`,
+      [`${hexCode}%`, rawTag]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Operative not found with that Agent ID' });
+    }
+
+    const user = result.rows[0];
+
+    res.json({
+      user: {
+        id: user.id,
+        agentId: getAgentId(user),
+        username: user.username,
+        callsign: user.callsign,
+        avatar: user.avatar_url,
+        role: user.role,
+        level: user.level,
+        xp: user.xp,
+        rank: user.rank,
+        badges: user.badges,
+        createdAt: user.created_at,
+        stats: {
+          missionsCompleted: user.missions_completed || 0,
+          vaultsCracked: user.vaults_cracked || 0,
+          alarmsTripped: user.alarms_tripped || 0,
+          winRate: user.win_rate || 100,
+          fastestTime: user.fastest_time || '--',
+          csMastery: user.cs_mastery || 50,
+          physicsMastery: user.physics_mastery || 50,
+          chemMastery: user.chem_mastery || 50,
+          mathMastery: user.math_mastery || 50,
+          cryptoMastery: user.crypto_mastery || 50
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('[USERS] Get by tag error:', err);
+    res.status(500).json({ error: 'Failed to retrieve operative by Agent ID' });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────
 // GET /api/users/:id — Get a user's public profile
 // ─────────────────────────────────────────────────────────────
@@ -34,6 +181,7 @@ router.get('/:id', authenticate, async (req, res) => {
     res.json({
       user: {
         id: user.id,
+        agentId: getAgentId(user),
         username: user.username,
         callsign: user.callsign,
         avatar: user.avatar_url,

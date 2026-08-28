@@ -8,6 +8,11 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
+const getAgentId = (user) => {
+  const shortId = (user.id || '').replace(/-/g, '').substring(0, 8).toUpperCase() || '77418902';
+  return user.agent_id || `VAULT-${shortId}`;
+};
+
 // ─────────────────────────────────────────────────────────────
 // GET /api/friends — List all friends (accepted + pending)
 // ─────────────────────────────────────────────────────────────
@@ -23,7 +28,7 @@ router.get('/', authenticate, async (req, res) => {
                 WHEN f.user_id = $1 THEN 'sent'
                 ELSE 'received'
               END AS direction,
-              u.username, u.callsign, u.avatar_url, u.role, u.level
+              u.id as user_uuid, u.username, u.callsign, u.avatar_url, u.role, u.level
        FROM friends f
        JOIN users u ON u.id = CASE 
                                 WHEN f.user_id = $1 THEN f.friend_id
@@ -37,6 +42,7 @@ router.get('/', authenticate, async (req, res) => {
     const friends = result.rows.map(f => ({
       id: f.id,
       userId: f.other_id,
+      agentId: getAgentId({ id: f.user_uuid }),
       username: f.username,
       callsign: f.callsign,
       avatar: f.avatar_url,
@@ -66,24 +72,30 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/friends/request — Send a friend request by callsign or username
+// POST /api/friends/request — Send a friend request by callsign, username, or Agent ID
 // ─────────────────────────────────────────────────────────────
 router.post('/request', authenticate, async (req, res) => {
   try {
     const { callsign } = req.body;
 
     if (!callsign || !callsign.trim()) {
-      return res.status(400).json({ error: 'Callsign or username is required' });
+      return res.status(400).json({ error: 'Callsign, username, or Agent ID is required' });
     }
 
-    // Find the target user
+    const cleanInput = callsign.trim().toLowerCase();
+    const strippedId = cleanInput.replace(/^vault-/, '').replace(/-/g, '');
+
+    // Find the target user by callsign, username, or Agent ID substring
     const targetResult = await query(
-      `SELECT id, callsign, username FROM users WHERE LOWER(callsign) = $1 OR LOWER(username) = $1`,
-      [callsign.trim().toLowerCase()]
+      `SELECT id, callsign, username FROM users 
+       WHERE LOWER(callsign) = $1 
+          OR LOWER(username) = $1
+          OR REPLACE(LOWER(id::text), '-', '') LIKE $2`,
+      [cleanInput, `${strippedId}%`]
     );
 
     if (targetResult.rows.length === 0) {
-      return res.status(404).json({ error: `No operative found with callsign "${callsign}"` });
+      return res.status(404).json({ error: `No operative found matching "${callsign}"` });
     }
 
     const targetUser = targetResult.rows[0];
@@ -154,6 +166,32 @@ router.put('/:id/accept', authenticate, async (req, res) => {
   } catch (err) {
     console.error('[FRIENDS] Accept error:', err);
     res.status(500).json({ error: 'Failed to accept friend request' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PUT /api/friends/:id/reject — Reject a friend request
+// ─────────────────────────────────────────────────────────────
+router.put('/:id/reject', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      `DELETE FROM friends 
+       WHERE id = $1 AND friend_id = $2 AND status = 'pending'
+       RETURNING id`,
+      [id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pending request not found' });
+    }
+
+    res.json({ message: 'Friend request declined' });
+
+  } catch (err) {
+    console.error('[FRIENDS] Reject error:', err);
+    res.status(500).json({ error: 'Failed to reject friend request' });
   }
 });
 

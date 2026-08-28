@@ -28,14 +28,17 @@ import CryptographerDeck from './components/CryptographerDeck';
 import InterdependenceMatrix from './components/InterdependenceMatrix';
 import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
+import { voiceEngine } from './services/voiceEngine';
 import CreateCustomHeistModal from './components/CreateCustomHeistModal';
 import RemediationRoadmapModal from './components/RemediationRoadmapModal';
 import HeroPage from './components/HeroPage';
 import AuthModal from './components/AuthModal';
 import StatsDashboard from './components/StatsDashboard';
 import GraphicalRoadmap from './components/GraphicalRoadmap';
+import OperativeDirectoryModal from './components/OperativeDirectoryModal';
+import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI } from './services/api.js';
-import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, lobbySocket, heistSocket } from './services/socket.js';
+import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
 
 // Specialist role configurations for multiplayer synchronization
 const ROLE_CONFIGS = [
@@ -56,6 +59,7 @@ function normalizeRoleKey(role) {
 }
 
 export default function App() {
+  const activeSocket = getSocket() || connectSocket();
   const [activeTab, setActiveTab] = useState('home');
   const [tabHistory, setTabHistory] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,10 +96,21 @@ export default function App() {
     }
   });
 
-  const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(true);
+  const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(false);
   const [isLobbyMicMuted, setIsLobbyMicMuted] = useState(false);
   const [isLobbyDeafened, setIsLobbyDeafened] = useState(false);
   const [speakingPlayerSlot, setSpeakingPlayerSlot] = useState(1);
+  const [micVolumeBars, setMicVolumeBars] = useState([8, 14, 10, 18, 12, 16, 10, 12]);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+
+  useEffect(() => {
+    const unsubVol = voiceEngine.onVolume((bars) => setMicVolumeBars(bars));
+    const unsubSpk = voiceEngine.onSpeaking((speaking) => setIsUserSpeaking(speaking));
+    return () => {
+      unsubVol();
+      unsubSpk();
+    };
+  }, []);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [bgVideoActive, setBgVideoActive] = useState(true);
@@ -141,10 +156,12 @@ export default function App() {
   });
 
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [isAgentDirectoryOpen, setIsAgentDirectoryOpen] = useState(false);
   const [isJoinRoomModalOpen, setIsJoinRoomModalOpen] = useState(false);
   const [joinRoomCodeInput, setJoinRoomCodeInput] = useState('');
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [createRoomTitleInput, setCreateRoomTitleInput] = useState('');
+  const [isInSquadRoom, setIsInSquadRoom] = useState(false);
   const [isLaunchingCountdown, setIsLaunchingCountdown] = useState(false);
   const [launchCountdown, setLaunchCountdown] = useState(3);
   const [lobbyRadioInput, setLobbyRadioInput] = useState('');
@@ -224,10 +241,34 @@ export default function App() {
     answer: '' 
   });
 
+  // ─── Fullscreen Lock Helpers ───────────────────────────────────
+  const enterHeistFullscreen = () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    } catch (e) { /* fullscreen not supported / blocked */ }
+  };
+
+  const exitHeistFullscreen = () => {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (e) { /* already not fullscreen */ }
+  };
+
+  const isHeistLocked = isTimerRunning && activeTab === 'liveheist';
+
   const navigateToTab = (newTab) => {
     if (newTab === 'login') {
       setIsAuthModalOpen(true);
       heistAudio.playKeyClick();
+      return;
+    }
+    // Block navigation during active heist
+    if (isHeistLocked && newTab !== 'liveheist') {
+      toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
       return;
     }
     const protectedTabs = ['stats', 'builder'];
@@ -247,6 +288,11 @@ export default function App() {
   };
 
   const handleGoBack = () => {
+    // Block back navigation during active heist
+    if (isHeistLocked) {
+      toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
+      return;
+    }
     heistAudio.playKeyClick();
     if (activeTab === 'liveheist') {
       setIsTimerRunning(false);
@@ -265,6 +311,7 @@ export default function App() {
     setIsTimerRunning(false);
     heistAudio.stopTension();
     setIsEndHeistModalOpen(false);
+    exitHeistFullscreen();
 
     const stage = allStages[currentStageIdx] || heistStages[0];
     const stageId = stage.stageId || 1;
@@ -623,6 +670,26 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isTimerRunning, timeLeft, alarmLevel]);
 
+  // Re-enter fullscreen if user presses Escape during active heist
+  useEffect(() => {
+    if (!isHeistLocked) return;
+    const handleFullscreenChange = () => {
+      if (isHeistLocked && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        // Re-request fullscreen after a brief delay
+        setTimeout(() => {
+          enterHeistFullscreen();
+          toast.warning("🔒 Fullscreen locked during heist! Use END HEIST to exit.");
+        }, 300);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, [isHeistLocked]);
+
   // ─────────────────────────────────────────────────────────────
   // Multiplayer Room Handlers
   // ─────────────────────────────────────────────────────────────
@@ -630,7 +697,7 @@ export default function App() {
   const handleCreateNewRoom = (customTitle) => {
     const code = `HEIST-${Math.floor(100 + Math.random() * 900)}`;
     const title = customTitle || `Squad Delta ${code}`;
-    const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'Operative';
+    const myName = currentUser?.callsign || currentUser?.username || localStorage.getItem('vault_guest_name') || 'Operative';
 
     lobbySocket.create('m1', code, title, 'hacker', 'c1', (res) => {
       if (res?.error) {
@@ -639,6 +706,7 @@ export default function App() {
       }
       if (res?.lobby) {
         setLobby(res.lobby);
+        setIsInSquadRoom(true);
         toast.success(`Squad room ${code} created! Share invite code with friends.`);
         heistAudio.playSuccessChime();
       }
@@ -654,7 +722,7 @@ export default function App() {
       return;
     }
 
-    const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'Operative';
+    const myName = currentUser?.callsign || currentUser?.username || localStorage.getItem('vault_guest_name') || 'Operative';
 
     lobbySocket.join(code, 'engineer', 'c2', myName, (res) => {
       if (res?.error) {
@@ -663,10 +731,44 @@ export default function App() {
       }
       if (res?.lobby) {
         setLobby(res.lobby);
+        setIsInSquadRoom(true);
         toast.success(`Joined room ${code}!`);
         heistAudio.playSuccessChime();
         setIsJoinRoomModalOpen(false);
         setJoinRoomCodeInput('');
+      }
+    });
+  };
+
+  const handleJoinSquadOperation = (roomCode, chosenRole = 'hacker') => {
+    const roleMap = {
+      hacker: 'c1',
+      engineer: 'c2',
+      scientist: 'c3',
+      cryptographer: 'c4'
+    };
+    const charId = roleMap[chosenRole] || 'c1';
+    const myName = currentUser?.callsign || currentUser?.username || localStorage.getItem('vault_guest_name') || 'Operative';
+
+    lobbySocket.join(roomCode, chosenRole, charId, myName, (res) => {
+      if (res?.error) {
+        toast.error(res.error);
+        return;
+      }
+      if (res?.lobby) {
+        setLobby(res.lobby);
+        setIsInSquadRoom(true);
+        toast.success(`Enlisted in squad as ${chosenRole.toUpperCase()}!`);
+        heistAudio.playSuccessChime();
+      } else {
+        setLobby(prev => ({
+          ...prev,
+          roomCode,
+          code: roomCode,
+          name: `Squad Operation ${roomCode}`
+        }));
+        setIsInSquadRoom(true);
+        toast.info(`Enlisted in ${roomCode} as ${chosenRole.toUpperCase()}`);
       }
     });
   };
@@ -743,6 +845,7 @@ export default function App() {
     const chosenRole = overrideRole || activeCockpitRole || activeRoles[0] || 'hacker';
     setActiveCockpitRole(chosenRole);
     setActiveTab('liveheist');
+    enterHeistFullscreen();
     heistAudio.startTensionBeat('LOW_SECURITY');
     heistAudio.playRadioSquelch();
     toast.success(`🚀 ${stage.title} ENGAGED! Specialist cockpit assigned: ${chosenRole.toUpperCase()}`);
@@ -768,6 +871,7 @@ export default function App() {
     const activeRoles = Object.keys(customStage.selectedRoles || {}).filter(k => customStage.selectedRoles[k]);
     setActiveCockpitRole(activeRoles[0] || 'hacker');
     setActiveTab('liveheist');
+    enterHeistFullscreen();
     heistAudio.startTensionBeat('LOW_SECURITY');
     heistAudio.playRadioSquelch();
     toast.success(`🚀 CUSTOM HEIST ENGAGED: ${customStage.title}!`);
@@ -804,6 +908,7 @@ export default function App() {
     setAlarmLevel('BUSTED');
     heistAudio.stopTension();
     heistAudio.playAlarmSiren();
+    exitHeistFullscreen();
     setIsMatchVictory(false);
     setAnalyticsStats({
       hackerXp: 50,
@@ -910,6 +1015,7 @@ export default function App() {
     setIsTimerRunning(false);
     heistAudio.stopTension();
     heistAudio.playSuccessChime();
+    exitHeistFullscreen();
 
     const stage = allStages[currentStageIdx] || heistStages[0];
     const totalTimeSpent = (stage.timeLimit || 180) - timeLeft;
@@ -1047,6 +1153,13 @@ export default function App() {
     }, 600);
   };
 
+  // Only registered users get a unique Agent ID
+  const currentAgentId = currentUser?.agentId || (
+    currentUser?.id 
+      ? `VAULT-${currentUser.id.replace(/-/g, '').substring(0, 8).toUpperCase()}`
+      : null
+  );
+
   const currentStageData = (allStages && allStages[currentStageIdx]) || heistStages[0] || {};
   const stageId = currentStageData.stageId || 1;
   const currentStageSolved = (stageSolvedRoles && stageSolvedRoles[stageId]) || {};
@@ -1058,11 +1171,12 @@ export default function App() {
       <Toaster 
         position="top-right" 
         theme="dark"
-        closeButton
+        closeButton={false}
+        duration={1000}
         richColors={false}
         toastOptions={{
           className: 'vault-toast',
-          duration: 3500
+          duration: 1000
         }}
       />
 
@@ -1202,7 +1316,7 @@ export default function App() {
               {activeTab === 'liveheist' && (
                 <button
                   onClick={() => setIsEndHeistModalOpen(true)}
-                  className="bg-[#FF4D6D] text-white font-mono font-black text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 transition-all flex items-center space-x-1.5 uppercase animate-pulse"
+                  className="bg-[#FF4D6D] text-white font-mono font-black text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-red-400/40 shadow-md shadow-red-950/60 hover:bg-[#FF3366] active:translate-x-0.5 transition-all flex items-center space-x-1.5 uppercase animate-pulse"
                   title="Conclude or Abort this operation on your own wish"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -1212,11 +1326,16 @@ export default function App() {
               )}
 
               <button 
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-1.5 sm:p-2 border-[2px] border-[#03140C] bg-[#0A261B] text-[#34D399] font-black shadow-[2px_2px_0px_#020C07] hover:bg-[#0E3526]"
-                title={soundEnabled ? "Mute SFX" : "Enable SFX"}
+                onClick={() => {
+                  setIsAgentDirectoryOpen(true);
+                  heistAudio.playKeyClick();
+                }}
+                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D] font-mono font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] active:translate-x-0.5 transition-all"
+                title="Search and identify syndicate operatives by unique Agent ID"
               >
-                {soundEnabled ? <Volume2 className="w-4 h-4 text-[#10B981]" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                <span className="hidden sm:inline">FIND AGENT</span>
+                <span className="sm:hidden">AGENT</span>
               </button>
 
               {currentUser ? (
@@ -1360,6 +1479,10 @@ export default function App() {
                       whileTap={{ scale: 0.98 }}
                       transition={{ duration: 0.15 }}
                       onClick={() => {
+                        if (isHeistLocked && tab.id !== 'liveheist') {
+                          toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
+                          return;
+                        }
                         navigateToTab(tab.id);
                         heistAudio.playKeyClick();
                         if (tab.id === 'liveheist' && !isTimerRunning) {
@@ -1370,7 +1493,9 @@ export default function App() {
                         }
                       }}
                       className={`w-full flex items-center justify-between p-2.5 transition-colors text-left border-[2.5px] border-[#03140C] ${
-                        isActive
+                        isHeistLocked && tab.id !== 'liveheist'
+                          ? 'bg-[#0A261B]/40 text-[#D1FAE5]/30 cursor-not-allowed opacity-40 shadow-none'
+                          : isActive
                           ? 'bg-[#10B981] text-[#02140D] font-black shadow-[3px_3px_0px_#FBBF24] translate-x-0.5'
                           : tab.highlight
                           ? 'bg-[#0E3523] text-[#FBBF24] hover:bg-[#10B981]/25 hover:text-white border-amber-400/40 shadow-[2px_2px_0px_#020C07]'
@@ -1883,17 +2008,41 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="space-y-6 max-w-7xl mx-auto text-left"
             >
-              <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 relative overflow-hidden">
-                {/* Background ambient grid pattern */}
-                <div className="absolute inset-0 bg-[radial-gradient(#10b98115_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-40" />
+              {!isInSquadRoom ? (
+                <SquadRecruitmentBoard
+                  socket={activeSocket}
+                  currentUser={currentUser}
+                  onCreateSquad={() => setIsCreateRoomModalOpen(true)}
+                  onOpenJoinModal={() => setIsJoinRoomModalOpen(true)}
+                  onOpenAgentDirectory={() => setIsAgentDirectoryOpen(true)}
+                  onJoinSquad={handleJoinSquadOperation}
+                />
+              ) : (
+                <div className="space-y-4">
+                  
+                  {/* Back to Squad Directory Button */}
+                  <button
+                    onClick={() => {
+                      setIsInSquadRoom(false);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="bg-[#020B06] hover:bg-[#072418] text-slate-300 hover:text-white border border-emerald-800/80 px-4 py-2.5 rounded-2xl text-xs font-mono font-bold flex items-center space-x-2 transition-all shadow-md group"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-[#10B981] group-hover:-translate-x-1 transition-transform" />
+                    <span>← Back to Squad Recruitment Directory</span>
+                  </button>
 
-                {/* Header Bar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-emerald-900/60 pb-5 relative z-10">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="bg-[#10B981] text-[#02140D] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded uppercase tracking-wider">
-                        SQUAD ASSEMBLED
-                      </span>
+                  <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 relative overflow-hidden">
+                    {/* Background ambient grid pattern */}
+                    <div className="absolute inset-0 bg-[radial-gradient(#10b98115_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-40" />
+
+                    {/* Header Bar */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-emerald-900/60 pb-5 relative z-10">
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="bg-[#10B981] text-[#02140D] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded uppercase tracking-wider">
+                            SQUAD ASSEMBLED
+                          </span>
                       <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded flex items-center space-x-1.5 ${
                         isSocketConnected 
                           ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800' 
@@ -1960,6 +2109,19 @@ export default function App() {
                       <span>Join Room</span>
                     </button>
 
+                    {/* Search & Invite by Agent ID */}
+                    <button
+                      onClick={() => {
+                        setIsAgentDirectoryOpen(true);
+                        heistAudio.playKeyClick();
+                      }}
+                      className="bg-[#020B06] text-[#34D399] border border-[#10B981]/60 hover:bg-[#072418] font-bold px-3.5 py-2.5 rounded-xl uppercase flex items-center space-x-1.5 text-xs font-game transition-all"
+                      title="Search operatives worldwide by unique Agent ID to invite to this squad"
+                    >
+                      <Users className="w-4 h-4 text-[#10B981]" />
+                      <span>Search by ID</span>
+                    </button>
+
                     {/* Custom Heist Creator */}
                     <button
                       onClick={() => {
@@ -2014,13 +2176,13 @@ export default function App() {
                   </div>
 
                   {isLobbyVoiceConnected && !isLobbyMicMuted && (
-                    <div className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#020B06] rounded-lg border border-emerald-900/60">
-                      <span className="text-[10px] font-mono text-emerald-400 mr-2">MIC AUDIO:</span>
-                      {[12, 24, 18, 28, 16, 22, 14, 26].map((h, i) => (
+                    <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-[#020B06] rounded-xl border border-emerald-500/40 shadow-inner">
+                      <span className="text-[10px] font-mono font-black text-emerald-400 mr-1.5">MIC AUDIO:</span>
+                      {micVolumeBars.map((h, i) => (
                         <span
                           key={i}
                           style={{ height: `${h}px` }}
-                          className="w-1 bg-[#10B981] rounded-full animate-pulse"
+                          className="w-1 bg-[#10B981] rounded-full transition-all duration-75"
                         />
                       ))}
                     </div>
@@ -2029,9 +2191,11 @@ export default function App() {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
-                        setIsLobbyMicMuted(!isLobbyMicMuted);
+                        const newMuted = !isLobbyMicMuted;
+                        setIsLobbyMicMuted(newMuted);
+                        voiceEngine.setMuted(newMuted);
                         heistAudio.playKeyClick();
-                        toast.info(!isLobbyMicMuted ? "🔇 Microphone Muted" : "🎙️ Microphone Live & Transmitting");
+                        toast.info(newMuted ? "🔇 Microphone Muted" : "🎙️ Microphone Live & Transmitting");
                       }}
                       className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
                         isLobbyMicMuted
@@ -2046,9 +2210,11 @@ export default function App() {
 
                     <button
                       onClick={() => {
-                        setIsLobbyDeafened(!isLobbyDeafened);
+                        const newDeafened = !isLobbyDeafened;
+                        setIsLobbyDeafened(newDeafened);
+                        voiceEngine.setDeafened(newDeafened);
                         heistAudio.playKeyClick();
-                        toast.info(!isLobbyDeafened ? "🎧 Deafen Active: Audio Muted" : "🔊 Deafen Off: Audio Live");
+                        toast.info(newDeafened ? "🎧 Deafen Active: Audio Muted" : "🔊 Deafen Off: Audio Live");
                       }}
                       className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
                         isLobbyDeafened
@@ -2074,10 +2240,23 @@ export default function App() {
                     </button>
 
                     <button
-                      onClick={() => {
-                        setIsLobbyVoiceConnected(!isLobbyVoiceConnected);
+                      onClick={async () => {
                         heistAudio.playKeyClick();
-                        toast.info(!isLobbyVoiceConnected ? "🟢 Connected to Squad Voice Channel" : "🔴 Disconnected from Squad Voice Channel");
+                        if (isLobbyVoiceConnected) {
+                          voiceEngine.stopVoice();
+                          setIsLobbyVoiceConnected(false);
+                          toast.info("🔴 Disconnected from Squad Voice Channel");
+                        } else {
+                          try {
+                            const roomCode = lobby.roomCode || lobby.code || 'MAIN';
+                            await voiceEngine.startVoice(activeSocket, roomCode);
+                            setIsLobbyVoiceConnected(true);
+                            toast.success("🎙️ Voice Channel Live (Opus HD Audio)");
+                          } catch (err) {
+                            toast.error("Microphone access denied or unavailable");
+                            setIsLobbyVoiceConnected(false);
+                          }
+                        }
                       }}
                       className={`p-2 rounded-xl border transition-all ${
                         isLobbyVoiceConnected
@@ -2099,7 +2278,7 @@ export default function App() {
                     const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
                     const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
                     const isMe = (slot.userId && slot.userId === myId) || (myName && playerName === myName);
-                    const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && isMe;
+                    const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && isMe && isUserSpeaking;
 
                     return (
                       <div
@@ -2171,6 +2350,36 @@ export default function App() {
 
                               <div>
                                 <h4 className="font-bold text-base text-white font-game">{playerName}</h4>
+                                
+                                {(() => {
+                                  const isRegisteredUser = slot.userId && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(slot.userId);
+                                  const slotTag = slot.agentId || (isRegisteredUser ? `VAULT-${slot.userId.replace(/-/g, '').substring(0, 8).toUpperCase()}` : null);
+                                  
+                                  return slotTag ? (
+                                    <div className="flex items-center justify-center space-x-1 mt-0.5">
+                                      <span className="text-[9px] font-mono font-bold text-[#FBBF24] bg-[#020B06] px-1.5 py-0.2 rounded border border-emerald-900/60">
+                                        {slotTag}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(slotTag);
+                                          heistAudio.playKeyClick();
+                                          toast.success(`📋 Copied ${playerName}'s ID: ${slotTag}`);
+                                        }}
+                                        className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
+                                        title="Copy Operative ID"
+                                      >
+                                        <Copy className="w-2.5 h-2.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center mt-0.5">
+                                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-[#020B06] px-1.5 py-0.2 rounded border border-slate-800">
+                                        GUEST
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                                 
                                 {isMe ? (
                                   <div className="mt-1.5">
@@ -2267,8 +2476,10 @@ export default function App() {
                   </form>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
+        </motion.div>
+      )}
 
           {activeTab === 'characters' && (
             <motion.div
@@ -2690,6 +2901,9 @@ export default function App() {
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onStartHeist={handleStartHeistStage}
+                onUpdateUser={(updated) => {
+                  setCurrentUser(prev => prev ? { ...prev, ...updated } : prev);
+                }}
                 onNavigate={(dest) => {
                   if (dest === 'login') {
                     setIsAuthModalOpen(true);
@@ -2810,55 +3024,120 @@ export default function App() {
       />
 
       {isEndHeistModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in">
-          <div className="forest-card max-w-md w-full p-6 space-y-5 border-[4px] border-[#03140C] bg-[#051811] shadow-[10px_10px_0px_#020C07]">
-            <div className="flex justify-between items-center border-b-2 border-[#03140C] pb-3">
-              <div className="flex items-center space-x-2 text-[#FF4D6D]">
-                <AlertTriangle className="w-5 h-5" />
-                <h3 className="text-xl font-black uppercase text-[#F0FDF4]">END OPERATION EARLY?</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl animate-fade-in">
+          <div className="max-w-xl w-full p-6 sm:p-8 space-y-6 border-4 border-[#042416]/90 bg-[#0D4A32]/55 backdrop-blur-2xl rounded-[36px] shadow-[10px_10px_0px_#03140C] text-left relative overflow-hidden text-white animate-cartoon-pop">
+            
+            {/* Playful Ambient Background Dots & Frost Glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(#34d39925_2px,transparent_2px)] [background-size:16px_16px] pointer-events-none opacity-80" />
+            <div className="absolute top-0 right-0 w-72 h-72 bg-[#10B981]/15 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Cartoon Header */}
+            <div className="flex items-start justify-between gap-4 border-b-4 border-[#042416]/80 pb-5 relative z-10">
+              <div className="space-y-2">
+                <div className="inline-flex items-center space-x-1.5 bg-[#FDE047] text-[#02140D] font-mono font-black text-xs px-3 py-1 rounded-xl uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] rotate-[-1.5deg] animate-badge-bounce">
+                  <Sparkles className="w-3.5 h-3.5 fill-current" />
+                  <span>HQ Tactical Broadcast</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-game drop-shadow-md">
+                  Conclude Mission, Agent?
+                </h2>
+                <p className="text-[#A7F3D0] text-xs sm:text-sm font-medium leading-relaxed">
+                  Currently infiltrating <span className="bg-[#06291B]/90 backdrop-blur-sm text-[#FDE047] px-2.5 py-0.5 rounded-lg border border-[#10B981]/60 font-mono font-bold">{currentStageData.title}</span>. Choose an exit directive:
+                </p>
               </div>
+
               <button 
                 onClick={() => setIsEndHeistModalOpen(false)} 
-                className="text-slate-400 hover:text-white font-bold text-lg p-1"
+                className="w-10 h-10 rounded-2xl bg-[#06291B]/90 hover:bg-[#FF4D6D] text-white border-2 border-black font-black text-sm flex items-center justify-center shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all backdrop-blur-sm"
+                title="Resume Heist"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-sm text-emerald-100/90 leading-relaxed font-medium">
-              You are currently engaged in active operation <strong>{currentStageData.title}</strong>. You can end the mission at any time:
-            </p>
-
-            <div className="space-y-3 font-mono">
-              <button
+            {/* Frosted Cartoon Directive Option Cards */}
+            <div className="space-y-4 relative z-10 font-mono">
+              
+              {/* Option 1: Claim Loot & Debrief (Frosted Jade & Gold) */}
+              <div
                 onClick={() => handleConcludeHeist('debrief')}
-                className="w-full bg-[#10B981] text-[#02140D] font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
+                className="p-4 sm:p-5 rounded-3xl border-3 border-[#052817]/90 bg-[#135C3E]/80 hover:bg-[#18704C]/90 backdrop-blur-md shadow-[5px_5px_0px_#03180E] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
               >
-                <div className="flex items-center space-x-2">
-                  <Trophy className="w-4 h-4 text-[#02140D]" />
-                  <span className="font-bold">END HEIST & VIEW ANALYTICS</span>
-                </div>
-                <span className="text-[10px] bg-[#02140D] text-[#FBBF24] px-1.5 py-0.5 border border-[#02140D]">CLAIM DEBRIEF</span>
-              </button>
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#FDE047] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 group-hover:animate-icon-wobble transition-transform">
+                    🏆
+                  </div>
 
-              <button
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDE047] transition-colors">
+                        CLAIM LOOT & DEBRIEF
+                      </h3>
+                      <span className="text-[10px] bg-[#34D399] text-[#02140D] font-black px-2 py-0.5 rounded-md border border-black hidden sm:inline-block">
+                        +XP
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#D1FAE5] font-medium mt-0.5">
+                      Save stage progress, inspect telemetry & log victory stats!
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="bg-[#10B981]/90 hover:bg-[#34D399] text-[#02140D] font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                >
+                  <span>Claim Loot</span>
+                  <ArrowRight className="w-4 h-4 stroke-[3]" />
+                </button>
+              </div>
+
+              {/* Option 2: Emergency Abort (Frosted Crimson & Coral) */}
+              <div
                 onClick={() => handleConcludeHeist('abort')}
-                className="w-full bg-[#FF4D6D] text-white font-black p-3.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 transition-all text-xs uppercase flex items-center justify-between"
+                className="p-4 sm:p-5 rounded-3xl border-3 border-[#2E0B12]/90 bg-[#4D1420]/80 hover:bg-[#631B2B]/90 backdrop-blur-md shadow-[5px_5px_0px_#1B060B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
               >
-                <div className="flex items-center space-x-2">
-                  <LogOut className="w-4 h-4 text-white" />
-                  <span className="font-bold">EMERGENCY EXFILTRATE (ABORT)</span>
-                </div>
-                <span className="text-[10px] bg-black/40 text-white px-1.5 py-0.5">RETURN HQ</span>
-              </button>
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#FF4D6D] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:-rotate-3 group-hover:animate-icon-wobble transition-transform">
+                    🚨
+                  </div>
 
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDA4AF] transition-colors">
+                        EMERGENCY EJECT (ABORT)
+                      </h3>
+                      <span className="text-[10px] bg-[#881337] text-[#FECDD3] font-bold px-2 py-0.5 rounded-md border border-[#BE123C] hidden sm:inline-block">
+                        RETREAT
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#FECDD3] font-medium mt-0.5">
+                      Hit the emergency exfil button and retreat to HQ base.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="bg-[#FF4D6D]/90 hover:bg-[#FF3366] text-white font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                >
+                  <span>Abort Mission</span>
+                  <ArrowRight className="w-4 h-4 stroke-[3]" />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Frosted Cartoon Footer / Resume Button */}
+            <div className="pt-2 relative z-10 font-mono">
               <button
                 onClick={() => setIsEndHeistModalOpen(false)}
-                className="w-full bg-[#0A261B] text-emerald-200 font-bold p-2.5 border-2 border-[#03140C] hover:bg-[#0E3526] text-xs uppercase"
+                className="w-full bg-[#06291B]/85 hover:bg-[#0A3D29]/95 backdrop-blur-md text-[#34D399] hover:text-[#10B981] font-black py-3.5 rounded-2xl border-2 border-[#10B981]/60 shadow-[4px_4px_0px_#03180E] text-xs font-game uppercase transition-all flex items-center justify-center space-x-2 active:translate-x-0.5 active:translate-y-0.5"
               >
-                RESUME HEIST OPERATION
+                <span>🎮 ← KEEP PLAYING (RESUME MISSION)</span>
               </button>
             </div>
+
           </div>
         </div>
       )}
@@ -2990,6 +3269,19 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Operative Directory & Unique ID Search Modal */}
+      <OperativeDirectoryModal
+        isOpen={isAgentDirectoryOpen}
+        onClose={() => setIsAgentDirectoryOpen(false)}
+        currentUser={currentUser}
+        currentLobbyCode={lobby?.code}
+        onInviteToLobby={(op) => {
+          if (lobby?.code) {
+            lobbySocket.sendRadioMessage(lobby.code, `[DISPATCH] Squad invitation routed to ${op.callsign} (${op.agentId})`, 'hq');
+          }
+        }}
+      />
 
     </div>
   );

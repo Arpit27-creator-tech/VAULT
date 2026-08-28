@@ -174,6 +174,14 @@ export const userAPI = {
 
   async getHistory(userId, page = 1, limit = 20) {
     return apiFetch(`/users/${userId}/history?page=${page}&limit=${limit}`);
+  },
+
+  async search(query = '') {
+    return apiFetch(`/users/search?q=${encodeURIComponent(query)}`);
+  },
+
+  async getByTag(agentId) {
+    return apiFetch(`/users/tag/${encodeURIComponent(agentId)}`);
   }
 };
 
@@ -303,6 +311,12 @@ export const friendAPI = {
 
   async acceptRequest(friendshipId) {
     return apiFetch(`/friends/${friendshipId}/accept`, {
+      method: 'PUT'
+    });
+  },
+
+  async rejectRequest(friendshipId) {
+    return apiFetch(`/friends/${friendshipId}/reject`, {
       method: 'PUT'
     });
   },

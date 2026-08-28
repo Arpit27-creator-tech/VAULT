@@ -493,8 +493,12 @@ router.get('/me', authenticate, async (req, res) => {
 // Helper: Build frontend-compatible user profile object
 // ─────────────────────────────────────────────────────────────
 function buildUserProfile(user, history = []) {
+  const shortId = (user.id || '').replace(/-/g, '').substring(0, 8).toUpperCase() || '77418902';
+  const agentId = user.agent_id || `VAULT-${shortId}`;
   return {
     id: user.id,
+    agentId,
+    username: user.username,
     callsign: user.callsign || user.username,
     email: user.email,
     role: user.role || 'Canopy Hacker',

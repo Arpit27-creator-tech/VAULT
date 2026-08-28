@@ -235,36 +235,6 @@ export default function HeroPage({
   return (
     <div className="space-y-16 sm:space-y-24 pb-20 w-full">
 
-      {!currentUser && (
-        <div className="p-4 sm:p-6 bg-[#041A11]/95 border-2 border-[#10B981]/50 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-start space-x-3.5">
-            <div className="p-3 bg-[#10B981] text-[#02140D] rounded-lg shadow-sm flex-shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-xs uppercase bg-[#10B981] text-[#02140D] px-2.5 py-0.5 rounded font-mono">
-                  Account Required
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
-                Please sign in with your email or username and password to access the complete learning platform, live multiplayer sessions, and statistics.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              if (onRequireAuth) onRequireAuth();
-              heistAudio.playKeyClick();
-            }}
-            className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-6 py-3 rounded-lg hover:bg-[#34D399] active:scale-[0.98] transition-all flex items-center space-x-2 flex-shrink-0 w-full md:w-auto justify-center shadow-md shadow-emerald-950 font-game"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Sign In / Register</span>
-          </button>
-        </div>
-      )}
-
       <section className="relative overflow-hidden bg-gradient-to-br from-[#062417]/90 via-[#0A3824]/85 to-[#041A11]/95 backdrop-blur-xl border-[3px] border-[#03140C] shadow-[0_12px_40px_rgba(0,0,0,0.6)] p-8 sm:p-12 lg:p-16">
         <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#10B981_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">

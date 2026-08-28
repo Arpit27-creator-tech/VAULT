@@ -1,0 +1,207 @@
+// ============================================================
+// V.A.U.L.T — User Routes (Profile, Stats, History)
+// ============================================================
+
+import { Router } from 'express';
+import { query } from '../db/index.js';
+import { authenticate } from '../middleware/auth.js';
+
+const router = Router();
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/:id — Get a user's public profile
+// ─────────────────────────────────────────────────────────────
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      `SELECT u.id, u.username, u.callsign, u.avatar_url, u.role, u.level, u.xp, u.rank, u.badges, u.created_at,
+              s.missions_completed, s.vaults_cracked, s.alarms_tripped, s.win_rate,
+              s.fastest_time, s.cs_mastery, s.physics_mastery, s.chem_mastery, s.math_mastery, s.crypto_mastery
+       FROM users u
+       LEFT JOIN user_stats s ON s.user_id = u.id
+       WHERE u.id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        callsign: user.callsign,
+        avatar: user.avatar_url,
+        role: user.role,
+        level: user.level,
+        xp: user.xp,
+        rank: user.rank,
+        badges: user.badges,
+        createdAt: user.created_at,
+        stats: {
+          missionsCompleted: user.missions_completed || 0,
+          vaultsCracked: user.vaults_cracked || 0,
+          alarmsTripped: user.alarms_tripped || 0,
+          winRate: user.win_rate || 100,
+          fastestTime: user.fastest_time || '--',
+          csMastery: user.cs_mastery || 50,
+          physicsMastery: user.physics_mastery || 50,
+          chemMastery: user.chem_mastery || 50,
+          mathMastery: user.math_mastery || 50,
+          cryptoMastery: user.crypto_mastery || 50
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('[USERS] Get profile error:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PUT /api/users/:id — Update own profile
+// ─────────────────────────────────────────────────────────────
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Users can only update their own profile
+    if (req.user.id !== id) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You can only update your own profile.' });
+    }
+
+    const { callsign, avatar_url, role } = req.body;
+
+    const fields = [];
+    const values = [];
+    let paramIdx = 1;
+
+    if (callsign) {
+      fields.push(`callsign = $${paramIdx++}`);
+      values.push(callsign);
+    }
+    if (avatar_url) {
+      fields.push(`avatar_url = $${paramIdx++}`);
+      values.push(avatar_url);
+    }
+    if (role) {
+      fields.push(`role = $${paramIdx++}`);
+      values.push(role);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    values.push(id);
+    const result = await query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIdx} 
+       RETURNING id, username, callsign, avatar_url, role, level, xp, rank`,
+      values
+    );
+
+    res.json({ user: result.rows[0] });
+
+  } catch (err) {
+    console.error('[USERS] Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/:id/stats — Detailed skill analytics
+// ─────────────────────────────────────────────────────────────
+router.get('/:id/stats', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(
+      `SELECT * FROM user_stats WHERE user_id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Stats not found' });
+    }
+
+    const s = result.rows[0];
+
+    res.json({
+      stats: {
+        missionsCompleted: s.missions_completed,
+        vaultsCracked: s.vaults_cracked,
+        alarmsTripped: s.alarms_tripped,
+        winRate: s.win_rate,
+        fastestTime: s.fastest_time,
+        totalTimePlayed: s.total_time_played,
+        csMastery: s.cs_mastery,
+        physicsMastery: s.physics_mastery,
+        chemMastery: s.chem_mastery,
+        mathMastery: s.math_mastery,
+        cryptoMastery: s.crypto_mastery
+      }
+    });
+
+  } catch (err) {
+    console.error('[USERS] Get stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/:id/history — Paginated heist history
+// ─────────────────────────────────────────────────────────────
+router.get('/:id/history', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const offset = (page - 1) * limit;
+
+    const result = await query(
+      `SELECT id, mission_title, role, result, xp_earned, time_elapsed, accuracy, alarms_tripped, completed_at
+       FROM heist_history
+       WHERE user_id = $1
+       ORDER BY completed_at DESC
+       LIMIT $2 OFFSET $3`,
+      [id, limit, offset]
+    );
+
+    const countResult = await query(
+      `SELECT COUNT(*) AS total FROM heist_history WHERE user_id = $1`,
+      [id]
+    );
+
+    res.json({
+      history: result.rows.map(h => ({
+        id: h.id,
+        mission: h.mission_title,
+        role: h.role,
+        result: h.result,
+        xp: `+${h.xp_earned} XP`,
+        time: h.time_elapsed,
+        accuracy: h.accuracy,
+        alarmsTripped: h.alarms_tripped,
+        date: h.completed_at
+      })),
+      pagination: {
+        page,
+        limit,
+        total: parseInt(countResult.rows[0].total),
+        totalPages: Math.ceil(parseInt(countResult.rows[0].total) / limit)
+      }
+    });
+
+  } catch (err) {
+    console.error('[USERS] Get history error:', err);
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
+
+export default router;

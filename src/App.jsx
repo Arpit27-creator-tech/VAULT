@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'sonner';
 import { 
@@ -34,6 +34,8 @@ import HeroPage from './components/HeroPage';
 import AuthModal from './components/AuthModal';
 import StatsDashboard from './components/StatsDashboard';
 import GraphicalRoadmap from './components/GraphicalRoadmap';
+import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI } from './services/api.js';
+import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, lobbySocket, heistSocket } from './services/socket.js';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -232,15 +234,109 @@ export default function App() {
     setCurrentUser(userData);
     localStorage.setItem('vault_current_user', JSON.stringify(userData));
     setSidebarCollapsed(false);
+    // Connect to Socket.io after successful login
+    try { connectSocket(); } catch (e) { /* socket optional */ }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('vault_current_user');
+    authAPI.logout();
+    disconnectSocket();
     setActiveTab('home');
     setTabHistory([]);
     toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
   };
+
+  // Auto-login from JWT token on mount
+  useEffect(() => {
+    if (!currentUser && authAPI.isAuthenticated()) {
+      authAPI.getMe().then(data => {
+        if (data?.user) {
+          setCurrentUser(data.user);
+          localStorage.setItem('vault_current_user', JSON.stringify(data.user));
+          try { connectSocket(); } catch (e) { /* socket optional */ }
+        }
+      }).catch(() => {
+        // Token expired or invalid — clean up
+        authAPI.logout();
+      });
+    } else if (currentUser) {
+      // Connect socket for existing session
+      try { connectSocket(); } catch (e) { /* socket optional */ }
+    }
+
+    // Listen for auth expiration events from API service
+    const handleAuthExpired = () => {
+      setCurrentUser(null);
+      setActiveTab('home');
+      toast.warning('🔒 Session expired. Please sign in again.');
+    };
+    window.addEventListener('vault:auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('vault:auth-expired', handleAuthExpired);
+  }, []);
+
+  // Real-Time Socket Event Subscriptions & Data Hydration
+  useEffect(() => {
+    // Hydrate missions from REST API if available
+    missionAPI.list().then(data => {
+      if (data?.missions && data.missions.length > 0) {
+        setMissions(data.missions);
+      }
+    }).catch(() => { /* offline fallback */ });
+
+    // Handle incoming real-time puzzle solved by teammate
+    const handleRemotePuzzleSolved = (data) => {
+      if (data?.role) {
+        const stage = allStages[currentStageIdx] || heistStages[0];
+        const sId = stage.stageId || 1;
+        setStageSolvedRoles(prev => ({
+          ...prev,
+          [sId]: { ...(prev[sId] || {}), [data.role]: true }
+        }));
+        if (data.clue) {
+          setStageRoleClues(prev => ({
+            ...prev,
+            [sId]: { ...(prev[sId] || {}), [data.role]: data.clue }
+          }));
+        }
+        heistAudio.playSuccessChime();
+        toast.success(`🔓 ${data.role.toUpperCase()} puzzle solved by ${data.solvedBy || 'teammate'}!`);
+      }
+    };
+
+    // Handle incoming radio messages
+    const handleRemoteRadioMessage = (msg) => {
+      if (msg?.text) {
+        setRadioMessages(prev => [...prev, msg]);
+        heistAudio.playRadioSquelch();
+      }
+    };
+
+    // Handle server timer tick
+    const handleTimerTick = (data) => {
+      if (data?.timeLeft !== undefined) setTimeLeft(data.timeLeft);
+      if (data?.alarmLevel) setAlarmLevel(data.alarmLevel);
+    };
+
+    // Handle remote squad launch
+    const handleHeistStarted = (data) => {
+      toast.success("🚀 Squad launch confirmed! Entering live cockpit.");
+      handleStartHeistStage(0);
+    };
+
+    onSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
+    onSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
+    onSocketEvent('heistTimerTick', handleTimerTick);
+    onSocketEvent('heistStarted', handleHeistStarted);
+
+    return () => {
+      offSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
+      offSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
+      offSocketEvent('heistTimerTick', handleTimerTick);
+      offSocketEvent('heistStarted', handleHeistStarted);
+    };
+  }, [currentStageIdx]);
 
   const [emailInput, setEmailInput] = useState('');
   const [crewNameInput, setCrewNameInput] = useState('');
@@ -453,6 +549,10 @@ export default function App() {
 
     toast.success(`🔓 ${role.toUpperCase()} LOCK BYPASSED! Clue dispatched.`);
 
+    try {
+      heistSocket.puzzleSolved('SYLVAN-142', role, clue);
+    } catch (e) { /* socket broadcast */ }
+
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
       : ['hacker', 'engineer', 'scientist', 'cryptographer'];
@@ -479,18 +579,22 @@ export default function App() {
     }
     setAlarmLevel(nextAlert);
 
+    try {
+      heistSocket.puzzleFailed('SYLVAN-142', role, reason);
+    } catch (e) { /* socket broadcast */ }
+
     const timeStr = `${Math.floor((180 - timeLeft) / 60)}:${((180 - timeLeft) % 60).toString().padStart(2, '0')}`;
     setRadioMessages(prev => [
       ...prev,
       {
         sender: "SECURITY SYSTEM",
-        role: "hq",
-        text: `⚠️ ANOMALY DETECTED by ${role.toUpperCase()}: ${reason} (-12s Penalty, Alarm Level: ${nextAlert})`,
+        role: "alert",
+        text: `[ALARM +1] ${role.toUpperCase()} trigger fail: "${reason}" (-12s Penalty)`,
         time: timeStr
       }
     ]);
-
-    toast.error(`⚠️ Security Warning! ${reason} (-12s penalty)`);
+    heistAudio.playAlarmChime();
+    toast.error(`🚨 ALARM ESCALATED! ${role.toUpperCase()} misfire!`);
 
     if (newFails >= 6) {
       handleHeistTimeout();
@@ -651,7 +755,16 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
-      <Toaster position="top-right" richColors />
+      <Toaster 
+        position="top-right" 
+        theme="dark"
+        closeButton
+        richColors={false}
+        toastOptions={{
+          className: 'vault-toast',
+          duration: 3500
+        }}
+      />
 
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         {bgVideoActive && (

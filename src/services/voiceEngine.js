@@ -7,7 +7,9 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
   ]
 };
 
@@ -27,6 +29,7 @@ class WebRTCVoiceEngine {
     this.onSpeakingListeners = new Set();
     this.onVolumeListeners = new Set();
     this.speakingThreshold = 0.04;
+    this.isSignalingBound = false;
   }
 
   /**
@@ -37,7 +40,7 @@ class WebRTCVoiceEngine {
     this.stopVoice(); // Clean up existing if any
 
     this.socket = socket;
-    this.roomCode = roomCode.toUpperCase();
+    this.roomCode = roomCode.toString().trim().toUpperCase();
 
     try {
       // 1. Capture real microphone with HD voice processing
@@ -53,7 +56,7 @@ class WebRTCVoiceEngine {
 
       // Apply initial mute state if set
       if (this.isMuted) {
-        this.localStream.getAudioTracks().forEach(t => t.enabled = false);
+        this.localStream.getAudioTracks().forEach(t => { t.enabled = false; });
       }
 
       // 2. Setup AudioContext for real-time visualizer & speaking detection
@@ -64,10 +67,13 @@ class WebRTCVoiceEngine {
 
       // 4. Announce join to server
       this.socket.emit('voice:join', { roomCode: this.roomCode }, (res) => {
-        if (res?.success && res?.peers) {
+        if (res?.success && Array.isArray(res?.peers)) {
+          console.log(`[VOICE] Joined room ${this.roomCode}, found ${res.peers.length} existing peers`);
           // Connect to each existing peer in the room (initiate offer)
           res.peers.forEach(peer => {
-            this.createPeerConnection(peer.socketId, true);
+            if (peer.socketId && peer.socketId !== this.socket.id) {
+              this.createPeerConnection(peer.socketId, true);
+            }
           });
         }
       });
@@ -89,14 +95,21 @@ class WebRTCVoiceEngine {
   setupSignaling() {
     if (!this.socket) return;
 
-    // A new user joined voice channel -> create peer connection (wait for their offer)
-    this.socket.on('voice:user-joined', ({ socketId }) => {
-      console.log('[VOICE] New peer joined channel:', socketId);
-      this.createPeerConnection(socketId, true);
-    });
+    // Clean up previous listeners if any
+    this.cleanupSignaling();
+
+    // A new user joined voice channel -> wait for their offer (they are the initiator)
+    this._onUserJoined = ({ socketId }) => {
+      if (socketId && socketId !== this.socket?.id) {
+        console.log('[VOICE] New peer joined channel:', socketId);
+        this.createPeerConnection(socketId, false);
+      }
+    };
 
     // Received WebRTC SDP offer/answer or ICE candidate
-    this.socket.on('voice:signal', async ({ from, signal }) => {
+    this._onSignal = async ({ from, signal }) => {
+      if (!from || from === this.socket?.id) return;
+
       let pc = this.peers.get(from);
       if (!pc) {
         pc = this.createPeerConnection(from, false);
@@ -104,7 +117,23 @@ class WebRTCVoiceEngine {
 
       try {
         if (signal.sdp) {
+          console.log(`[VOICE] Received SDP ${signal.sdp.type} from:`, from);
           await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+
+          // Drain queued ICE candidates received before remote description was set
+          if (pc._iceCandidatesQueue && pc._iceCandidatesQueue.length > 0) {
+            console.log(`[VOICE] Draining ${pc._iceCandidatesQueue.length} queued ICE candidates for:`, from);
+            for (const cand of pc._iceCandidatesQueue) {
+              try {
+                await pc.addIceCandidate(new RTCIceCandidate(cand));
+              } catch (iceErr) {
+                console.warn('[VOICE] Error adding queued ICE candidate:', iceErr);
+              }
+            }
+            pc._iceCandidatesQueue = [];
+          }
+
+          // If received offer, generate and transmit answer
           if (signal.sdp.type === 'offer') {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
@@ -112,19 +141,43 @@ class WebRTCVoiceEngine {
               to: from,
               signal: { sdp: pc.localDescription }
             });
+            console.log('[VOICE] Sent SDP answer to:', from);
           }
         } else if (signal.candidate) {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          if (!pc.remoteDescription) {
+            // Queue candidate until remote description is set
+            if (!pc._iceCandidatesQueue) pc._iceCandidatesQueue = [];
+            pc._iceCandidatesQueue.push(signal.candidate);
+          } else {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          }
         }
       } catch (err) {
-        console.error('[VOICE] Signaling error:', err);
+        console.error('[VOICE] Signaling error for peer:', from, err);
       }
-    });
+    };
 
     // User left voice channel
-    this.socket.on('voice:user-left', ({ socketId }) => {
-      this.closePeer(socketId);
-    });
+    this._onUserLeft = ({ socketId }) => {
+      if (socketId) {
+        console.log('[VOICE] Peer left channel:', socketId);
+        this.closePeer(socketId);
+      }
+    };
+
+    this.socket.on('voice:user-joined', this._onUserJoined);
+    this.socket.on('voice:signal', this._onSignal);
+    this.socket.on('voice:user-left', this._onUserLeft);
+    this.isSignalingBound = true;
+  }
+
+  cleanupSignaling() {
+    if (this.socket && this.isSignalingBound) {
+      if (this._onUserJoined) this.socket.off('voice:user-joined', this._onUserJoined);
+      if (this._onSignal) this.socket.off('voice:signal', this._onSignal);
+      if (this._onUserLeft) this.socket.off('voice:user-left', this._onUserLeft);
+      this.isSignalingBound = false;
+    }
   }
 
   /**
@@ -136,16 +189,10 @@ class WebRTCVoiceEngine {
     }
 
     const pc = new RTCPeerConnection(ICE_SERVERS);
+    pc._iceCandidatesQueue = [];
     this.peers.set(peerSocketId, pc);
 
-    // Add local mic audio tracks to the peer connection
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
-        pc.addTrack(track, this.localStream);
-      });
-    }
-
-    // ICE Candidates
+    // ICE Candidates forwarding
     pc.onicecandidate = (event) => {
       if (event.candidate && this.socket) {
         this.socket.emit('voice:signal', {
@@ -164,14 +211,36 @@ class WebRTCVoiceEngine {
       if (!audio) {
         audio = new Audio();
         audio.autoplay = true;
+        audio.playsInline = true;
+        audio.volume = 1.0;
         audio.muted = this.isDeafened;
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
         this.audioElements.set(peerSocketId, audio);
       }
       audio.srcObject = remoteStream;
-      audio.play().catch(e => console.log('[VOICE] Autoplay audio error:', e));
+      audio.play().catch(e => {
+        console.warn('[VOICE] Autoplay blocked, will retry on user gesture:', e);
+        const retryPlay = () => {
+          audio.play().catch(() => {});
+          document.removeEventListener('click', retryPlay);
+          document.removeEventListener('touchstart', retryPlay);
+        };
+        document.addEventListener('click', retryPlay, { once: true });
+        document.addEventListener('touchstart', retryPlay, { once: true });
+      });
     };
 
-    // If initiator, create and send SDP offer
+    // Connection state monitoring
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[VOICE] ICE state for ${peerSocketId}: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'failed') {
+        console.warn(`[VOICE] Peer ${peerSocketId} connection failed, attempting restart...`);
+        pc.restartIce?.();
+      }
+    };
+
+    // If initiator, set up negotiation handler BEFORE adding tracks
     if (isInitiator) {
       pc.onnegotiationneeded = async () => {
         try {
@@ -181,10 +250,18 @@ class WebRTCVoiceEngine {
             to: peerSocketId,
             signal: { sdp: pc.localDescription }
           });
+          console.log('[VOICE] Sent SDP offer to:', peerSocketId);
         } catch (err) {
           console.error('[VOICE] Negotiation offer error:', err);
         }
       };
+    }
+
+    // Add local mic audio tracks to the peer connection
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => {
+        pc.addTrack(track, this.localStream);
+      });
     }
 
     return pc;
@@ -285,7 +362,8 @@ class WebRTCVoiceEngine {
     const audio = this.audioElements.get(socketId);
     if (audio) {
       audio.srcObject = null;
-      audio.remove();
+      audio.pause();
+      if (audio.parentNode) audio.parentNode.removeChild(audio);
       this.audioElements.delete(socketId);
     }
   }
@@ -296,10 +374,8 @@ class WebRTCVoiceEngine {
   stopVoice() {
     if (this.socket && this.roomCode) {
       this.socket.emit('voice:leave', { roomCode: this.roomCode });
-      this.socket.off('voice:user-joined');
-      this.socket.off('voice:signal');
-      this.socket.off('voice:user-left');
     }
+    this.cleanupSignaling();
 
     if (this.volumeCheckInterval) {
       clearInterval(this.volumeCheckInterval);
@@ -322,7 +398,8 @@ class WebRTCVoiceEngine {
 
     this.audioElements.forEach((audio) => {
       audio.srcObject = null;
-      audio.remove();
+      audio.pause();
+      if (audio.parentNode) audio.parentNode.removeChild(audio);
     });
     this.audioElements.clear();
 

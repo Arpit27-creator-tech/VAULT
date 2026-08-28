@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Radio, Send } from 'lucide-react';
+import { Radio, Send, Mic, MicOff, Headphones, VolumeX, PhoneCall, PhoneOff } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 
-export default function RadioComms({ messages, onSendMessage, activeRole }) {
+export default function RadioComms({ 
+  messages = [], 
+  onSendMessage, 
+  activeRole = 'hacker',
+  voiceConnected = false,
+  micMuted = false,
+  isDeafened = false,
+  onToggleVoice,
+  onToggleMic,
+  onToggleDeafen,
+  isSpeaking = false
+}) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -26,6 +37,7 @@ export default function RadioComms({ messages, onSendMessage, activeRole }) {
 
   return (
     <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 space-y-3 shadow-md">
+      {/* Header with Title & Voice Comms Quick Controls */}
       <div className="flex justify-between items-center pb-2 border-b border-emerald-900/50">
         <div className="flex items-center space-x-2">
           <Radio className="w-4 h-4 text-[#10B981]" />
@@ -33,9 +45,67 @@ export default function RadioComms({ messages, onSendMessage, activeRole }) {
             Squad Radio Stream
           </span>
         </div>
-        <span className="text-[10px] font-mono text-[#34D399] bg-[#020B06] px-2 py-0.5 rounded border border-emerald-900/50">
-          Live Mesh
-        </span>
+
+        {/* Live Voice Comms Bar */}
+        <div className="flex items-center space-x-1.5">
+          {onToggleVoice && (
+            <button
+              type="button"
+              onClick={onToggleVoice}
+              className={`p-1.5 rounded-lg border text-[10px] flex items-center space-x-1 transition-all ${
+                voiceConnected
+                  ? 'bg-emerald-950/80 border-[#10B981] text-[#10B981]'
+                  : 'bg-[#020B06] border-slate-700 text-slate-400 hover:text-emerald-400'
+              }`}
+              title={voiceConnected ? "Disconnect Voice Comms" : "Connect Voice Comms"}
+            >
+              {voiceConnected ? <PhoneOff className="w-3 h-3 text-red-400" /> : <PhoneCall className="w-3 h-3" />}
+              <span className="font-mono text-[9px] hidden sm:inline">
+                {voiceConnected ? 'VOICE ON' : 'VOICE OFF'}
+              </span>
+            </button>
+          )}
+
+          {voiceConnected && onToggleMic && (
+            <button
+              type="button"
+              onClick={onToggleMic}
+              className={`p-1.5 rounded-lg border transition-all ${
+                micMuted
+                  ? 'bg-red-950/80 border-red-700 text-red-400'
+                  : isSpeaking
+                  ? 'bg-emerald-900 border-[#10B981] text-emerald-300 ring-1 ring-[#10B981]'
+                  : 'bg-[#020B06] border-emerald-800 text-[#10B981]'
+              }`}
+              title={micMuted ? "Unmute Mic" : "Mute Mic"}
+            >
+              {micMuted ? <MicOff className="w-3 h-3 text-red-400" /> : <Mic className="w-3 h-3" />}
+            </button>
+          )}
+
+          {voiceConnected && onToggleDeafen && (
+            <button
+              type="button"
+              onClick={onToggleDeafen}
+              className={`p-1.5 rounded-lg border transition-all ${
+                isDeafened
+                  ? 'bg-purple-950/80 border-purple-700 text-purple-400'
+                  : 'bg-[#020B06] border-emerald-900 text-slate-400 hover:text-white'
+              }`}
+              title={isDeafened ? "Undeafen Audio" : "Deafen Audio"}
+            >
+              {isDeafened ? <VolumeX className="w-3 h-3 text-purple-400" /> : <Headphones className="w-3 h-3" />}
+            </button>
+          )}
+
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+            voiceConnected 
+              ? 'text-[#34D399] bg-[#020B06] border-emerald-900/50' 
+              : 'text-slate-400 bg-[#020B06] border-emerald-900/50'
+          }`}>
+            {voiceConnected ? 'Live Mesh' : 'Mesh Ready'}
+          </span>
+        </div>
       </div>
 
       <div className="h-40 overflow-y-auto space-y-2 bg-[#020B06] p-3 rounded-lg border border-emerald-950 font-mono text-[11px]">

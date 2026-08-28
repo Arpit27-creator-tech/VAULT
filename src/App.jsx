@@ -580,6 +580,21 @@ export default function App() {
       }
     };
 
+    const handleLobbyVoiceUpdate = (data) => {
+      if (data?.slotId) {
+        setLobby(prev => {
+          if (!prev?.players) return prev;
+          const updatedPlayers = prev.players.map(p => {
+            if (p.slotId === data.slotId || p.userId === data.userId) {
+              return { ...p, voiceState: data.voiceState };
+            }
+            return p;
+          });
+          return { ...prev, players: updatedPlayers };
+        });
+      }
+    };
+
     onSocketEvent('connected', handleConnected);
     onSocketEvent('disconnected', handleDisconnected);
     onSocketEvent('lobbyState', handleLobbyState);
@@ -590,6 +605,7 @@ export default function App() {
     onSocketEvent('lobbyHostChanged', handleLobbyHostChanged);
     onSocketEvent('lobbyKicked', handleLobbyKicked);
     onSocketEvent('lobbyStarting', handleLobbyStarting);
+    onSocketEvent('lobbyVoiceUpdate', handleLobbyVoiceUpdate);
     onSocketEvent('lobbyError', handleLobbyError);
     onSocketEvent('heistStarted', handleHeistStarted);
     onSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
@@ -609,6 +625,7 @@ export default function App() {
       offSocketEvent('lobbyHostChanged', handleLobbyHostChanged);
       offSocketEvent('lobbyKicked', handleLobbyKicked);
       offSocketEvent('lobbyStarting', handleLobbyStarting);
+      offSocketEvent('lobbyVoiceUpdate', handleLobbyVoiceUpdate);
       offSocketEvent('lobbyError', handleLobbyError);
       offSocketEvent('heistStarted', handleHeistStarted);
       offSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
@@ -771,6 +788,48 @@ export default function App() {
         toast.info(`Enlisted in ${roomCode} as ${chosenRole.toUpperCase()}`);
       }
     });
+  };
+
+  const handleToggleVoice = async () => {
+    heistAudio.playKeyClick();
+    const roomCode = lobby.roomCode || lobby.code || 'MAIN';
+    if (isLobbyVoiceConnected) {
+      voiceEngine.stopVoice();
+      setIsLobbyVoiceConnected(false);
+      lobbySocket.updateVoiceState(roomCode, false, isLobbyMicMuted, isLobbyDeafened);
+      toast.info("🔴 Disconnected from Squad Voice Channel");
+    } else {
+      try {
+        const currentSocket = getSocket() || activeSocket || connectSocket();
+        await voiceEngine.startVoice(currentSocket, roomCode);
+        setIsLobbyVoiceConnected(true);
+        lobbySocket.updateVoiceState(roomCode, true, isLobbyMicMuted, isLobbyDeafened);
+        toast.success("🎙️ Voice Channel Live (Opus HD Audio Mesh)");
+      } catch (err) {
+        toast.error("Microphone access denied or unavailable");
+        setIsLobbyVoiceConnected(false);
+      }
+    }
+  };
+
+  const handleToggleMic = () => {
+    const newMuted = !isLobbyMicMuted;
+    setIsLobbyMicMuted(newMuted);
+    voiceEngine.setMuted(newMuted);
+    const roomCode = lobby.roomCode || lobby.code || 'MAIN';
+    lobbySocket.updateVoiceState(roomCode, isLobbyVoiceConnected, newMuted, isLobbyDeafened);
+    heistAudio.playKeyClick();
+    toast.info(newMuted ? "🔇 Microphone Muted" : "🎙️ Microphone Live & Transmitting");
+  };
+
+  const handleToggleDeafen = () => {
+    const newDeafened = !isLobbyDeafened;
+    setIsLobbyDeafened(newDeafened);
+    voiceEngine.setDeafened(newDeafened);
+    const roomCode = lobby.roomCode || lobby.code || 'MAIN';
+    lobbySocket.updateVoiceState(roomCode, isLobbyVoiceConnected, isLobbyMicMuted, newDeafened);
+    heistAudio.playKeyClick();
+    toast.info(newDeafened ? "🎧 Deafen Active: Audio Muted" : "🔊 Deafen Off: Audio Live");
   };
 
   const handleCopyInviteLink = () => {
@@ -1867,6 +1926,13 @@ export default function App() {
                     messages={radioMessages}
                     activeRole={activeCockpitRole}
                     onSendMessage={handleSendMessage}
+                    voiceConnected={isLobbyVoiceConnected}
+                    micMuted={isLobbyMicMuted}
+                    isDeafened={isLobbyDeafened}
+                    onToggleVoice={handleToggleVoice}
+                    onToggleMic={handleToggleMic}
+                    onToggleDeafen={handleToggleDeafen}
+                    isSpeaking={isUserSpeaking}
                   />
 
                   <div className="bg-[#051C12] p-4 rounded-xl border border-emerald-800/40 space-y-2.5 shadow-md">
@@ -2190,16 +2256,12 @@ export default function App() {
 
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => {
-                        const newMuted = !isLobbyMicMuted;
-                        setIsLobbyMicMuted(newMuted);
-                        voiceEngine.setMuted(newMuted);
-                        heistAudio.playKeyClick();
-                        toast.info(newMuted ? "🔇 Microphone Muted" : "🎙️ Microphone Live & Transmitting");
-                      }}
+                      onClick={handleToggleMic}
                       className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
                         isLobbyMicMuted
                           ? 'bg-red-950/80 text-red-300 border border-red-800'
+                          : isUserSpeaking
+                          ? 'bg-[#063520] text-[#10B981] border-[#10B981] ring-1 ring-[#10B981]'
                           : 'bg-[#042416] text-[#34D399] border border-emerald-700 hover:bg-[#073621]'
                       }`}
                       title={isLobbyMicMuted ? "Unmute Microphone" : "Mute Microphone"}
@@ -2209,13 +2271,7 @@ export default function App() {
                     </button>
 
                     <button
-                      onClick={() => {
-                        const newDeafened = !isLobbyDeafened;
-                        setIsLobbyDeafened(newDeafened);
-                        voiceEngine.setDeafened(newDeafened);
-                        heistAudio.playKeyClick();
-                        toast.info(newDeafened ? "🎧 Deafen Active: Audio Muted" : "🔊 Deafen Off: Audio Live");
-                      }}
+                      onClick={handleToggleDeafen}
                       className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
                         isLobbyDeafened
                           ? 'bg-purple-950/80 text-purple-300 border border-purple-800'
@@ -2240,24 +2296,7 @@ export default function App() {
                     </button>
 
                     <button
-                      onClick={async () => {
-                        heistAudio.playKeyClick();
-                        if (isLobbyVoiceConnected) {
-                          voiceEngine.stopVoice();
-                          setIsLobbyVoiceConnected(false);
-                          toast.info("🔴 Disconnected from Squad Voice Channel");
-                        } else {
-                          try {
-                            const roomCode = lobby.roomCode || lobby.code || 'MAIN';
-                            await voiceEngine.startVoice(activeSocket, roomCode);
-                            setIsLobbyVoiceConnected(true);
-                            toast.success("🎙️ Voice Channel Live (Opus HD Audio)");
-                          } catch (err) {
-                            toast.error("Microphone access denied or unavailable");
-                            setIsLobbyVoiceConnected(false);
-                          }
-                        }
-                      }}
+                      onClick={handleToggleVoice}
                       className={`p-2 rounded-xl border transition-all ${
                         isLobbyVoiceConnected
                           ? 'bg-red-950/40 border-red-900/80 text-red-400 hover:bg-red-900/60'

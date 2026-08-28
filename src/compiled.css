@@ -2060,6 +2060,11 @@ button, input, select, textarea {
   border-color: rgb(168 85 247 / 0.6);
 }
 
+.border-purple-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(126 34 206 / var(--tw-border-opacity, 1));
+}
+
 .border-purple-800 {
   --tw-border-opacity: 1;
   border-color: rgb(107 33 168 / var(--tw-border-opacity, 1));
@@ -2076,6 +2081,11 @@ button, input, select, textarea {
 .border-red-500 {
   --tw-border-opacity: 1;
   border-color: rgb(239 68 68 / var(--tw-border-opacity, 1));
+}
+
+.border-red-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
 }
 
 .border-red-800 {
@@ -2286,6 +2296,11 @@ button, input, select, textarea {
 
 .bg-\[\#06291B\]\/90 {
   background-color: rgb(6 41 27 / 0.9);
+}
+
+.bg-\[\#063520\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(6 53 32 / var(--tw-bg-opacity, 1));
 }
 
 .bg-\[\#06B6D4\] {
@@ -2499,6 +2514,11 @@ button, input, select, textarea {
 .bg-emerald-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(6 95 70 / var(--tw-bg-opacity, 1));
+}
+
+.bg-emerald-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(6 78 59 / var(--tw-bg-opacity, 1));
 }
 
 .bg-emerald-950 {
@@ -4455,6 +4475,11 @@ table tr, table td, table th {
 .hover\:text-\[\#FF4D6D\]:hover {
   --tw-text-opacity: 1;
   color: rgb(255 77 109 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-emerald-400:hover {
+  --tw-text-opacity: 1;
+  color: rgb(52 211 153 / var(--tw-text-opacity, 1));
 }
 
 .hover\:text-white:hover {

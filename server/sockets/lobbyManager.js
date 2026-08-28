@@ -462,35 +462,53 @@ export function setupLobbyManager(io, socket) {
   // ─────────────────────────────────────────────────────────
   // WebRTC Multi-Peer Real-Time Voice Signaling
   // ─────────────────────────────────────────────────────────
-  socket.on('voice:join', (data, callback) => {
+  socket.on('voice:join', async (data, callback) => {
     try {
       const roomCode = normCode(data.roomCode);
       if (!roomCode) return callback?.({ error: 'Room code required' });
 
-      socket.join(`voice:${roomCode}`);
+      const voiceRoom = `voice:${roomCode}`;
 
-      // Find other active players in this lobby
-      const lobby = activeLobbies.get(roomCode);
+      // Discover existing peers in the voice room BEFORE this socket joins
       const otherSockets = [];
-
-      if (lobby) {
-        lobby.players.forEach(p => {
-          if (p.socketId && p.socketId !== socket.id && p.userId) {
+      try {
+        const socketsInRoom = await io.in(voiceRoom).fetchSockets();
+        socketsInRoom.forEach(s => {
+          if (s.id !== socket.id) {
             otherSockets.push({
-              socketId: p.socketId,
-              userId: p.userId,
-              username: p.username
+              socketId: s.id,
+              userId: s.userId || s.id,
+              username: s.username || 'Operative'
             });
           }
         });
+      } catch (e) {
+        // Fallback to lobby-based discovery
+        const lobby = activeLobbies.get(roomCode);
+        if (lobby) {
+          lobby.players.forEach(p => {
+            if (p.socketId && p.socketId !== socket.id && p.userId) {
+              otherSockets.push({
+                socketId: p.socketId,
+                userId: p.userId,
+                username: p.username
+              });
+            }
+          });
+        }
       }
 
+      // Now join the voice room
+      socket.join(voiceRoom);
+
       // Notify others in voice room that a new peer has linked
-      socket.to(`voice:${roomCode}`).emit('voice:user-joined', {
+      socket.to(voiceRoom).emit('voice:user-joined', {
         socketId: socket.id,
         userId: socket.userId,
         username: socket.username
       });
+
+      console.log(`[VOICE] ${socket.username} joined voice room ${roomCode} (${otherSockets.length} peers found)`);
 
       callback?.({
         success: true,

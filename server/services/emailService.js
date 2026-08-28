@@ -286,14 +286,23 @@ If you did not request this code, you can safely ignore this email.
   console.log(`⏱️  EXPIRES IN: 10 minutes`);
   console.log(`══════════════════════════════════════════════════\n`);
 
-  await dispatchEmail({
+  const result = await dispatchEmail({
     to: toEmail,
     subject: `Your VAULT verification code: ${code}`,
     html: htmlContent,
     text: plainText
   });
 
-  return { success: true, previewCode: code };
+  if (!result || !result.success) {
+    console.error(`[EMAIL] Failed to send verification email to ${toEmail}:`, result?.error || 'Unknown dispatch error');
+  }
+
+  return {
+    success: result?.success ?? false,
+    previewCode: code,
+    provider: result?.provider,
+    error: result?.error
+  };
 };
 
 /**
@@ -364,12 +373,20 @@ If you did not request a password reset, please secure your account immediately.
 
   console.log(`\n🔑 [PASSWORD RESET CODE FOR ${toEmail}]: ${code}\n🔗 URL: ${resetUrl}\n`);
 
-  await dispatchEmail({
+  const result = await dispatchEmail({
     to: toEmail,
     subject: `[V.A.U.L.T] Password Reset Code: ${code}`,
     html: htmlContent,
     text: plainText
   });
 
-  return { success: true };
+  if (!result || !result.success) {
+    console.error(`[EMAIL] Failed to send password reset email to ${toEmail}:`, result?.error || 'Unknown dispatch error');
+  }
+
+  return {
+    success: result?.success ?? false,
+    provider: result?.provider,
+    error: result?.error
+  };
 };

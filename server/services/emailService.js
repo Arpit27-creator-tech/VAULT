@@ -94,8 +94,8 @@ async function sendViaBrevo({ to, subject, html, text, fromName, fromEmail }) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) return null;
 
-  const name = fromName || 'V.A.U.L.T HQ';
-  const email = fromEmail || process.env.SMTP_USER || 'vault.game.hq@gmail.com';
+  const name = fromName || process.env.BREVO_SENDER_NAME || 'V.A.U.L.T HQ';
+  const email = fromEmail || process.env.BREVO_SENDER_EMAIL || 'arpi85222707@gmail.com';
 
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -164,19 +164,27 @@ async function sendViaSMTP({ to, subject, html, text, from, replyTo }) {
  * Unified email dispatch prioritizing HTTPS REST APIs over SMTP
  */
 async function dispatchEmail({ to, subject, html, text }) {
+  const brevoSender = process.env.BREVO_SENDER_EMAIL || 'arpi85222707@gmail.com';
   const senderEmail = process.env.SMTP_USER || 'vault.game.hq@gmail.com';
   const senderFrom = process.env.SMTP_FROM || `"V.A.U.L.T HQ" <${senderEmail}>`;
 
-  // 1. Try Resend API (HTTP REST)
+  // 1. Try Brevo API (HTTP REST — prioritized for instant unrestricted delivery)
+  if (process.env.BREVO_API_KEY) {
+    const brevoResult = await sendViaBrevo({ 
+      to, 
+      subject, 
+      html, 
+      text, 
+      fromName: 'V.A.U.L.T HQ', 
+      fromEmail: brevoSender 
+    });
+    if (brevoResult && brevoResult.success) return brevoResult;
+  }
+
+  // 2. Try Resend API (HTTP REST)
   if (process.env.RESEND_API_KEY) {
     const resendResult = await sendViaResend({ to, subject, html, text });
     if (resendResult && resendResult.success) return resendResult;
-  }
-
-  // 2. Try Brevo API (HTTP REST)
-  if (process.env.BREVO_API_KEY) {
-    const brevoResult = await sendViaBrevo({ to, subject, html, text, fromName: 'V.A.U.L.T HQ', fromEmail: senderEmail });
-    if (brevoResult && brevoResult.success) return brevoResult;
   }
 
   // 3. Try Nodemailer SMTP (Port 465/587)

@@ -242,9 +242,6 @@ router.post('/verify-code', async (req, res) => {
       });
     }
 
-    // Mark code as used
-    await query('UPDATE email_verifications SET is_used = TRUE WHERE id = $1', [result.rows[0].id]);
-
     res.json({
       success: true,
       verified: true,

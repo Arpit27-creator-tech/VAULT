@@ -30,3 +30,7 @@ dist-ssr
 server/.env
 server/node_modules
 .env*
+
+# Backups & temp files
+*.bak*
+

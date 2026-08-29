@@ -86,15 +86,7 @@ export default function App() {
   });
   const [characters] = useState(initialCharacters || []);
   const [topics] = useState(initialTopics || []);
-  const [lobby, setLobby] = useState(() => {
-    try {
-      const saved = localStorage.getItem('kh_lobby_subject_v4');
-      const parsed = saved ? JSON.parse(saved) : null;
-      return parsed && Array.isArray(parsed.players) ? parsed : initialLobby;
-    } catch {
-      return initialLobby;
-    }
-  });
+  const [lobby, setLobby] = useState(initialLobby);
 
   const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(false);
   const [isLobbyMicMuted, setIsLobbyMicMuted] = useState(false);
@@ -761,6 +753,10 @@ export default function App() {
   };
 
   const handleJoinSquadOperation = (roomCode, chosenRole = 'hacker') => {
+    if (!roomCode || !roomCode.trim()) {
+      toast.error("Enter a valid room code before enlisting.");
+      return;
+    }
     const roleMap = {
       hacker: 'c1',
       engineer: 'c2',
@@ -795,7 +791,11 @@ export default function App() {
 
   const handleToggleVoice = async () => {
     heistAudio.playKeyClick();
-    const roomCode = lobby.roomCode || lobby.code || 'MAIN';
+    const roomCode = lobby.roomCode || lobby.code;
+    if (!roomCode) {
+      toast.error("No active squad room found. Join or create a squad before starting voice.");
+      return;
+    }
     if (isLobbyVoiceConnected) {
       voiceEngine.stopVoice();
       setIsLobbyVoiceConnected(false);

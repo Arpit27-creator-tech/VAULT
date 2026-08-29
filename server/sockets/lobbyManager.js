@@ -175,6 +175,7 @@ export function setupLobbyManager(io, socket) {
         lobby = {
           heistId: data.heistId || 'm1',
           roomCode,
+          code: roomCode,
           name: data.missionTitle || 'The Quantum Core Strike Squad',
           hostId: socket.userId,
           players: [

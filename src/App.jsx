@@ -2611,7 +2611,11 @@ export default function App() {
                         const isStringMsg = typeof msg === 'string';
                         const sender = isStringMsg ? 'OPERATIVE' : msg?.sender || 'OPERATIVE';
                         const text = isStringMsg ? msg : msg?.text || '';
-                        const time = isStringMsg ? 'NOW' : msg?.time || 'NOW';
+                        const time = isStringMsg
+                          ? 'NOW'
+                          : (msg?.timestamp
+                              ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : msg?.time || 'NOW');
                         const roleKey = (isStringMsg ? 'hacker' : msg?.role || 'hacker').toLowerCase();
 
                         const roleBadgeStyle = 

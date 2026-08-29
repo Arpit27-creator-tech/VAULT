@@ -407,14 +407,14 @@ export function setupLobbyManager(io, socket) {
     const player = lobby.players.find(p => p.userId === socket.userId);
     const sender = player ? `${player.username} (${(player.role || role || 'OPERATIVE').toUpperCase()})` : socket.username;
 
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
+    // Send a raw timestamp, not a pre-formatted time string — the server's
+    // local timezone is not the same as the players', so formatting must
+    // happen client-side using each viewer's own local time.
     const message = {
       sender,
       role: player?.role || role || 'hacker',
       text,
-      time: timeStr,
+      timestamp: Date.now(),
       userId: socket.userId
     };
 

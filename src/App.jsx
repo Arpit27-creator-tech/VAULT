@@ -108,7 +108,6 @@ export default function App() {
   const [bgVideoActive, setBgVideoActive] = useState(true);
   const [bgDimMode, setBgDimMode] = useState('vivid'); 
   const videoRef = useRef(null);
-
   const [isCustomHeistModalOpen, setIsCustomHeistModalOpen] = useState(false);
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState(false);
   const [allStages, setAllStages] = useState(heistStages);
@@ -135,6 +134,14 @@ export default function App() {
     { sender: "Sylvan HQ", role: "hq", text: "Expedition crew deployed. Interlock sequence initialized. Coordinate all 4 roles!", time: "00:01" },
     { sender: "Scientist Cleo", role: "scientist", text: "Analyzing compound stoichiometry now. Will transmit optical density to Engineer.", time: "00:04" }
   ]);
+  const lobbyChatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (activeTab === 'lobby') {
+      lobbyChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [radioMessages, activeTab]);
+
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
   const [isMatchVictory, setIsMatchVictory] = useState(true);
   const [analyticsStats, setAnalyticsStats] = useState({
@@ -605,6 +612,7 @@ export default function App() {
     onSocketEvent('heistStarted', handleHeistStarted);
     onSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
     onSocketEvent('heistPuzzleFailed', handleRemotePuzzleFailed);
+    onSocketEvent('lobbyRadioMessage', handleRemoteRadioMessage);
     onSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
     onSocketEvent('heistTimerTick', handleTimerTick);
     onSocketEvent('heistStageSynced', handleRemoteStageSynced);
@@ -625,6 +633,7 @@ export default function App() {
       offSocketEvent('heistStarted', handleHeistStarted);
       offSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
       offSocketEvent('heistPuzzleFailed', handleRemotePuzzleFailed);
+      offSocketEvent('lobbyRadioMessage', handleRemoteRadioMessage);
       offSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
       offSocketEvent('heistTimerTick', handleTimerTick);
       offSocketEvent('heistStageSynced', handleRemoteStageSynced);
@@ -776,15 +785,6 @@ export default function App() {
         setIsInSquadRoom(true);
         toast.success(`Enlisted in squad as ${chosenRole.toUpperCase()}!`);
         heistAudio.playSuccessChime();
-      } else {
-        setLobby(prev => ({
-          ...prev,
-          roomCode,
-          code: roomCode,
-          name: `Squad Operation ${roomCode}`
-        }));
-        setIsInSquadRoom(true);
-        toast.info(`Enlisted in ${roomCode} as ${chosenRole.toUpperCase()}`);
       }
     });
   };
@@ -840,7 +840,12 @@ export default function App() {
   };
 
   const handleCopyInviteLink = () => {
-    const link = `${window.location.origin}?room=${lobby.code}`;
+    const code = lobby?.code || lobby?.roomCode || '';
+    if (!code) {
+      toast.error('No active room code to share.');
+      return;
+    }
+    const link = `${window.location.origin}?room=${code}`;
     navigator.clipboard.writeText(link).then(() => {
       setCopiedLink(true);
       toast.success('🔗 Invite link copied to clipboard!');
@@ -849,30 +854,43 @@ export default function App() {
   };
 
   const handleCopyRoomCode = () => {
-    navigator.clipboard.writeText(lobby.code).then(() => {
+    const code = lobby?.code || lobby?.roomCode || '';
+    if (!code) {
+      toast.error('No active room code.');
+      return;
+    }
+    navigator.clipboard.writeText(code).then(() => {
       setCopiedCode(true);
-      toast.success(`📋 Room code ${lobby.code} copied!`);
+      toast.success(`📋 Room code ${code} copied!`);
       setTimeout(() => setCopiedCode(false), 2500);
     });
   };
 
   const handleSelectRole = (roleKey) => {
-    lobbySocket.selectRole(lobby.code, roleKey);
+    const code = lobby?.code || lobby?.roomCode;
+    if (code) lobbySocket.selectRole(code, roleKey);
     heistAudio.playKeyClick();
   };
 
   const handleToggleReady = (currentReadyState) => {
-    lobbySocket.setReady(lobby.code, !currentReadyState);
+    const code = lobby?.code || lobby?.roomCode;
+    if (code) lobbySocket.setReady(code, !currentReadyState);
     heistAudio.playKeyClick();
   };
 
   const handleKickSlot = (slotId) => {
-    lobbySocket.kick(lobby.code, slotId);
+    const code = lobby?.code || lobby?.roomCode;
+    if (code) lobbySocket.kick(code, slotId);
     heistAudio.playKeyClick();
   };
 
   const handleStartMultiplayerHeist = () => {
-    lobbySocket.start(lobby.code, (res) => {
+    const code = lobby?.code || lobby?.roomCode;
+    if (!code) {
+      toast.error('No active squad room found to launch.');
+      return;
+    }
+    lobbySocket.start(code, (res) => {
       if (res?.error) {
         toast.error(res.error);
         return;
@@ -882,14 +900,34 @@ export default function App() {
   };
 
   const handleSendLobbyRadio = (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     if (!lobbyRadioInput.trim()) return;
+    const roomCode = lobby.roomCode || lobby.code;
+    if (!roomCode) {
+      toast.error("No active squad room found. Join or create a squad before broadcasting.");
+      return;
+    }
     const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
     const mySlot = lobby?.players?.find(p => p.userId === myId);
     const myRole = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
 
-    lobbySocket.sendRadioMessage(lobby.code, lobbyRadioInput.trim(), myRole);
+    lobbySocket.sendRadioMessage(roomCode, lobbyRadioInput.trim(), myRole);
     setLobbyRadioInput('');
+    heistAudio.playRadioSquelch();
+  };
+
+  const handleSendLobbyQuickMacro = (text) => {
+    if (!text || !text.trim()) return;
+    const roomCode = lobby.roomCode || lobby.code;
+    if (!roomCode) {
+      toast.error("No active squad room found. Join or create a squad before broadcasting.");
+      return;
+    }
+    const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+    const mySlot = lobby?.players?.find(p => p.userId === myId);
+    const myRole = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
+
+    lobbySocket.sendRadioMessage(roomCode, text.trim(), myRole);
     heistAudio.playRadioSquelch();
   };
 
@@ -1507,7 +1545,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="text-[10px] font-mono bg-[#0A261B] text-[#FBBF24] px-2 py-0.5 border border-[#03140C] font-bold">
-                    10 OPS
+                    9 OPS
                   </span>
                   <button
                     onClick={() => {
@@ -1527,7 +1565,6 @@ export default function App() {
                   { id: 'home', label: 'Home HQ', icon: Home, badge: 'HOME', sub: 'Platform Overview' },
                   { id: 'stats', label: 'My Stats', icon: BarChart3, badge: currentUser ? `LVL ${currentUser.level}` : 'STATS', sub: 'Operative Dossier', highlight: !!currentUser },
                   { id: 'missions', label: 'Expeditions', icon: Compass, badge: '3 Ops', sub: 'Campaign Missions' },
-                  { id: 'liveheist', label: 'Live Cockpit', icon: Zap, badge: 'LIVE HUD', sub: 'Real-time Co-op', highlight: true },
                   { id: 'lobby', label: 'Squad Lobby', icon: Users, badge: '4 Roles', sub: 'Crew Assembly' },
                   { id: 'characters', label: '4 Roles', icon: Sparkles, badge: 'Classes', sub: 'Role Capabilities' },
                   { id: 'topics', label: 'Disciplines', icon: BookOpen, badge: 'STEM', sub: 'Cross-Curricular' },
@@ -2127,7 +2164,7 @@ export default function App() {
                       <span className="text-xs font-mono text-emerald-300">4-OPERATIVE MULTIPLAYER ROOM</span>
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-[#F0FDF4] font-game">
-                      {lobby.name}
+                      {lobby?.name || 'Squad Operation'}
                     </h2>
                     <p className="text-slate-300 text-xs sm:text-sm">
                       Coordinate roles, calibrate voice frequencies, and launch synchronized co-op operations.
@@ -2140,7 +2177,7 @@ export default function App() {
                     <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-emerald-800/60 flex items-center space-x-2">
                       <div>
                         <span className="text-[9px] font-mono text-emerald-400 block uppercase font-bold">Room Code</span>
-                        <span className="text-base sm:text-lg font-mono font-bold text-[#FBBF24] tracking-widest">{lobby.code}</span>
+                        <span className="text-base sm:text-lg font-mono font-bold text-[#FBBF24] tracking-widest">{lobby?.code || 'HEIST-782'}</span>
                       </div>
                       <button
                         onClick={handleCopyRoomCode}
@@ -2243,7 +2280,7 @@ export default function App() {
                         <span>•</span>
                         <span>Low-Latency Opus HD</span>
                         <span>•</span>
-                        <span>{lobby.players.filter(p => p.playerName || p.username).length} / 4 Operatives Linked</span>
+                        <span>{(lobby?.players || []).filter(p => p?.playerName || p?.username).length} / 4 Operatives Linked</span>
                       </div>
                     </div>
                   </div>
@@ -2318,7 +2355,7 @@ export default function App() {
 
                 {/* 4 Squad Operatives Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-                  {lobby.players.map((slot) => {
+                  {(lobby?.players || []).map((slot) => {
                     const char = characters.find(c => c.id === slot.characterId);
                     const playerName = slot.playerName || slot.username;
                     const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
@@ -2492,29 +2529,132 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Live Squad Tactical Radio Comms Stream */}
-                <div className="bg-[#020B06] border border-emerald-900/60 rounded-xl p-4 space-y-3 relative z-10">
-                  <div className="flex items-center justify-between border-b border-emerald-950 pb-2.5">
-                    <div className="flex items-center space-x-2">
-                      <Terminal className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-emerald-300 font-game uppercase tracking-wider">
-                        Squad Pre-Mission Tactical Comms
+                {/* Live Squad Tactical Radio & Chat Stream */}
+                <div className="bg-[#020B06] border border-emerald-900/60 rounded-2xl p-4 sm:p-5 space-y-3.5 relative z-10 shadow-2xl">
+                  {/* Chat Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-950 pb-3">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="p-1.5 rounded-lg bg-emerald-950/90 border border-emerald-700/60 text-[#10B981]">
+                        <Terminal className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-sm font-bold text-white font-game uppercase tracking-wider">
+                            Squad Tactical Comms & Live Chat
+                          </h3>
+                          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                        </div>
+                        <p className="text-[10px] font-mono text-emerald-400/80">
+                          REAL-TIME ENCRYPTED SQUAD FREQUENCY • {lobby.code ? `ROOM: ${lobby.code}` : 'SQUAD CHANNEL'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-[10px] font-mono">
+                      <span className={`px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 ${
+                        isLobbyVoiceConnected 
+                          ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700' 
+                          : 'bg-[#051C12] text-slate-400 border-emerald-900/50'
+                      }`}>
+                        <Radio className="w-3 h-3 text-[#10B981]" />
+                        <span>{isLobbyVoiceConnected ? 'VOICE MESH LIVE' : 'VOICE STANDBY'}</span>
+                      </span>
+                      <span className="bg-[#042416] text-[#FBBF24] border border-amber-900/60 px-2.5 py-1 rounded-lg font-bold">
+                        {radioMessages.length} TRANSMISSIONS
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-400">ENCRYPTED OPERATIVE CHANNEL</span>
                   </div>
 
-                  <form onSubmit={handleSendLobbyRadio} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={lobbyRadioInput}
-                      onChange={(e) => setLobbyRadioInput(e.target.value)}
-                      placeholder="Type squad tactical plan or role assignment..."
-                      className="flex-1 bg-[#051811] border border-emerald-800/80 rounded-xl px-3.5 py-2 text-xs font-mono text-emerald-100 placeholder-emerald-800 outline-none focus:border-[#10B981]"
-                    />
+                  {/* Messages Feed */}
+                  <div className="h-56 sm:h-64 overflow-y-auto space-y-2 bg-[#04160E]/90 p-3.5 rounded-xl border border-emerald-950 font-mono text-xs shadow-inner custom-scrollbar">
+                    {(!radioMessages || radioMessages.length === 0) ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-2 text-slate-400">
+                        <Radio className="w-6 h-6 text-emerald-600 animate-pulse" />
+                        <p className="text-xs text-emerald-300 font-bold font-game">Tactical Frequency Clear</p>
+                        <p className="text-[11px] text-slate-400 max-w-xs">
+                          Coordinate role specializations, strategy, or test squad communications below.
+                        </p>
+                      </div>
+                    ) : (
+                      (radioMessages || []).map((msg, idx) => {
+                        const isStringMsg = typeof msg === 'string';
+                        const sender = isStringMsg ? 'OPERATIVE' : msg?.sender || 'OPERATIVE';
+                        const text = isStringMsg ? msg : msg?.text || '';
+                        const time = isStringMsg ? 'NOW' : msg?.time || 'NOW';
+                        const roleKey = (isStringMsg ? 'hacker' : msg?.role || 'hacker').toLowerCase();
+
+                        const roleBadgeStyle = 
+                          roleKey.includes('hacker') ? 'text-[#10B981] bg-emerald-950/80 border-emerald-700/60' :
+                          roleKey.includes('engineer') ? 'text-[#FBBF24] bg-amber-950/80 border-amber-700/60' :
+                          roleKey.includes('scientist') ? 'text-[#06B6D4] bg-cyan-950/80 border-cyan-700/60' :
+                          roleKey.includes('cryptographer') || roleKey.includes('crypto') ? 'text-[#C084FC] bg-purple-950/80 border-purple-700/60' :
+                          roleKey.includes('hq') ? 'text-[#FBBF24] bg-[#020B06] border-amber-500/50' :
+                          'text-emerald-300 bg-emerald-950/60 border-emerald-800/40';
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className="p-2 rounded-lg bg-[#020B06]/70 border border-emerald-900/30 hover:border-emerald-700/50 transition-colors flex items-start justify-between gap-2"
+                          >
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border font-mono ${roleBadgeStyle}`}>
+                                  {sender}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  [{time}]
+                                </span>
+                              </div>
+                              <p className="text-slate-100 text-xs break-words leading-relaxed pl-0.5 pt-0.5">
+                                {text}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={lobbyChatEndRef} />
+                  </div>
+
+                  {/* Quick Tactical Macro Chips */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-mono text-emerald-500 font-bold uppercase mr-1">
+                      Quick Macros:
+                    </span>
+                    {[
+                      "🎯 Taking Hacker (CS & Logic)",
+                      "🔧 Taking Engineer (Optics & Physics)",
+                      "🧪 Taking Scientist (Chemistry)",
+                      "🔐 Taking Cryptographer (Ciphers)",
+                      "🚀 All slots confirmed, ready to launch!",
+                      "🎙️ Mic check, 5x5 loud and clear."
+                    ].map((macro, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSendLobbyQuickMacro(macro)}
+                        className="bg-[#042416] text-emerald-300 hover:text-white hover:bg-[#10B981] hover:border-emerald-400 border border-emerald-800/60 text-[10px] font-mono px-2.5 py-1 rounded-lg transition-all"
+                      >
+                        {macro}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Message Composer Input Form */}
+                  <form onSubmit={handleSendLobbyRadio} className="flex gap-2 pt-1">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={lobbyRadioInput}
+                        onChange={(e) => setLobbyRadioInput(e.target.value)}
+                        placeholder={`Broadcast tactical comms to squad room (${lobby.code || 'Squad'})...`}
+                        className="w-full bg-[#051811] border border-emerald-800/80 rounded-xl pl-3.5 pr-10 py-2.5 text-xs font-mono text-emerald-100 placeholder-emerald-800/80 outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981]"
+                      />
+                    </div>
                     <button
                       type="submit"
-                      className="bg-[#10B981] text-[#02140D] font-bold px-4 py-2 rounded-xl hover:bg-[#34D399] uppercase text-xs font-game flex items-center space-x-1.5 transition-all"
+                      disabled={!lobbyRadioInput.trim()}
+                      className="bg-[#10B981] disabled:opacity-40 disabled:cursor-not-allowed text-[#02140D] font-bold px-5 py-2.5 rounded-xl hover:bg-[#34D399] uppercase text-xs font-game flex items-center space-x-1.5 shadow-md shadow-emerald-950 transition-all"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Transmit</span>

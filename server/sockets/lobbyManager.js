@@ -168,66 +168,15 @@ export function setupLobbyManager(io, socket) {
       const characterId = data.characterId || 'c2';
       const playerName = data.playerName || socket.username;
 
+      if (!roomCode) {
+        return callback?.({ error: 'Please enter a valid room code.' });
+      }
+
       let lobby = activeLobbies.get(roomCode);
 
-      // If lobby doesn't exist yet, create a fresh lobby with this code
+      // If lobby doesn't exist, reject join attempt
       if (!lobby) {
-        lobby = {
-          heistId: data.heistId || 'm1',
-          roomCode,
-          code: roomCode,
-          name: data.missionTitle || 'The Quantum Core Strike Squad',
-          hostId: socket.userId,
-          players: [
-            {
-              userId: socket.userId,
-              username: playerName,
-              socketId: socket.id,
-              slotId: 1,
-              role: role || 'hacker',
-              characterId: characterId || 'c1',
-              isHost: true,
-              isReady: true,
-              voiceState: { connected: true, muted: false, deafened: false }
-            },
-            {
-              userId: null,
-              username: '',
-              socketId: null,
-              slotId: 2,
-              role: 'engineer',
-              characterId: 'c2',
-              isHost: false,
-              isReady: false,
-              voiceState: { connected: false, muted: false, deafened: false }
-            },
-            {
-              userId: null,
-              username: '',
-              socketId: null,
-              slotId: 3,
-              role: 'scientist',
-              characterId: 'c3',
-              isHost: false,
-              isReady: false,
-              voiceState: { connected: false, muted: false, deafened: false }
-            },
-            {
-              userId: null,
-              username: '',
-              socketId: null,
-              slotId: 4,
-              role: 'cryptographer',
-              characterId: 'c4',
-              isHost: false,
-              isReady: false,
-              voiceState: { connected: false, muted: false, deafened: false }
-            }
-          ],
-          status: 'waiting',
-          createdAt: Date.now()
-        };
-        activeLobbies.set(roomCode, lobby);
+        return callback?.({ error: `Squad room "${roomCode}" not found. Please verify the code or create a new squad.` });
       }
 
       const lobbyRoom = `lobby:${roomCode}`;

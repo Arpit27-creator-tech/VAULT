@@ -104,6 +104,7 @@ export function connectSocket(overrideAuth = {}) {
   socket.on('lobby:kicked', (data) => triggerHandler('lobbyKicked', data));
   socket.on('lobby:starting', (data) => triggerHandler('lobbyStarting', data));
   socket.on('lobby:voice-update', (data) => triggerHandler('lobbyVoiceUpdate', data));
+  socket.on('lobby:radio-message', (data) => triggerHandler('lobbyRadioMessage', data));
   socket.on('lobby:error', (data) => triggerHandler('lobbyError', data));
 
   // ─── Heist Events ──────────────────────────────────────

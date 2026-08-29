@@ -54,29 +54,52 @@ class ErrorBoundary extends React.Component {
               color: '#FF6B8B',
               marginBottom: '20px',
               overflowX: 'auto',
-              textAlign: 'left'
+              maxHeight: '160px',
+              textAlign: 'left',
+              whiteSpace: 'pre-wrap'
             }}>
-              {this.state.error?.message || 'Unknown runtime anomaly'}
+              {this.state.error?.stack || this.state.error?.message || 'Unknown runtime anomaly'}
             </div>
-            <button
-              onClick={() => {
-                localStorage.clear();
-                window.location.href = '/';
-              }}
-              style={{
-                backgroundColor: '#10B981',
-                color: '#02140D',
-                fontWeight: 'bold',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                textTransform: 'uppercase'
-              }}
-            >
-              Reset Session & Reload HUD
-            </button>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
+                }}
+                style={{
+                  backgroundColor: '#10B981',
+                  color: '#02140D',
+                  fontWeight: 'bold',
+                  padding: '10px 18px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Reload HUD
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.href = '/';
+                }}
+                style={{
+                  backgroundColor: '#051C12',
+                  color: '#FBBF24',
+                  border: '1px solid #FBBF24',
+                  fontWeight: 'bold',
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Reset & Clear Storage
+              </button>
+            </div>
           </div>
         </div>
       );

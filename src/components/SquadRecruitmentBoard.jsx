@@ -51,76 +51,7 @@ const ROLE_CONFIG = {
   }
 };
 
-const DEFAULT_RECRUITING_SQUADS = [
-  {
-    roomCode: 'HEIST-941',
-    name: 'The Quantum Core Strike Squad',
-    heistId: 'm1',
-    hostName: 'Sylvan_Commander',
-    hostAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-    hostRole: 'hacker',
-    totalMembers: 2,
-    maxMembers: 4,
-    filledRoles: [
-      { role: 'hacker', username: 'Sylvan_Commander' },
-      { role: 'scientist', username: 'Dr_Cleo' }
-    ],
-    openRoles: ['engineer', 'cryptographer'],
-    voiceActive: true,
-    createdAt: Date.now() - 120000
-  },
-  {
-    roomCode: 'HEIST-408',
-    name: 'Boreal Vault Infiltration Unit',
-    heistId: 'm2',
-    hostName: 'Valkyrie_Lead',
-    hostAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
-    hostRole: 'engineer',
-    totalMembers: 1,
-    maxMembers: 4,
-    filledRoles: [
-      { role: 'engineer', username: 'Valkyrie_Lead' }
-    ],
-    openRoles: ['hacker', 'scientist', 'cryptographer'],
-    voiceActive: true,
-    createdAt: Date.now() - 340000
-  },
-  {
-    roomCode: 'HEIST-772',
-    name: 'Apex Canopy Cyber Syndicate',
-    heistId: 'm3',
-    hostName: 'Cipher_Ghost',
-    hostAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-    hostRole: 'cryptographer',
-    totalMembers: 3,
-    maxMembers: 4,
-    filledRoles: [
-      { role: 'cryptographer', username: 'Cipher_Ghost' },
-      { role: 'hacker', username: 'NetRunner_09' },
-      { role: 'engineer', username: 'LaserWarden' }
-    ],
-    openRoles: ['scientist'],
-    voiceActive: true,
-    createdAt: Date.now() - 60000
-  },
-  {
-    roomCode: 'HEIST-519',
-    name: 'Caustic Biolab Expedition Alpha',
-    heistId: 'm1',
-    hostName: 'Flora_Aegis',
-    hostAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80',
-    hostRole: 'scientist',
-    totalMembers: 2,
-    maxMembers: 4,
-    filledRoles: [
-      { role: 'scientist', username: 'Flora_Aegis' },
-      { role: 'engineer', username: 'Circuit_Breaker' }
-    ],
-    openRoles: ['hacker', 'cryptographer'],
-    voiceActive: true,
-    createdAt: Date.now() - 450000
-  }
-];
+const DEFAULT_RECRUITING_SQUADS = [];
 
 export default function SquadRecruitmentBoard({
   socket,
@@ -130,7 +61,7 @@ export default function SquadRecruitmentBoard({
   onOpenJoinModal,
   onOpenAgentDirectory
 }) {
-  const [squads, setSquads] = useState(DEFAULT_RECRUITING_SQUADS);
+  const [squads, setSquads] = useState([]);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -141,10 +72,9 @@ export default function SquadRecruitmentBoard({
     if (socket && socket.connected) {
       socket.emit('lobby:list-recruiting', (res) => {
         setIsRefreshing(false);
-        if (res?.success && Array.isArray(res.squads) && res.squads.length > 0) {
-          const liveCodes = new Set(res.squads.map(s => s.roomCode));
-          const filteredDefaults = DEFAULT_RECRUITING_SQUADS.filter(d => !liveCodes.has(d.roomCode));
-          setSquads([...res.squads, ...filteredDefaults]);
+        if (res?.success && Array.isArray(res.squads)) {
+          // Only ever show real, live squads — no fake/demo fallback data.
+          setSquads(res.squads);
         }
       });
     } else {

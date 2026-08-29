@@ -25,7 +25,21 @@ export function setupLobbyManager(io, socket) {
   // ─────────────────────────────────────────────────────────
   socket.on('lobby:create', async (data, callback) => {
     try {
-      const roomCode = normCode(data.roomCode || `HEIST-${Math.floor(100 + Math.random() * 900)}`);
+      // Generate a room code that is actually free — retry on collision
+      // instead of silently overwriting an existing active lobby.
+      function generateFreeRoomCode() {
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const candidate = `HEIST-${Math.floor(1000 + Math.random() * 9000)}`;
+          if (!activeLobbies.has(candidate)) return candidate;
+        }
+        // Extremely unlikely fallback: timestamp-based suffix guarantees uniqueness
+        return `HEIST-${Date.now().toString(36).toUpperCase().slice(-5)}`;
+      }
+      const roomCode = normCode(data.roomCode || generateFreeRoomCode());
+      if (activeLobbies.has(roomCode) && !data.roomCode) {
+        // Should not happen given generateFreeRoomCode, but guard anyway.
+        return callback?.({ error: 'Room code collision, please try again' });
+      }
       const heistId = data.heistId || 'm1';
       const missionTitle = data.missionTitle || 'The Quantum Core Strike Squad';
       const role = data.role || 'hacker';

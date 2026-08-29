@@ -161,6 +161,7 @@ export default function App() {
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [createRoomTitleInput, setCreateRoomTitleInput] = useState('');
   const [isInSquadRoom, setIsInSquadRoom] = useState(false);
+  const [isLeaveSquadModalOpen, setIsLeaveSquadModalOpen] = useState(false);
   const [isLaunchingCountdown, setIsLaunchingCountdown] = useState(false);
   const [launchCountdown, setLaunchCountdown] = useState(3);
   const [lobbyRadioInput, setLobbyRadioInput] = useState('');
@@ -908,6 +909,23 @@ export default function App() {
       }
       toast.info('🚀 Launch sequence initiated! Synchronizing squad...');
     });
+  };
+
+  const handleConfirmLeaveSquad = () => {
+    const code = lobby?.code || lobby?.roomCode;
+    if (code) {
+      lobbySocket.leave(code);
+    }
+    if (isLobbyVoiceConnected) {
+      try {
+        voiceEngine.leaveRoom();
+      } catch (e) {}
+      setIsLobbyVoiceConnected(false);
+    }
+    setIsInSquadRoom(false);
+    setIsLeaveSquadModalOpen(false);
+    heistAudio.playKeyClick();
+    toast.info("Left squad operation.");
   };
 
   const handleSendLobbyRadio = (e) => {
@@ -2143,16 +2161,16 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   
-                  {/* Back to Squad Directory Button */}
+                  {/* Leave Squad Button */}
                   <button
                     onClick={() => {
-                      setIsInSquadRoom(false);
+                      setIsLeaveSquadModalOpen(true);
                       heistAudio.playKeyClick();
                     }}
-                    className="bg-[#020B06] hover:bg-[#072418] text-slate-300 hover:text-white border border-emerald-800/80 px-4 py-2.5 rounded-2xl text-xs font-mono font-bold flex items-center space-x-2 transition-all shadow-md group"
+                    className="bg-[#020B06] hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border border-emerald-900/80 hover:border-rose-700/60 px-4 py-2.5 rounded-2xl text-xs font-mono font-bold flex items-center space-x-2 transition-all shadow-md group"
                   >
-                    <ArrowLeft className="w-4 h-4 text-[#10B981] group-hover:-translate-x-1 transition-transform" />
-                    <span>← Back to Squad Recruitment Directory</span>
+                    <LogOut className="w-4 h-4 text-rose-400 group-hover:-translate-x-0.5 transition-transform" />
+                    <span>Leave Squad</span>
                   </button>
 
                   <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 relative overflow-hidden">
@@ -3481,6 +3499,62 @@ export default function App() {
           }
         }}
       />
+
+      {/* Leave Squad Confirmation Modal */}
+      <AnimatePresence>
+        {isLeaveSquadModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-[#051C12] border-2 border-rose-600/70 rounded-3xl p-6 max-w-md w-full text-left shadow-2xl space-y-5 relative overflow-hidden"
+            >
+              <div className="flex items-center space-x-3 text-rose-400">
+                <div className="p-2.5 rounded-xl bg-rose-950/90 border border-rose-700/60">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white font-game uppercase tracking-wider">
+                    Leave Squad Operation?
+                  </h3>
+                  <p className="text-[11px] font-mono text-rose-300/80">CONFIRMATION REQUIRED</p>
+                </div>
+              </div>
+
+              <div className="bg-[#020B06] p-4 rounded-2xl border border-rose-950 text-xs font-mono text-slate-300 space-y-2">
+                <p className="text-slate-100 font-bold">
+                  Are you sure you want to leave the squad?
+                </p>
+                <p className="text-slate-400 leading-relaxed">
+                  Leaving will disconnect you from tactical radio & voice comms in room <span className="text-[#FBBF24] font-bold">{lobby?.code || 'squad'}</span> and vacate your specialist slot.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLeaveSquadModalOpen(false);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-emerald-800/80 text-emerald-300 hover:bg-[#072418] text-xs font-mono font-bold transition-all"
+                >
+                  Stay in Squad
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLeaveSquad}
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-game uppercase flex items-center space-x-1.5 shadow-lg shadow-rose-950 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Leave Squad</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

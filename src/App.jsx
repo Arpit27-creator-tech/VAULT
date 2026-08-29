@@ -3500,57 +3500,136 @@ export default function App() {
         }}
       />
 
-      {/* Leave Squad Confirmation Modal */}
+      {/* Leave Squad Confirmation Modal (Styled per Tactical Broadcast Blueprint) */}
       <AnimatePresence>
         {isLeaveSquadModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl animate-fade-in">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-[#051C12] border-2 border-rose-600/70 rounded-3xl p-6 max-w-md w-full text-left shadow-2xl space-y-5 relative overflow-hidden"
+              className="max-w-xl w-full p-6 sm:p-8 space-y-6 border-4 border-[#042416]/90 bg-[#0D4A32]/55 backdrop-blur-2xl rounded-[36px] shadow-[10px_10px_0px_#03140C] text-left relative overflow-hidden text-white animate-cartoon-pop"
             >
-              <div className="flex items-center space-x-3 text-rose-400">
-                <div className="p-2.5 rounded-xl bg-rose-950/90 border border-rose-700/60">
-                  <AlertTriangle className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white font-game uppercase tracking-wider">
-                    Leave Squad Operation?
-                  </h3>
-                  <p className="text-[11px] font-mono text-rose-300/80">CONFIRMATION REQUIRED</p>
-                </div>
-              </div>
+              {/* Playful Ambient Background Dots & Frost Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(#34d39925_2px,transparent_2px)] [background-size:16px_16px] pointer-events-none opacity-80" />
+              <div className="absolute top-0 right-0 w-72 h-72 bg-[#10B981]/15 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="bg-[#020B06] p-4 rounded-2xl border border-rose-950 text-xs font-mono text-slate-300 space-y-2">
-                <p className="text-slate-100 font-bold">
-                  Are you sure you want to leave the squad?
-                </p>
-                <p className="text-slate-400 leading-relaxed">
-                  Leaving will disconnect you from tactical radio & voice comms in room <span className="text-[#FBBF24] font-bold">{lobby?.code || 'squad'}</span> and vacate your specialist slot.
-                </p>
-              </div>
+              {/* Cartoon Header */}
+              <div className="flex items-start justify-between gap-4 border-b-4 border-[#042416]/80 pb-5 relative z-10">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center space-x-1.5 bg-[#FDE047] text-[#02140D] font-mono font-black text-xs px-3 py-1 rounded-xl uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] rotate-[-1.5deg] animate-badge-bounce">
+                    <Sparkles className="w-3.5 h-3.5 fill-current" />
+                    <span>HQ TACTICAL BROADCAST</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-game drop-shadow-md">
+                    LEAVE SQUAD, AGENT?
+                  </h2>
+                  <p className="text-[#A7F3D0] text-xs sm:text-sm font-medium leading-relaxed">
+                    Currently assembled in <span className="bg-[#06291B]/90 backdrop-blur-sm text-[#FDE047] px-2.5 py-0.5 rounded-lg border border-[#10B981]/60 font-mono font-bold">Room {lobby?.code || 'SQUAD'}</span>. Choose an exit directive:
+                  </p>
+                </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
+                <button 
                   onClick={() => {
                     setIsLeaveSquadModalOpen(false);
                     heistAudio.playKeyClick();
                   }}
-                  className="px-4 py-2.5 rounded-xl border border-emerald-800/80 text-emerald-300 hover:bg-[#072418] text-xs font-mono font-bold transition-all"
+                  className="w-10 h-10 rounded-2xl bg-[#06291B]/90 hover:bg-[#FF4D6D] text-white border-2 border-black font-black text-sm flex items-center justify-center shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all backdrop-blur-sm"
+                  title="Cancel"
                 >
-                  Stay in Squad
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmLeaveSquad}
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-game uppercase flex items-center space-x-1.5 shadow-lg shadow-rose-950 transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Leave Squad</span>
+                  ✕
                 </button>
               </div>
+
+              {/* Frosted Cartoon Directive Option Cards */}
+              <div className="space-y-4 relative z-10 font-mono">
+                
+                {/* Option 1: Stay in Squad & Sync (Frosted Jade & Gold) */}
+                <div
+                  onClick={() => {
+                    setIsLeaveSquadModalOpen(false);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="p-4 sm:p-5 rounded-3xl border-3 border-[#052817]/90 bg-[#135C3E]/80 hover:bg-[#18704C]/90 backdrop-blur-md shadow-[5px_5px_0px_#03180E] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#FDE047] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 group-hover:animate-icon-wobble transition-transform">
+                      🏆
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDE047] transition-colors">
+                          STAY IN SQUAD & SYNC
+                        </h3>
+                        <span className="text-[10px] bg-[#34D399] text-[#02140D] font-black px-2 py-0.5 rounded-md border border-black hidden sm:inline-block">
+                          +CO-OP
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#D1FAE5] font-medium mt-0.5">
+                        Maintain active voice & radio mesh. Keep your specialist slot reserved!
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="bg-[#10B981]/90 hover:bg-[#34D399] text-[#02140D] font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                  >
+                    <span>Stay in Squad</span>
+                    <ArrowRight className="w-4 h-4 stroke-[3]" />
+                  </button>
+                </div>
+
+                {/* Option 2: Leave Squad (Frosted Crimson & Coral) */}
+                <div
+                  onClick={handleConfirmLeaveSquad}
+                  className="p-4 sm:p-5 rounded-3xl border-3 border-[#2E0B12]/90 bg-[#4D1420]/80 hover:bg-[#631B2B]/90 backdrop-blur-md shadow-[5px_5px_0px_#1B060B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#FF4D6D] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:-rotate-3 group-hover:animate-icon-wobble transition-transform">
+                      🚨
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDA4AF] transition-colors">
+                          LEAVE SQUAD (DISCONNECT)
+                        </h3>
+                        <span className="text-[10px] bg-[#881337] text-[#FECDD3] font-bold px-2 py-0.5 rounded-md border border-[#BE123C] hidden sm:inline-block">
+                          RETREAT
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#FECDD3] font-medium mt-0.5">
+                        Disconnect from squad frequency and return to Recruitment Directory.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="bg-[#FF4D6D]/90 hover:bg-[#FF3366] text-white font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                  >
+                    <span>Leave Squad</span>
+                    <ArrowRight className="w-4 h-4 stroke-[3]" />
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Frosted Cartoon Footer / Resume Button */}
+              <div className="pt-2 relative z-10 font-mono">
+                <button
+                  onClick={() => {
+                    setIsLeaveSquadModalOpen(false);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="w-full bg-[#06291B]/85 hover:bg-[#0A3D29]/95 backdrop-blur-md text-[#34D399] hover:text-[#10B981] font-black py-3.5 rounded-2xl border-2 border-[#10B981]/60 shadow-[4px_4px_0px_#03180E] text-xs font-game uppercase transition-all flex items-center justify-center space-x-2 active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <span>🎮 ← KEEP PLAYING (RESUME SQUAD LOBBY)</span>
+                </button>
+              </div>
+
             </motion.div>
           </div>
         )}

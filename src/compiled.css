@@ -1447,10 +1447,6 @@ button, input, select, textarea {
   align-items: center;
 }
 
-.justify-end {
-  justify-content: flex-end;
-}
-
 .justify-center {
   justify-content: center;
 }
@@ -2134,19 +2130,6 @@ button, input, select, textarea {
   border-color: rgb(244 63 94 / var(--tw-border-opacity, 1));
 }
 
-.border-rose-600\/70 {
-  border-color: rgb(225 29 72 / 0.7);
-}
-
-.border-rose-700\/60 {
-  border-color: rgb(190 18 60 / 0.6);
-}
-
-.border-rose-950 {
-  --tw-border-opacity: 1;
-  border-color: rgb(76 5 25 / var(--tw-border-opacity, 1));
-}
-
 .border-slate-300\/40 {
   border-color: rgb(203 213 225 / 0.4);
 }
@@ -2631,17 +2614,8 @@ button, input, select, textarea {
   background-color: rgb(69 10 10 / 0.8);
 }
 
-.bg-rose-600 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(225 29 72 / var(--tw-bg-opacity, 1));
-}
-
 .bg-rose-950\/80 {
   background-color: rgb(76 5 25 / 0.8);
-}
-
-.bg-rose-950\/90 {
-  background-color: rgb(76 5 25 / 0.9);
 }
 
 .bg-slate-200 {
@@ -3427,10 +3401,6 @@ button, input, select, textarea {
   color: rgb(254 205 211 / var(--tw-text-opacity, 1));
 }
 
-.text-rose-300\/80 {
-  color: rgb(253 164 175 / 0.8);
-}
-
 .text-rose-400 {
   --tw-text-opacity: 1;
   color: rgb(251 113 133 / var(--tw-text-opacity, 1));
@@ -3821,11 +3791,6 @@ button, input, select, textarea {
 
 .shadow-red-950\/60 {
   --tw-shadow-color: rgb(69 10 10 / 0.6);
-  --tw-shadow: var(--tw-shadow-colored);
-}
-
-.shadow-rose-950 {
-  --tw-shadow-color: #4c0519;
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -4551,11 +4516,6 @@ table tr, table td, table th {
 .hover\:bg-red-950:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(69 10 10 / var(--tw-bg-opacity, 1));
-}
-
-.hover\:bg-rose-500:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(244 63 94 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-rose-950\/40:hover {

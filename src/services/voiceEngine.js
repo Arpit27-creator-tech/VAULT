@@ -7,10 +7,29 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    {
+      urls: 'turn:global.relay.metered.ca:80',
+      username: '264b43561e488e0c7dc98518',
+      credential: 'pevp4xL3kUx/DSYn'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+      username: '264b43561e488e0c7dc98518',
+      credential: 'pevp4xL3kUx/DSYn'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443',
+      username: '264b43561e488e0c7dc98518',
+      credential: 'pevp4xL3kUx/DSYn'
+    },
+    {
+      urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+      username: '264b43561e488e0c7dc98518',
+      credential: 'pevp4xL3kUx/DSYn'
+    }
+  ],
+  iceCandidatePoolSize: 10
 };
 
 class WebRTCVoiceEngine {

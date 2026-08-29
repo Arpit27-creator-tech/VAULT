@@ -405,7 +405,6 @@ export function setupLobbyManager(io, socket) {
     };
 
     io.to(`lobby:${roomCode}`).emit('lobby:radio-message', message);
-    io.to(`lobby:${roomCode}`).emit('heist:radio-message', message);
     io.to(`heist:${roomCode}`).emit('heist:radio-message', message);
   });
 

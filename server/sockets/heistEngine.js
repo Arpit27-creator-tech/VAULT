@@ -191,7 +191,7 @@ export function setupHeistEngine(io, socket) {
     };
 
     io.to(`heist:${roomCode}`).emit('heist:radio-message', message);
-    io.to(`lobby:${roomCode}`).emit('heist:radio-message', message);
+    io.to(`lobby:${roomCode}`).emit('lobby:radio-message', message);
   });
 
   // ─────────────────────────────────────────────────────────

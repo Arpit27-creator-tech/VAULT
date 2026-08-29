@@ -562,7 +562,18 @@ export default function App() {
 
     const handleRemoteRadioMessage = (msg) => {
       if (msg?.text) {
-        setRadioMessages(prev => [...prev, msg]);
+        setRadioMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (
+            last && 
+            last.text === msg.text && 
+            last.sender === msg.sender && 
+            (last.time === msg.time || !last.time || !msg.time)
+          ) {
+            return prev;
+          }
+          return [...prev, msg];
+        });
         heistAudio.playRadioSquelch();
       }
     };
@@ -1166,17 +1177,19 @@ export default function App() {
   const handleSendMessage = (text, role) => {
     const timeStr = `${Math.floor((180 - timeLeft) / 60)}:${((180 - timeLeft) % 60).toString().padStart(2, '0')}`;
     const senderName = currentUser?.username || localStorage.getItem('vault_guest_name') || `You (${role.toUpperCase()})`;
-    const newMsg = {
-      sender: senderName,
-      role: role,
-      text: text,
-      time: timeStr
-    };
-    setRadioMessages(prev => [...prev, newMsg]);
+    const code = lobby?.code || lobby?.roomCode;
 
-    try {
-      heistSocket.sendRadioMessage(lobby.code, text, role, senderName);
-    } catch (e) { /* socket broadcast */ }
+    if (code) {
+      try {
+        heistSocket.sendRadioMessage(code, text, role, senderName);
+      } catch (e) {
+        const newMsg = { sender: senderName, role, text, time: timeStr };
+        setRadioMessages(prev => [...prev, newMsg]);
+      }
+    } else {
+      const newMsg = { sender: senderName, role, text, time: timeStr };
+      setRadioMessages(prev => [...prev, newMsg]);
+    }
   };
 
   const handleClaimSlot = (slotId) => {

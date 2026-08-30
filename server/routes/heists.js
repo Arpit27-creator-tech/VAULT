@@ -224,7 +224,7 @@ router.post('/complete', authenticate, async (req, res) => {
       );
 
       const userResult = await client.query(
-        `UPDATE users SET xp = xp + $1, level = GREATEST(1, (xp + $1) / 1000 + 1)
+        `UPDATE users SET xp = xp + $1, level = GREATEST(1, CAST(FLOOR((xp + $1) / 1000.0) AS INTEGER) + 1)
          WHERE id = $2
          RETURNING id, username, callsign, avatar_url, role, level, xp, rank, badges`,
         [xpGained, req.user.id]
@@ -304,7 +304,7 @@ router.put('/:id/results', authenticate, async (req, res) => {
       // Update user XP and level
       const xpGained = xp_earned || 0;
       await client.query(
-        `UPDATE users SET xp = xp + $1, level = GREATEST(1, (xp + $1) / 1000 + 1) WHERE id = $2`,
+        `UPDATE users SET xp = xp + $1, level = GREATEST(1, CAST(FLOOR((xp + $1) / 1000.0) AS INTEGER) + 1) WHERE id = $2`,
         [xpGained, req.user.id]
       );
 

@@ -205,6 +205,71 @@ router.post('/join', authenticate, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// POST /api/heists/complete — Record results for a heist that
+// ran entirely over Socket.io (no heist_sessions row exists).
+// Persists XP, level, stats, and heist history to the database
+// so progress is consistent across every device the user logs
+// into, instead of being trapped in one browser's localStorage.
+// ─────────────────────────────────────────────────────────────
+router.post('/complete', authenticate, async (req, res) => {
+  try {
+    const { result, xp_earned, time_elapsed, accuracy, alarms_tripped, role, mission_title, vaults_cracked } = req.body;
+    const xpGained = Number.isFinite(xp_earned) ? xp_earned : 0;
+
+    const updatedUser = await transaction(async (client) => {
+      await client.query(
+        `INSERT INTO heist_history (user_id, heist_id, mission_title, role, result, xp_earned, time_elapsed, accuracy, alarms_tripped)
+         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8)`,
+        [req.user.id, mission_title || 'Unknown Mission', role, result || 'CONCLUDED', xpGained, time_elapsed || '0s', accuracy || '0%', alarms_tripped || 0]
+      );
+
+      const userResult = await client.query(
+        `UPDATE users SET xp = xp + $1, level = GREATEST(1, (xp + $1) / 1000 + 1)
+         WHERE id = $2
+         RETURNING id, username, callsign, avatar_url, role, level, xp, rank, badges`,
+        [xpGained, req.user.id]
+      );
+
+      await client.query(
+        `UPDATE user_stats SET
+           missions_completed = missions_completed + 1,
+           vaults_cracked = vaults_cracked + $1,
+           alarms_tripped = alarms_tripped + $2
+         WHERE user_id = $3`,
+        [vaults_cracked || 0, alarms_tripped || 0, req.user.id]
+      );
+
+      await client.query(
+        `UPDATE leaderboard SET total_xp = total_xp + $1, weekly_xp = weekly_xp + $1,
+                streak = CASE WHEN $2 = 'VICTORY' THEN streak + 1 ELSE 0 END
+         WHERE user_id = $3`,
+        [xpGained, result, req.user.id]
+      );
+
+      return userResult.rows[0];
+    });
+
+    res.json({
+      message: 'Heist results recorded successfully',
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        callsign: updatedUser.callsign,
+        avatar: updatedUser.avatar_url,
+        role: updatedUser.role,
+        level: updatedUser.level,
+        xp: updatedUser.xp,
+        rank: updatedUser.rank,
+        badges: updatedUser.badges
+      }
+    });
+  } catch (err) {
+    console.error('[HEISTS] Complete error:', err);
+    res.status(500).json({ error: 'Failed to record heist results' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // PUT /api/heists/:id/results — Submit heist results
 // Updates user XP, stats, and creates history entries
 // ─────────────────────────────────────────────────────────────

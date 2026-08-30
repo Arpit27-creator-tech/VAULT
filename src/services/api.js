@@ -245,6 +245,16 @@ export const heistAPI = {
       method: 'PUT',
       body: JSON.stringify(results)
     });
+  },
+
+  // For heists run entirely over Socket.io, with no heist_sessions row.
+  // Persists XP/level/history to the database so progress is consistent
+  // across devices, instead of being local-only to one browser.
+  async completeHeist(results) {
+    return apiFetch('/heists/complete', {
+      method: 'POST',
+      body: JSON.stringify(results)
+    });
   }
 };
 

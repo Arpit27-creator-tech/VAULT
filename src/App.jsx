@@ -337,16 +337,20 @@ export default function App() {
 
       if (currentUser) {
         const gainedXp = solvedCount > 0 ? 450 : 150;
+        const resultLabel = solvedCount > 0 ? 'VICTORY' : 'CONCLUDED';
+        const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
         const newRecord = {
           id: `h-${Date.now()}`,
           mission: stage.title || 'Infiltration Op',
-          role: activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer',
-          result: solvedCount > 0 ? 'VICTORY' : 'CONCLUDED',
+          role: roleLabel,
+          result: resultLabel,
           xp: `+${gainedXp} XP`,
           time: timeStr,
           date: 'Just now'
         };
-        const updatedUser = {
+        // Optimistic local update so the UI reflects progress immediately,
+        // without waiting on the network round-trip.
+        const optimisticUser = {
           ...currentUser,
           xp: currentUser.xp + gainedXp,
           level: Math.floor((currentUser.xp + gainedXp) / 1000) + 1,
@@ -358,8 +362,34 @@ export default function App() {
           },
           history: [newRecord, ...(currentUser.history || [])]
         };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('vault_current_user', JSON.stringify(updatedUser));
+        setCurrentUser(optimisticUser);
+        localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
+
+        // Persist to the database so XP/level/history are consistent across
+        // every device the account logs into, not just this browser tab.
+        heistAPI.completeHeist({
+          mission_title: stage.title || 'Infiltration Op',
+          role: activeCockpitRole || 'hacker',
+          result: resultLabel,
+          xp_earned: gainedXp,
+          time_elapsed: timeStr,
+          accuracy: alarmFails === 0 ? '100%' : `${Math.max(50, 100 - alarmFails * 10)}%`,
+          alarms_tripped: alarmFails,
+          vaults_cracked: solvedCount
+        }).then((res) => {
+          if (res?.user) {
+            // Reconcile with the server's authoritative xp/level in case
+            // of any drift, while keeping locally-tracked fields like history.
+            setCurrentUser(prev => {
+              const reconciled = { ...prev, ...res.user, history: prev?.history };
+              localStorage.setItem('vault_current_user', JSON.stringify(reconciled));
+              return reconciled;
+            });
+          }
+        }).catch((err) => {
+          console.error('[HEIST] Failed to persist results to server:', err);
+          toast.error('Could not save mission results to your account. Progress may not sync across devices.');
+        });
       }
 
       setTimeLeft(defaultTime);

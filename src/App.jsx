@@ -281,6 +281,8 @@ export default function App() {
       if (activeTab === 'liveheist' && newTab !== 'liveheist') {
         setIsTimerRunning(false);
         heistAudio.stopTension();
+        setAlarmLevel('LOW_SECURITY');
+        setAlarmFails(0);
       }
       setTabHistory(prev => [...prev, activeTab]);
       setActiveTab(newTab);
@@ -297,6 +299,8 @@ export default function App() {
     if (activeTab === 'liveheist') {
       setIsTimerRunning(false);
       heistAudio.stopTension();
+      setAlarmLevel('LOW_SECURITY');
+      setAlarmFails(0);
     }
     if (tabHistory.length > 0) {
       const prevTab = tabHistory[tabHistory.length - 1];
@@ -3255,6 +3259,8 @@ export default function App() {
         }}
         onReturnToLobby={() => {
           setAnalyticsModalOpen(false);
+          setAlarmLevel('LOW_SECURITY');
+          setAlarmFails(0);
           setActiveTab('lobby');
         }}
       />

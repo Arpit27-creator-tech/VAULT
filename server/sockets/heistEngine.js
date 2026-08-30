@@ -390,20 +390,7 @@ function clearHeistTimer(roomCode) {
 function handlePuzzleSolved(io, roomCode, role, clue, socket, solvedByName) {
   let state = activeHeists.get(roomCode);
   if (!state) {
-    state = {
-      roomCode,
-      stageIdx: 0,
-      timeLimit: 180,
-      timeLeft: 180,
-      alarmLevel: 'LOW_SECURITY',
-      alarmFails: 0,
-      solvedRoles: {},
-      clues: {},
-      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
-      startedAt: Date.now(),
-      status: 'active'
-    };
-    activeHeists.set(roomCode, state);
+    return;
   }
 
   state.solvedRoles[role] = true;
@@ -437,20 +424,7 @@ function handlePuzzleSolved(io, roomCode, role, clue, socket, solvedByName) {
 function handlePuzzleFailed(io, roomCode, role, reason, socket, failedByName) {
   let state = activeHeists.get(roomCode);
   if (!state) {
-    state = {
-      roomCode,
-      stageIdx: 0,
-      timeLimit: 180,
-      timeLeft: 180,
-      alarmLevel: 'LOW_SECURITY',
-      alarmFails: 0,
-      solvedRoles: {},
-      clues: {},
-      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
-      startedAt: Date.now(),
-      status: 'active'
-    };
-    activeHeists.set(roomCode, state);
+    return;
   }
 
   state.alarmFails += 1;

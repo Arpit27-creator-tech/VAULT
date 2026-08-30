@@ -8,168 +8,11 @@ import {
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 import { toast } from 'sonner';
+import { leaderboardAPI } from '../services/api';
 
-const GLOBAL_LEADERBOARD = [
-  {
-    rank: 1,
-    callsign: "Valkyrie_Zero",
-    team: "Apex Sylvan Squad",
-    role: "Canopy Hacker",
-    country: "🇺🇸 US",
-    vaults: 184,
-    winRate: "99.4%",
-    xp: 28450,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    badge: "Mastermind Ace"
-  },
-  {
-    rank: 2,
-    callsign: "Dr_Sylvan_K",
-    team: "Quantum Canopy",
-    role: "Flora Scientist",
-    country: "🇯🇵 JP",
-    vaults: 172,
-    winRate: "98.8%",
-    xp: 26100,
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
-    badge: "Chemical Maestro"
-  },
-  {
-    rank: 3,
-    callsign: "Photon_Ray",
-    team: "Optics Syndicate",
-    role: "Woodland Engineer",
-    country: "🇩🇪 DE",
-    vaults: 165,
-    winRate: "98.2%",
-    xp: 24900,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-    badge: "Snell Deflector"
-  },
-  {
-    rank: 4,
-    callsign: "Cipher_Ghost",
-    team: "Modulo Breakers",
-    role: "Mist Cryptographer",
-    country: "🇬🇧 UK",
-    vaults: 158,
-    winRate: "97.6%",
-    xp: 23400,
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
-    badge: "Modulo Overdrive"
-  },
-  {
-    rank: 5,
-    callsign: "Nova_Helix",
-    team: "Bio-Logic Crew",
-    role: "Flora Scientist",
-    country: "🇸🇬 SG",
-    vaults: 149,
-    winRate: "96.9%",
-    xp: 21850,
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
-    badge: "Buffer Catalysis"
-  },
-  {
-    rank: 6,
-    callsign: "Kernel_Fox",
-    team: "Root Infiltrators",
-    role: "Canopy Hacker",
-    country: "🇨🇦 CA",
-    vaults: 142,
-    winRate: "96.4%",
-    xp: 20700,
-    avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80",
-    badge: "Binary Phantom"
-  },
-  {
-    rank: 7,
-    callsign: "Aero_Vector",
-    team: "Laser Vanguard",
-    role: "Woodland Engineer",
-    country: "🇮🇳 IN",
-    vaults: 138,
-    winRate: "95.8%",
-    xp: 19650,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-    badge: "Prism Lock"
-  }
-];
 
-const GLOBAL_TEAM_LEADERBOARD = [
-  {
-    rank: 1,
-    teamName: "Apex Sylvan Squad",
-    captain: "Valkyrie_Zero",
-    members: ["Valkyrie_Zero", "Photon_Ray", "Dr_Sylvan_K", "Cipher_Ghost"],
-    country: "🇺🇸 US",
-    vaults: 582,
-    syncRate: "99.8%",
-    xp: 94800,
-    badge: "Champion Syndicate",
-    emblem: "🌲"
-  },
-  {
-    rank: 2,
-    teamName: "Quantum Canopy",
-    captain: "Dr_Sylvan_K",
-    members: ["Dr_Sylvan_K", "Aero_Vector", "Nova_Helix", "Kernel_Fox"],
-    country: "🇯🇵 JP",
-    vaults: 541,
-    syncRate: "99.1%",
-    xp: 88500,
-    badge: "Optics Titans",
-    emblem: "⚡"
-  },
-  {
-    rank: 3,
-    teamName: "Modulo Breakers",
-    captain: "Cipher_Ghost",
-    members: ["Cipher_Ghost", "Valkyrie_Zero", "Photon_Ray", "Nova_Helix"],
-    country: "🇬🇧 UK",
-    vaults: 508,
-    syncRate: "98.5%",
-    xp: 82100,
-    badge: "Prime Cryptarchs",
-    emblem: "🔑"
-  },
-  {
-    rank: 4,
-    teamName: "Laser Vanguard",
-    captain: "Aero_Vector",
-    members: ["Aero_Vector", "Kernel_Fox", "Dr_Sylvan_K", "Cipher_Ghost"],
-    country: "🇮🇳 IN",
-    vaults: 489,
-    syncRate: "97.9%",
-    xp: 78900,
-    badge: "Beam Deflectors",
-    emblem: "✨"
-  },
-  {
-    rank: 5,
-    teamName: "Bio-Logic Crew",
-    captain: "Nova_Helix",
-    members: ["Nova_Helix", "Photon_Ray", "Kernel_Fox", "Valkyrie_Zero"],
-    country: "🇸🇬 SG",
-    vaults: 462,
-    syncRate: "97.4%",
-    xp: 74600,
-    badge: "Buffer Guild",
-    emblem: "🧪"
-  },
-  {
-    rank: 6,
-    teamName: "Root Infiltrators",
-    captain: "Kernel_Fox",
-    members: ["Kernel_Fox", "Dr_Sylvan_K", "Aero_Vector", "Nova_Helix"],
-    country: "🇨🇦 CA",
-    vaults: 435,
-    syncRate: "96.8%",
-    xp: 70200,
-    badge: "Kernel Phantoms",
-    emblem: "💻"
-  }
-];
+
+
 
 export default function HeroPage({
   onNavigate,
@@ -184,8 +27,27 @@ export default function HeroPage({
   const [selectedRoleIdx, setSelectedRoleIdx] = useState(0);
   const [liveRelayStep, setLiveRelayStep] = useState(0);
   const [isSimulatingTransmission, setIsSimulatingTransmission] = useState(false);
-  const [leaderboardType, setLeaderboardType] = useState('PLAYERS'); 
-  const [leaderboardFilter, setLeaderboardFilter] = useState('ALL'); 
+  const [leaderboardFilter, setLeaderboardFilter] = useState('ALL');
+  const [realLeaderboard, setRealLeaderboard] = useState([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchLeaderboard = async () => {
+      try {
+        const data = await leaderboardAPI.getGlobal(100);
+        if (mounted && data?.leaderboard) {
+          setRealLeaderboard(data.leaderboard);
+        }
+      } catch (err) {
+        console.error('Failed to fetch leaderboard:', err);
+      } finally {
+        if (mounted) setIsLoadingLeaderboard(false);
+      }
+    };
+    fetchLeaderboard();
+    return () => { mounted = false; };
+  }, []); 
 
   const [liveTransmissions] = useState([
     { id: 1, sender: "Canopy Hacker", role: "hacker", color: "#10B981", text: "Array pointer unlocked at 0x7FF. Sending refractive index n=1.52 to Engineer!" },
@@ -227,9 +89,9 @@ export default function HeroPage({
     }
   };
 
-  const filteredLeaderboard = GLOBAL_LEADERBOARD.filter(item => {
+  const filteredLeaderboard = realLeaderboard.filter(item => {
     if (leaderboardFilter === 'ALL') return true;
-    return item.role.toLowerCase().includes(leaderboardFilter.toLowerCase());
+    return (item.role || '').toLowerCase().includes(leaderboardFilter.toLowerCase());
   });
 
   return (
@@ -438,48 +300,12 @@ export default function HeroPage({
               Global Syndicate Leaderboard
             </h2>
             <p className="text-xs sm:text-sm text-slate-300">
-              {leaderboardType === 'PLAYERS' 
-                ? "Live individual specialist standings ranked by vaults cracked and season XP."
-                : "Top 4-operative synchronous teams ranked by crew synergy and combined vault score."}
+              Live individual specialist standings ranked by season XP.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="bg-[#020B06]/85 p-1 rounded-xl border border-emerald-800/60 flex items-center shadow-inner">
-              <button
-                onClick={() => {
-                  setLeaderboardType('PLAYERS');
-                  heistAudio.playKeyClick();
-                }}
-                className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold font-game uppercase transition-all ${
-                  leaderboardType === 'PLAYERS'
-                    ? 'bg-[#10B981] text-[#02140D] shadow-md shadow-emerald-950'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Solo Operatives</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setLeaderboardType('TEAMS');
-                  heistAudio.playKeyClick();
-                }}
-                className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold font-game uppercase transition-all ${
-                  leaderboardType === 'TEAMS'
-                    ? 'bg-[#FBBF24] text-[#02140D] shadow-md shadow-amber-950'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5" />
-                <span>Squad Teams</span>
-              </button>
-            </div>
           </div>
         </div>
 
-        {leaderboardType === 'PLAYERS' && (
+        {true && (
           <div className="flex flex-wrap gap-1.5 bg-[#020B06]/70 backdrop-blur-sm p-1 rounded-xl border border-emerald-900/60 text-xs font-mono relative z-10">
             {[
               { id: 'ALL', label: 'All Specialists' },
@@ -506,44 +332,49 @@ export default function HeroPage({
           </div>
         )}
 
-        {leaderboardType === 'PLAYERS' && (
+        {true && (
           <div className="space-y-2.5 relative z-10">
-            {filteredLeaderboard.map(player => {
-              const isTop3 = player.rank <= 3;
+            {isLoadingLeaderboard ? (
+              <div className="text-center text-slate-400 py-10 font-mono text-sm">Loading Leaderboard...</div>
+            ) : filteredLeaderboard.length === 0 ? (
+              <div className="text-center text-slate-400 py-10 font-mono text-sm">No operatives found in this category.</div>
+            ) : filteredLeaderboard.map(player => {
+              const pos = player.position;
+              const isTop3 = pos <= 3;
               return (
                 <div
-                  key={player.rank}
+                  key={player.userId || pos}
                   className={`p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-4 group ${
-                    player.rank === 1
+                    pos === 1
                       ? 'bg-gradient-to-r from-[#173019]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-amber-400/50 hover:border-amber-400'
-                      : player.rank === 2
+                      : pos === 2
                       ? 'bg-gradient-to-r from-[#162721]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-slate-300/40 hover:border-slate-300'
-                      : player.rank === 3
+                      : pos === 3
                       ? 'bg-gradient-to-r from-[#201A12]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-amber-700/50 hover:border-amber-600'
                       : 'bg-[#041C13]/40 backdrop-blur-md border-emerald-900/40 hover:border-[#10B981]/60 hover:bg-[#06291B]/60'
                   }`}
                 >
                   <div className="flex items-center space-x-3.5 min-w-[260px]">
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 shadow-sm ${
-                      player.rank === 1 ? 'bg-amber-400 text-[#02140D] font-black ring-1 ring-amber-300' :
-                      player.rank === 2 ? 'bg-slate-200 text-[#02140D] font-black ring-1 ring-slate-100' :
-                      player.rank === 3 ? 'bg-amber-700 text-white font-black ring-1 ring-amber-600' :
+                      pos === 1 ? 'bg-amber-400 text-[#02140D] font-black ring-1 ring-amber-300' :
+                      pos === 2 ? 'bg-slate-200 text-[#02140D] font-black ring-1 ring-slate-100' :
+                      pos === 3 ? 'bg-amber-700 text-white font-black ring-1 ring-amber-600' :
                       'bg-[#020B06]/90 text-slate-400 border border-emerald-900/60'
                     }`}>
-                      #{player.rank}
+                      #{pos}
                     </span>
 
                     <div className="relative flex-shrink-0">
                       <img 
-                        src={player.avatar} 
-                        alt={player.callsign} 
+                        src={player.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'} 
+                        alt={player.callsign || player.username} 
                         className="w-10 h-10 rounded-xl object-cover border border-emerald-800/80 group-hover:scale-105 transition-transform" 
                       />
                       {isTop3 && (
                         <div className="absolute -top-1 -right-1 p-0.5 rounded-full bg-[#020B06]">
                           <Crown className={`w-3 h-3 ${
-                            player.rank === 1 ? 'text-amber-400' :
-                            player.rank === 2 ? 'text-slate-300' : 'text-amber-600'
+                            pos === 1 ? 'text-amber-400' :
+                            pos === 2 ? 'text-slate-300' : 'text-amber-600'
                           }`} />
                         </div>
                       )}
@@ -552,37 +383,30 @@ export default function HeroPage({
                     <div className="min-w-0">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-bold text-base sm:text-lg text-white font-game truncate group-hover:text-[#10B981] transition-colors">
-                          {player.callsign}
+                          {player.callsign || player.username}
                         </h3>
-                        <span className="text-xs">{player.country}</span>
+                        <span className="text-xs">{player.level ? `LVL ${player.level}` : ''}</span>
                       </div>
                       <p className="text-[11px] font-mono text-emerald-300/80 truncate">
-                        {player.team}
+                        {player.rank || 'Operative'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-[#020B06]/70 px-2.5 py-1 rounded-lg border border-emerald-900/60 text-xs font-mono text-[#34D399] font-medium">
-                      {player.role}
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-amber-300 bg-[#020B06]/80 px-2 py-0.5 rounded border border-emerald-900/40 hidden sm:inline-block">
-                      {player.badge}
+                    <span className="bg-[#020B06]/70 px-2.5 py-1 rounded-lg border border-emerald-900/60 text-xs font-mono text-[#34D399] font-medium uppercase">
+                      {player.role || 'Hacker'}
                     </span>
                   </div>
 
                   <div className="flex items-center space-x-4 sm:space-x-6 text-xs font-mono pt-2 md:pt-0 border-t md:border-t-0 border-emerald-950/80">
                     <div className="text-left md:text-center">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Vaults</span>
-                      <span className="text-white font-bold text-sm">{player.vaults}</span>
-                    </div>
-                    <div className="text-left md:text-center">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Win Rate</span>
-                      <span className="text-[#10B981] font-bold text-sm">{player.winRate}</span>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Streak</span>
+                      <span className="text-white font-bold text-sm">{player.streak || 0}</span>
                     </div>
                     <div className="text-left md:text-right min-w-[70px]">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Season XP</span>
-                      <span className="text-amber-300 font-bold text-sm">{player.xp.toLocaleString()}</span>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Total XP</span>
+                      <span className="text-amber-300 font-bold text-sm">{(player.totalXp || 0).toLocaleString()}</span>
                     </div>
                   </div>
 
@@ -592,80 +416,6 @@ export default function HeroPage({
           </div>
         )}
 
-        {leaderboardType === 'TEAMS' && (
-          <div className="space-y-2.5 relative z-10">
-            {GLOBAL_TEAM_LEADERBOARD.map(team => {
-              return (
-                <div
-                  key={team.rank}
-                  className={`p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-4 group ${
-                    team.rank === 1
-                      ? 'bg-gradient-to-r from-[#201D11]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-amber-400/50 hover:border-amber-400'
-                      : team.rank === 2
-                      ? 'bg-gradient-to-r from-[#172621]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-slate-300/40 hover:border-slate-300'
-                      : team.rank === 3
-                      ? 'bg-gradient-to-r from-[#231A12]/60 via-[#041A11]/60 to-[#041A11]/60 backdrop-blur-md border-amber-700/50 hover:border-amber-600'
-                      : 'bg-[#041C13]/40 backdrop-blur-md border-emerald-900/40 hover:border-[#10B981]/60 hover:bg-[#06291B]/60'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3.5 min-w-[280px]">
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 shadow-sm ${
-                      team.rank === 1 ? 'bg-amber-400 text-[#02140D] font-black ring-1 ring-amber-300' :
-                      team.rank === 2 ? 'bg-slate-200 text-[#02140D] font-black ring-1 ring-slate-100' :
-                      team.rank === 3 ? 'bg-amber-700 text-white font-black ring-1 ring-amber-600' :
-                      'bg-[#020B06]/90 text-slate-400 border border-emerald-900/60'
-                    }`}>
-                      #{team.rank}
-                    </span>
-
-                    <div className="w-10 h-10 rounded-xl bg-[#020B06] border border-emerald-800/80 flex items-center justify-center text-xl flex-shrink-0">
-                      {team.emblem}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-bold text-base sm:text-lg text-white font-game truncate group-hover:text-[#FBBF24] transition-colors">
-                          {team.teamName}
-                        </h3>
-                        <span className="text-xs">{team.country}</span>
-                      </div>
-                      <p className="text-[11px] font-mono text-slate-400 truncate">
-                        Lead: <span className="text-emerald-300 font-bold">{team.captain}</span> • 4 Operatives
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase hidden lg:inline">Roster:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {team.members.map((mem, idx) => (
-                        <span key={idx} className="bg-[#020B06]/80 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-900/60">
-                          {mem}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4 sm:space-x-6 text-xs font-mono pt-2 md:pt-0 border-t md:border-t-0 border-emerald-950/80">
-                    <div className="text-left md:text-center">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Crew Vaults</span>
-                      <span className="text-white font-bold text-sm">{team.vaults}</span>
-                    </div>
-                    <div className="text-left md:text-center">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Sync Rate</span>
-                      <span className="text-[#34D399] font-bold text-sm">{team.syncRate}</span>
-                    </div>
-                    <div className="text-left md:text-right min-w-[70px]">
-                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Squad XP</span>
-                      <span className="text-amber-300 font-bold text-sm">{team.xp.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
-        )}
 
       </section>
 

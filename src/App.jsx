@@ -211,24 +211,7 @@ export default function App() {
       return 3;
     }
   });
-  const [leaderboard, setLeaderboard] = useState(() => {
-    try {
-      const saved = localStorage.getItem('kh_leaderboard_sylvan');
-      return saved ? JSON.parse(saved) : [
-        { name: 'You (Explorer)', xp: 1200, streak: 3 },
-        { name: 'Captain Bramble', xp: 2450, streak: 5 },
-        { name: 'Dr. Cleo', xp: 1900, streak: 4 },
-        { name: 'Shadow Nyx', xp: 1720, streak: 3 }
-      ];
-    } catch {
-      return [
-        { name: 'You (Explorer)', xp: 1200, streak: 3 },
-        { name: 'Captain Bramble', xp: 2450, streak: 5 },
-        { name: 'Dr. Cleo', xp: 1900, streak: 4 },
-        { name: 'Shadow Nyx', xp: 1720, streak: 3 }
-      ];
-    }
-  });
+
   const [showFinale, setShowFinale] = useState(false);
   const [builderSaving, setBuilderSaving] = useState(false);
   const [builder, setBuilder] = useState({ 

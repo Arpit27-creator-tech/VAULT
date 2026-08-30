@@ -6,6 +6,10 @@
 // In-memory lobby state (backed by DB for persistence)
 const activeLobbies = new Map();
 
+export function getLobbyState(roomCode) {
+  return activeLobbies.get(roomCode);
+}
+
 /**
  * Helper to normalize room codes
  */

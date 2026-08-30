@@ -146,16 +146,18 @@ export default function SquadRecruitmentBoard({
               <span>Join by Code</span>
             </button>
 
-            <button
-              onClick={() => {
-                onOpenAgentDirectory();
-                heistAudio.playKeyClick();
-              }}
-              className="bg-[#020B06] hover:bg-[#072418] text-emerald-300 border border-emerald-800/80 font-bold px-4 py-3 rounded-2xl transition-all flex items-center space-x-2 text-xs sm:text-sm font-game uppercase shadow-md"
-            >
-              <Search className="w-4 h-4" />
-              <span>Find Agent</span>
-            </button>
+            {currentUser && (
+              <button
+                onClick={() => {
+                  onOpenAgentDirectory();
+                  heistAudio.playKeyClick();
+                }}
+                className="bg-[#020B06] hover:bg-[#072418] text-emerald-300 border border-emerald-800/80 font-bold px-4 py-3 rounded-2xl transition-all flex items-center space-x-2 text-xs sm:text-sm font-game uppercase shadow-md"
+              >
+                <Search className="w-4 h-4" />
+                <span>Find Agent</span>
+              </button>
+            )}
           </div>
         </div>
 

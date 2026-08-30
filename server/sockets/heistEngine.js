@@ -2,6 +2,8 @@
 // V.A.U.L.T — Heist Engine (Server-Authoritative Game State)
 // Manages active heist timers, puzzle validation, alarm states
 // ============================================================
+// ============================================================
+import { getLobbyState } from './lobbyManager.js';
 
 // In-memory active heist state
 const activeHeists = new Map();
@@ -145,6 +147,80 @@ export function setupHeistEngine(io, socket) {
       handlePuzzleFailed(io, roomCode, role, data.reason || 'Incorrect answer', socket, data.failedBy);
       callback?.({ success: true, correct: false });
     }
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // heist:propose-end — Propose to end the heist (multiplayer vote)
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:propose-end', (data, callback) => {
+    const roomCode = normCode(data.roomCode);
+    const directive = data.directive; // 'abort' or 'debrief'
+    const proposedBy = data.proposedBy || 'A teammate';
+
+    const state = activeHeists.get(roomCode);
+    if (!state || state.status !== 'active') {
+      return callback?.({ error: 'No active heist found' });
+    }
+
+    const lobby = getLobbyState(roomCode);
+    const totalPlayers = lobby?.players?.length || 1;
+
+    const requiredVotes = Math.floor(totalPlayers / 2) + 1;
+
+    state.activeVote = {
+      directive,
+      proposedBy,
+      yesVotes: [],
+      noVotes: [],
+      requiredVotes,
+      totalPlayers
+    };
+
+    io.to(`heist:${roomCode}`).emit('heist:vote-state', state.activeVote);
+    callback?.({ success: true });
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // heist:vote-end — Vote on an active end-heist proposal
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:vote-end', (data, callback) => {
+    const roomCode = normCode(data.roomCode);
+    const vote = data.vote; // 'yes' or 'no'
+    const voterId = data.voterId || socket.id;
+
+    const state = activeHeists.get(roomCode);
+    if (!state || state.status !== 'active' || !state.activeVote) {
+      return callback?.({ error: 'No active vote found' });
+    }
+
+    const v = state.activeVote;
+    if (v.yesVotes.includes(voterId) || v.noVotes.includes(voterId)) {
+      return callback?.({ error: 'Already voted' });
+    }
+
+    if (vote === 'yes') {
+      v.yesVotes.push(voterId);
+    } else {
+      v.noVotes.push(voterId);
+    }
+
+    io.to(`heist:${roomCode}`).emit('heist:vote-state', v);
+
+    // Check if majority reached
+    if (v.yesVotes.length >= v.requiredVotes) {
+      io.to(`heist:${roomCode}`).emit('heist:end-voted', { directive: v.directive });
+      state.activeVote = null; // Clear vote
+    } else {
+      // Check if majority is impossible
+      const remainingVotes = v.totalPlayers - (v.yesVotes.length + v.noVotes.length);
+      if (v.yesVotes.length + remainingVotes < v.requiredVotes) {
+        // Vote failed
+        io.to(`heist:${roomCode}`).emit('heist:vote-failed');
+        state.activeVote = null;
+      }
+    }
+    
+    callback?.({ success: true });
   });
 
   // ─────────────────────────────────────────────────────────

@@ -65,6 +65,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [isEndHeistModalOpen, setIsEndHeistModalOpen] = useState(false);
+  const [endHeistVoteState, setEndHeistVoteState] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -294,7 +295,21 @@ export default function App() {
     }
   };
 
-  const handleConcludeHeist = (actionType = 'abort') => {
+  const handleConcludeHeist = (actionType = 'abort', force = false) => {
+    // If in multiplayer and not forced by a successful vote, propose a vote instead
+    if (!force && lobby && lobby.players && lobby.players.length > 1 && activeTab === 'liveheist') {
+      const activeSocket = getSocket();
+      if (activeSocket) {
+        activeSocket.emit('heist:propose-end', {
+          roomCode: lobby.code,
+          directive: actionType,
+          proposedBy: currentUser?.callsign || currentUser?.username || 'A teammate'
+        });
+        setIsEndHeistModalOpen(false);
+      }
+      return;
+    }
+
     setIsTimerRunning(false);
     heistAudio.stopTension();
     setIsEndHeistModalOpen(false);
@@ -609,6 +624,21 @@ export default function App() {
         setAlarmFails(0);
         toast.success(`Advancing to Stage ${(data.stageIdx || 0) + 1} synchronously!`);
       }
+    };
+
+    const handleVoteState = (data) => {
+      setEndHeistVoteState(data);
+    };
+
+    const handleEndVoted = (data) => {
+      setEndHeistVoteState(null);
+      toast.success("Majority vote reached! Ending heist.");
+      handleConcludeHeist(data?.directive || 'abort', true);
+    };
+
+    const handleVoteFailed = () => {
+      setEndHeistVoteState(null);
+      toast.error("Majority vote failed. Mission continues!");
     };
 
     const handleLobbyVoiceUpdate = (data) => {
@@ -1477,18 +1507,20 @@ export default function App() {
                 </button>
               )}
 
-              <button 
-                onClick={() => {
-                  setIsAgentDirectoryOpen(true);
-                  heistAudio.playKeyClick();
-                }}
-                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D] font-mono font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] active:translate-x-0.5 transition-all"
-                title="Search and identify syndicate operatives by unique Agent ID"
-              >
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">FIND AGENT</span>
-                <span className="sm:hidden">AGENT</span>
-              </button>
+              {currentUser && (
+                <button 
+                  onClick={() => {
+                    setIsAgentDirectoryOpen(true);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D] font-mono font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] active:translate-x-0.5 transition-all"
+                  title="Search and identify syndicate operatives by unique Agent ID"
+                >
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">FIND AGENT</span>
+                  <span className="sm:hidden">AGENT</span>
+                </button>
+              )}
 
               {currentUser ? (
                 <div className="flex items-center space-x-2">
@@ -3262,6 +3294,62 @@ export default function App() {
           toast.success("💡 Tactical retry initiated with +60s bonus time!");
         }}
       />
+
+      {endHeistVoteState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl animate-fade-in">
+          <div className="max-w-md w-full p-6 sm:p-8 space-y-6 border-4 border-[#042416]/90 bg-[#0D4A32]/85 backdrop-blur-2xl rounded-[36px] shadow-[10px_10px_0px_#03140C] text-left relative overflow-hidden text-white animate-cartoon-pop">
+            
+            <div className="absolute inset-0 bg-[radial-gradient(#34d39925_2px,transparent_2px)] [background-size:16px_16px] pointer-events-none opacity-80" />
+            
+            <div className="relative z-10 space-y-4">
+              <div className="inline-flex items-center space-x-1.5 bg-[#FF4D6D] text-white font-mono font-black text-xs px-3 py-1 rounded-xl uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] rotate-[1.5deg]">
+                <Shield className="w-3.5 h-3.5 fill-current" />
+                <span>Squad Vote Required</span>
+              </div>
+              
+              <h2 className="text-2xl font-black uppercase tracking-tight font-game">
+                {endHeistVoteState.proposedBy} wants to {endHeistVoteState.directive === 'abort' ? 'Abort' : 'End'} the Heist!
+              </h2>
+              
+              <div className="flex flex-col space-y-1 font-mono text-sm">
+                <div className="flex justify-between text-[#A7F3D0]">
+                  <span>Majority Required:</span>
+                  <span className="font-bold text-[#FDE047]">{endHeistVoteState.requiredVotes} Votes</span>
+                </div>
+                <div className="flex justify-between text-[#A7F3D0]">
+                  <span>Current YES Votes:</span>
+                  <span className="font-bold text-[#34D399]">{endHeistVoteState.yesVotes.length}</span>
+                </div>
+                <div className="flex justify-between text-[#A7F3D0]">
+                  <span>Current NO Votes:</span>
+                  <span className="font-bold text-[#FF4D6D]">{endHeistVoteState.noVotes.length}</span>
+                </div>
+              </div>
+
+              {!endHeistVoteState.yesVotes.includes(activeSocket?.id) && !endHeistVoteState.noVotes.includes(activeSocket?.id) ? (
+                <div className="flex space-x-4 pt-4">
+                  <button
+                    onClick={() => activeSocket?.emit('heist:vote-end', { roomCode: lobby?.code, vote: 'yes' })}
+                    className="flex-1 bg-[#10B981] text-[#02140D] font-black py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:bg-[#34D399] active:translate-x-0.5 active:translate-y-0.5 transition-all uppercase font-game"
+                  >
+                    VOTE YES
+                  </button>
+                  <button
+                    onClick={() => activeSocket?.emit('heist:vote-end', { roomCode: lobby?.code, vote: 'no' })}
+                    className="flex-1 bg-[#FF4D6D] text-white font-black py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all uppercase font-game"
+                  >
+                    VOTE NO
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-4 text-center text-[#A7F3D0] font-mono font-bold animate-pulse">
+                  Waiting for other squad members to vote...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isEndHeistModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl animate-fade-in">

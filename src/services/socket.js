@@ -120,7 +120,10 @@ export function connectSocket(overrideAuth = {}) {
   socket.on('heist:timeout', (data) => triggerHandler('heistTimeout', data));
   socket.on('heist:aborted', (data) => triggerHandler('heistAborted', data));
   socket.on('heist:concluded', (data) => triggerHandler('heistConcluded', data));
-
+  
+  socket.on('heist:vote-state', (data) => triggerHandler('heistVoteState', data));
+  socket.on('heist:end-voted', (data) => triggerHandler('heistEndVoted', data));
+  socket.on('heist:vote-failed', (data) => triggerHandler('heistVoteFailed', data));
   // ─── Presence Events ───────────────────────────────────
   socket.on('presence:friend-update', (data) => triggerHandler('presenceFriendUpdate', data));
 

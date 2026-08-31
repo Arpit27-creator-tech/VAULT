@@ -162,21 +162,31 @@ export function setupHeistEngine(io, socket) {
       return callback?.({ error: 'No active heist found' });
     }
 
-    const lobby = getLobbyState(roomCode);
-    const totalPlayers = lobby?.players?.length || 1;
+    const lobby = require('./lobbyManager').activeLobbies?.get(roomCode);
+    const totalPlayers = lobby ? lobby.players.filter(p => p.userId || p.socketId).length : 1;
 
-    const requiredVotes = Math.floor(totalPlayers / 2) + 1;
+    const requiredVotes = Math.max(1, Math.ceil(totalPlayers / 2));
 
     state.activeVote = {
       directive,
       proposedBy,
-      yesVotes: [],
+      yesVotes: [socket.id],
       noVotes: [],
       requiredVotes,
       totalPlayers
     };
 
-    io.to(`heist:${roomCode}`).emit('heist:vote-state', state.activeVote);
+    if (state.activeVote.yesVotes.length >= requiredVotes) {
+      io.to(`heist:${roomCode}`).emit('heist:vote-state', state.activeVote);
+      io.to(`heist:${roomCode}`).emit('heist:end-voted', { directive });
+      state.activeVote = null;
+      if (directive === 'abort') {
+        state.status = 'failed';
+      }
+    } else {
+      io.to(`heist:${roomCode}`).emit('heist:vote-state', state.activeVote);
+    }
+
     callback?.({ success: true });
   });
 

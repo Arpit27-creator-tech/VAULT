@@ -295,6 +295,29 @@ export default function App() {
     }
   };
 
+  const handleLeaveHeistLocally = () => {
+    const code = lobby?.code || lobby?.roomCode;
+    if (code) {
+      lobbySocket.leave(code);
+    }
+    if (isLobbyVoiceConnected) {
+      try {
+        voiceEngine.leaveRoom();
+      } catch (e) {}
+      setIsLobbyVoiceConnected(false);
+    }
+    setIsInSquadRoom(false);
+    
+    setIsTimerRunning(false);
+    heistAudio.stopTension();
+    setIsEndHeistModalOpen(false);
+    exitHeistFullscreen();
+    setIsMatchVictory(false);
+    setActiveTab('operations');
+    heistAudio.playKeyClick();
+    toast.info("Left squad operation.");
+  };
+
   const handleConcludeHeist = (actionType = 'abort', force = false) => {
     // If in multiplayer and not forced by a successful vote, propose a vote instead
     if (!force && lobby && lobby.players && lobby.players.length > 1 && activeTab === 'liveheist') {
@@ -3385,10 +3408,14 @@ export default function App() {
 
             {/* Frosted Cartoon Directive Option Cards */}
             <div className="space-y-4 relative z-10 font-mono">
-              
-              {/* Option 1: Claim Loot & Debrief (Frosted Jade & Gold) */}
-              <div
-                onClick={() => handleConcludeHeist('debrief')}
+              {(() => {
+                const inSquad = lobby && lobby.players && lobby.players.length > 1;
+
+                return (
+                  <React.Fragment key="directives">
+                    {/* Option 1: Claim Loot & Debrief (Frosted Jade & Gold) */}
+                    <div
+                      onClick={() => handleConcludeHeist('debrief')}
                 className="p-4 sm:p-5 rounded-3xl border-3 border-[#052817]/90 bg-[#135C3E]/80 hover:bg-[#18704C]/90 backdrop-blur-md shadow-[5px_5px_0px_#03180E] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
               >
                 <div className="flex items-center space-x-4">
@@ -3399,7 +3426,7 @@ export default function App() {
                   <div className="min-w-0">
                     <div className="flex items-center space-x-2">
                       <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDE047] transition-colors">
-                        CLAIM LOOT & DEBRIEF
+                        {inSquad ? 'PROPOSE: CLAIM LOOT & DEBRIEF' : 'CLAIM LOOT & DEBRIEF'}
                       </h3>
                       <span className="text-[10px] bg-[#34D399] text-[#02140D] font-black px-2 py-0.5 rounded-md border border-black hidden sm:inline-block">
                         +XP
@@ -3433,7 +3460,7 @@ export default function App() {
                   <div className="min-w-0">
                     <div className="flex items-center space-x-2">
                       <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDA4AF] transition-colors">
-                        EMERGENCY EJECT (ABORT)
+                        {inSquad ? 'PROPOSE: EMERGENCY EJECT' : 'EMERGENCY EJECT (ABORT)'}
                       </h3>
                       <span className="text-[10px] bg-[#881337] text-[#FECDD3] font-bold px-2 py-0.5 rounded-md border border-[#BE123C] hidden sm:inline-block">
                         RETREAT
@@ -3454,6 +3481,44 @@ export default function App() {
                 </button>
               </div>
 
+              {inSquad && (
+                <div
+                  onClick={handleLeaveHeistLocally}
+                  className="p-4 sm:p-5 rounded-3xl border-3 border-[#1E3A8A]/90 bg-[#1E40AF]/80 hover:bg-[#1D4ED8]/90 backdrop-blur-md shadow-[5px_5px_0px_#172554] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#60A5FA] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 group-hover:animate-icon-wobble transition-transform">
+                      🏃
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#93C5FD] transition-colors">
+                          LEAVE SQUAD (SOLO EXFIL)
+                        </h3>
+                        <span className="text-[10px] bg-[#1E3A8A] text-[#BFDBFE] font-bold px-2 py-0.5 rounded-md border border-[#1E40AF] hidden sm:inline-block">
+                          AWOL
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#DBEAFE] font-medium mt-0.5">
+                        Abandon your teammates and exit the operation alone.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="bg-[#3B82F6]/90 hover:bg-[#60A5FA] text-white font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                  >
+                    <span>Leave Squad</span>
+                    <ArrowRight className="w-4 h-4 stroke-[3]" />
+                  </button>
+                </div>
+              )}
+
+                </React.Fragment>
+              );
+            })()}
             </div>
 
             {/* Frosted Cartoon Footer / Resume Button */}

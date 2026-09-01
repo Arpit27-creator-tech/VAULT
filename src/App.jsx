@@ -327,6 +327,10 @@ export default function App() {
           roomCode: lobby.code,
           directive: actionType,
           proposedBy: currentUser?.callsign || currentUser?.username || 'A teammate'
+        }, (res) => {
+          if (res?.error) {
+            toast.error(`Could not propose vote: ${res.error}`);
+          }
         });
         setIsEndHeistModalOpen(false);
       }
@@ -698,6 +702,9 @@ export default function App() {
     onSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
     onSocketEvent('heistTimerTick', handleTimerTick);
     onSocketEvent('heistStageSynced', handleRemoteStageSynced);
+    onSocketEvent('heistVoteState', handleVoteState);
+    onSocketEvent('heistEndVoted', handleEndVoted);
+    onSocketEvent('heistVoteFailed', handleVoteFailed);
 
     return () => {
       offSocketEvent('connected', handleConnected);
@@ -719,6 +726,9 @@ export default function App() {
       offSocketEvent('heistRadioMessage', handleRemoteRadioMessage);
       offSocketEvent('heistTimerTick', handleTimerTick);
       offSocketEvent('heistStageSynced', handleRemoteStageSynced);
+      offSocketEvent('heistVoteState', handleVoteState);
+      offSocketEvent('heistEndVoted', handleEndVoted);
+      offSocketEvent('heistVoteFailed', handleVoteFailed);
     };
   }, [currentStageIdx, lobby?.code, currentUser]);
 

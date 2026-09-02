@@ -1673,17 +1673,17 @@ export default function App() {
                 </div>
               </div>
 
-              <nav className="p-2.5 sm:p-3 space-y-1.5">
+              <nav className="p-2.5 sm:p-3 space-y-1">
                 {[
-                  { id: 'home', label: 'Home HQ', icon: Home, badge: 'HOME', sub: 'Platform Overview' },
-                  { id: 'stats', label: 'My Stats', icon: BarChart3, badge: currentUser ? `LVL ${currentUser.level}` : 'STATS', sub: 'Operative Dossier', highlight: !!currentUser },
-                  { id: 'missions', label: 'Expeditions', icon: Compass, badge: '3 Ops', sub: 'Campaign Missions' },
-                  { id: 'lobby', label: 'Squad Lobby', icon: Users, badge: '4 Roles', sub: 'Crew Assembly' },
-                  { id: 'characters', label: '4 Roles', icon: Sparkles, badge: 'Classes', sub: 'Role Capabilities' },
-                  { id: 'topics', label: 'Disciplines', icon: BookOpen, badge: 'STEM', sub: 'Cross-Curricular' },
-                  { id: 'map', label: 'Canopy Map', icon: MapPin, badge: 'Tactical', sub: 'Interactive Vaults' },
-                  { id: 'builder', label: 'Architect', icon: Terminal, badge: 'Forge', sub: 'Custom Blueprints' },
-                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket, badge: 'VIP', sub: 'Early Access Pass' }
+                  { id: 'home', label: 'Home HQ', icon: Home },
+                  { id: 'stats', label: 'My Stats', icon: BarChart3, highlight: !!currentUser },
+                  { id: 'missions', label: 'Expeditions', icon: Compass },
+                  { id: 'lobby', label: 'Squad Lobby', icon: Users },
+                  { id: 'characters', label: '4 Roles', icon: Sparkles },
+                  { id: 'topics', label: 'Disciplines', icon: BookOpen },
+                  { id: 'map', label: 'Canopy Map', icon: MapPin },
+                  { id: 'builder', label: 'Architect', icon: Terminal },
+                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket }
                 ].map(tab => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -1708,50 +1708,25 @@ export default function App() {
                           setSidebarOpen(false);
                         }
                       }}
-                      className={`w-full flex items-center justify-between p-2.5 transition-colors text-left border-[2.5px] border-[#03140C] ${
+                      className={`w-full flex items-center p-2.5 transition-colors text-left ${
                         isHeistLocked && tab.id !== 'liveheist'
-                          ? 'bg-[#0A261B]/40 text-[#D1FAE5]/30 cursor-not-allowed opacity-40 shadow-none'
+                          ? 'text-[#D1FAE5]/30 cursor-not-allowed opacity-40'
                           : isActive
-                          ? 'bg-[#10B981] text-[#02140D] font-black shadow-[3px_3px_0px_#FBBF24] translate-x-0.5'
-                          : tab.highlight
-                          ? 'bg-[#0E3523] text-[#FBBF24] hover:bg-[#10B981]/25 hover:text-white border-amber-400/40 shadow-[2px_2px_0px_#020C07]'
-                          : 'bg-[#0A261B]/80 text-[#D1FAE5] hover:bg-[#10B981]/20 hover:text-white shadow-[2px_2px_0px_#020C07]'
+                          ? 'bg-[#10B981] text-[#02140D] font-black border-l-[3px] border-[#FBBF24] shadow-[2px_2px_0px_#020C07]'
+                          : 'text-[#D1FAE5]/80 hover:bg-[#10B981]/10 hover:text-white border-l-[3px] border-transparent'
                       }`}
                     >
                       <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-                        <div className={`p-1.5 border border-[#03140C] flex-shrink-0 ${
-                          isActive 
-                            ? 'bg-[#02140D] text-[#10B981]' 
-                            : tab.highlight 
-                            ? 'bg-[#FBBF24] text-[#02140D]' 
-                            : 'bg-[#051A12] text-[#34D399]'
-                        }`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-black uppercase tracking-wider truncate flex items-center space-x-1.5">
-                            <span>{tab.label}</span>
-                            {tab.highlight && (
-                              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#02140D]' : 'bg-red-500'} animate-ping`} />
-                            )}
-                          </div>
-                          <p className={`text-[10px] truncate ${isActive ? 'text-[#02140D]/80 font-bold' : 'text-emerald-400/70 font-medium'}`}>
-                            {tab.sub}
-                          </p>
-                        </div>
-                      </div>
-
-                      {tab.badge && (
-                        <span className={`text-[9px] font-mono font-black px-1.5 py-0.5 border flex-shrink-0 ${
-                          isActive
-                            ? 'bg-[#02140D] text-[#FBBF24] border-[#02140D]'
-                            : tab.highlight
-                            ? 'bg-[#FF4D6D] text-white border-[#03140C] animate-pulse'
-                            : 'bg-[#051C13] text-[#6EE7B7] border-[#03140C]'
-                        }`}>
-                          {tab.badge}
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${
+                          isActive ? 'text-[#02140D]' : tab.highlight ? 'text-[#FBBF24]' : 'text-[#34D399]'
+                        }`} />
+                        <span className="text-xs font-bold uppercase tracking-wider truncate flex items-center space-x-1.5">
+                          <span>{tab.label}</span>
+                          {tab.highlight && (
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-[#02140D]' : 'bg-red-500'} animate-pulse`} />
+                          )}
                         </span>
-                      )}
+                      </div>
                     </motion.button>
                   );
                 })}

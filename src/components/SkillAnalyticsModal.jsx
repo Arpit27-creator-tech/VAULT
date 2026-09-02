@@ -1,10 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, 
   ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key,
   MapPin, BookOpen, Lightbulb
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
+
+/** Animates a number counting up from 0 to `value` over `duration` ms. */
+function useCountUp(value, duration = 900, startDelay = 0) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    let raf;
+    let startTime;
+    const timer = setTimeout(() => {
+      const step = (ts) => {
+        if (!startTime) startTime = ts;
+        const progress = Math.min(1, (ts - startTime) / duration);
+        setDisplay(Math.round(progress * value));
+        if (progress < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }, startDelay);
+
+    return () => {
+      clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [value, duration, startDelay]);
+
+  return display;
+}
 
 export default function SkillAnalyticsModal({ 
   isOpen, 
@@ -18,7 +44,7 @@ export default function SkillAnalyticsModal({
   onReturnToLobby,
   onOpenRoadmap
 }) {
-  if (!isOpen) return null;
+  const [revealStep, setRevealStep] = useState(0);
 
   const xpBreakdown = [
     { subject: "Computer Science (Logic & Code)", xp: stats.hackerXp || 350, icon: Terminal, color: "#10B981" },
@@ -27,7 +53,34 @@ export default function SkillAnalyticsModal({
     { subject: "Cryptography & Linguistics", xp: stats.cryptoXp || 350, icon: Key, color: "#C084FC" },
   ];
 
-  const totalXp = xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0);
+  const comboBonus = stats.comboBonus || 0;
+  const totalXp = xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0) + comboBonus;
+
+  // Reveal each line item one at a time, like a loot box opening,
+  // instead of dumping every number on screen at once.
+  useEffect(() => {
+    if (!isOpen) {
+      setRevealStep(0);
+      return;
+    }
+    const totalSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1; // +1 for the total
+    let step = 0;
+    const interval = setInterval(() => {
+      step += 1;
+      setRevealStep(step);
+      if (step >= totalSteps) clearInterval(interval);
+    }, 380);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const totalDisplay = useCountUp(
+    isVictory || totalXp > 0 ? totalXp : 0,
+    1100,
+    (xpBreakdown.length + (comboBonus > 0 ? 1 : 0)) * 380
+  );
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -96,7 +149,9 @@ export default function SkillAnalyticsModal({
           </div>
           <div className="bg-[#020B06] p-3 border border-emerald-900/60">
             <span className="text-[10px] font-mono text-emerald-400 uppercase">Total XP Gained</span>
-            <p className="text-lg font-mono font-black text-[#FBBF24]">+{totalXp}</p>
+            <p className="text-lg font-mono font-black text-[#FBBF24]">
+              {revealStep >= xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1 ? `+${totalDisplay}` : '???'}
+            </p>
           </div>
         </div>
 
@@ -112,24 +167,54 @@ export default function SkillAnalyticsModal({
           <div className="space-y-2.5">
             {xpBreakdown.map((item, idx) => {
               const Icon = item.icon;
+              const revealed = revealStep > idx;
               return (
-                <div key={idx} className="space-y-1">
+                <div
+                  key={idx}
+                  className={`space-y-1 transition-all duration-300 ${
+                    revealed ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3'
+                  }`}
+                >
                   <div className="flex justify-between text-xs font-mono">
                     <span className="flex items-center space-x-1.5 text-emerald-100">
                       <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
                       <span>{item.subject}</span>
                     </span>
-                    <span className="font-black text-[#FBBF24]">+{item.xp} XP</span>
+                    <span className="font-black text-[#FBBF24]">{revealed ? `+${item.xp} XP` : ''}</span>
                   </div>
                   <div className="h-2 w-full bg-[#020B06] border border-[#0E3A28] overflow-hidden">
                     <div 
-                      className="h-full transition-all duration-1000"
-                      style={{ width: `${Math.min(100, (item.xp / 400) * 100)}%`, backgroundColor: item.color }}
+                      className="h-full transition-all duration-700"
+                      style={{ width: revealed ? `${Math.min(100, (item.xp / 400) * 100)}%` : '0%', backgroundColor: item.color }}
                     />
                   </div>
                 </div>
               );
             })}
+
+            {comboBonus > 0 && (
+              <div
+                className={`space-y-1 pt-2 border-t border-emerald-900/60 transition-all duration-300 ${
+                  revealStep > xpBreakdown.length ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3'
+                }`}
+              >
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="flex items-center space-x-1.5 text-[#FBBF24]">
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>{stats.maxCombo}x Combo Bonus (no-miss streak)</span>
+                  </span>
+                  <span className="font-black text-[#FBBF24]">
+                    {revealStep > xpBreakdown.length ? `+${comboBonus} XP` : ''}
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-[#020B06] border border-[#0E3A28] overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-700 bg-[#FBBF24]"
+                    style={{ width: revealStep > xpBreakdown.length ? '100%' : '0%' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

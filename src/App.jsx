@@ -29,6 +29,7 @@ import CryptographerDeck from './components/CryptographerDeck';
 import InterdependenceMatrix from './components/InterdependenceMatrix';
 import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
+import ParticleBurst from './components/ParticleBurst';
 import { voiceEngine } from './services/voiceEngine';
 import CreateCustomHeistModal from './components/CreateCustomHeistModal';
 import RemediationRoadmapModal from './components/RemediationRoadmapModal';
@@ -136,6 +137,10 @@ export default function App() {
   });
   const [alarmLevel, setAlarmLevel] = useState('LOW_SECURITY'); 
   const [alarmFails, setAlarmFails] = useState(0);
+  const [screenShake, setScreenShake] = useState(false);
+  const [burstTrigger, setBurstTrigger] = useState(0);
+  const [comboStreak, setComboStreak] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [radioMessages, setRadioMessages] = useState([
@@ -366,6 +371,7 @@ export default function App() {
       const timeStr = `${Math.floor(totalTimeSpent / 60)}m ${(totalTimeSpent % 60)}s`;
 
       setIsMatchVictory(solvedCount > 0);
+      const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
       setAnalyticsStats({
         hackerXp: solved.hacker ? 350 : 100,
         engineerXp: solved.engineer ? 350 : 100,
@@ -373,11 +379,13 @@ export default function App() {
         cryptoXp: solved.cryptographer ? 350 : 100,
         timeElapsed: timeStr,
         accuracy: alarmFails === 0 ? "100%" : `${Math.max(50, 100 - alarmFails * 10)}%`,
-        alarmsTripped: alarmFails
+        alarmsTripped: alarmFails,
+        comboBonus,
+        maxCombo
       });
 
       if (currentUser) {
-        const gainedXp = solvedCount > 0 ? 450 : 150;
+        const gainedXp = (solvedCount > 0 ? 450 : 150) + comboBonus;
         const resultLabel = solvedCount > 0 ? 'VICTORY' : 'CONCLUDED';
         const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
         const newRecord = {
@@ -1112,6 +1120,8 @@ export default function App() {
     setIsTimerRunning(true);
     setAlarmLevel('LOW_SECURITY');
     setAlarmFails(0);
+    setComboStreak(0);
+    setMaxCombo(0);
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
       : ['hacker', 'engineer', 'scientist', 'cryptographer'];
@@ -1200,7 +1210,21 @@ export default function App() {
   const handleRolePuzzleSolved = (role, clue) => {
     const stage = allStages[currentStageIdx] || heistStages[0];
     const stageId = stage.stageId;
-    
+
+    // Puzzle-solved celebration: brief screen shake + particle burst,
+    // and bump the combo streak (rewards consecutive solves without a miss).
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 400);
+    setBurstTrigger(prev => prev + 1);
+    setComboStreak(prev => {
+      const next = prev + 1;
+      setMaxCombo(m => Math.max(m, next));
+      if (next >= 2) {
+        toast.success(`🔥 ${next}x COMBO!`, { duration: 1500 });
+      }
+      return next;
+    });
+
     setStageSolvedRoles(prev => {
       const current = { ...(prev[stageId] || {}) };
       current[role] = true;
@@ -1249,6 +1273,7 @@ export default function App() {
   const handleRolePuzzleFailed = (role, reason) => {
     const newFails = alarmFails + 1;
     setAlarmFails(newFails);
+    setComboStreak(0);
     
     setTimeLeft(prev => Math.max(5, prev - 12));
 
@@ -1296,7 +1321,8 @@ export default function App() {
     const timeStr = `${Math.floor(totalTimeSpent / 60)}m ${(totalTimeSpent % 60)}s`;
 
     const xpReward = 500 + (currentStageIdx + 1) * 250;
-    setXp(prev => prev + xpReward);
+    const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
+    setXp(prev => prev + xpReward + comboBonus);
     setStreak(prev => prev + 1);
 
     setIsMatchVictory(true);
@@ -1307,7 +1333,9 @@ export default function App() {
       cryptoXp: 350 + (currentStageIdx + 1) * 50,
       timeElapsed: timeStr,
       accuracy: alarmFails === 0 ? "100%" : `${Math.max(65, 100 - alarmFails * 8)}%`,
-      alarmsTripped: alarmFails
+      alarmsTripped: alarmFails,
+      comboBonus,
+      maxCombo
     });
     setAnalyticsModalOpen(true);
   };
@@ -1937,9 +1965,20 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.99 }}
               transition={{ duration: 0.2 }}
-              className="space-y-5 max-w-7xl mx-auto"
+              className={`space-y-5 max-w-7xl mx-auto ${screenShake ? 'animate-screen-shake' : ''}`}
             >
-              
+              {burstTrigger > 0 && <ParticleBurst key={burstTrigger} />}
+
+              {comboStreak >= 2 && (
+                <div
+                  key={comboStreak}
+                  className="fixed top-20 right-4 sm:right-8 z-[60] bg-[#FBBF24] text-[#02140D] font-black px-4 py-2 border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] animate-combo-pop flex items-center space-x-2"
+                >
+                  <Flame className="w-5 h-5" />
+                  <span className="uppercase text-sm">{comboStreak}x Combo!</span>
+                </div>
+              )}
+
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">

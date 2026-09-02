@@ -326,8 +326,13 @@ export default function App() {
   };
 
   const handleConcludeHeist = (actionType = 'abort', force = false) => {
+    // Count only slots with a real connected player, not empty role slots —
+    // lobby.players always has 4 entries regardless of how many people
+    // actually joined, so raw .length is always 4 and would incorrectly
+    // force a vote even when testing solo.
+    const activePlayers = (lobby?.players || []).filter(p => p.userId || p.username);
     // If in multiplayer and not forced by a successful vote, propose a vote instead
-    if (!force && lobby && lobby.players && lobby.players.length > 1 && activeTab === 'liveheist') {
+    if (!force && activePlayers.length > 1 && activeTab === 'liveheist') {
       const activeSocket = getSocket();
       if (activeSocket) {
         activeSocket.emit('heist:propose-end', {

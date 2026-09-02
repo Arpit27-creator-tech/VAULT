@@ -224,7 +224,7 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden', message: 'You can only update your own profile.' });
     }
 
-    const { callsign, avatar_url, role } = req.body;
+    const { callsign, avatar_url, role, notification_prefs } = req.body;
 
     const fields = [];
     const values = [];
@@ -242,6 +242,10 @@ router.put('/:id', authenticate, async (req, res) => {
       fields.push(`role = $${paramIdx++}`);
       values.push(role);
     }
+    if (notification_prefs) {
+      fields.push(`notification_prefs = $${paramIdx++}::jsonb`);
+      values.push(JSON.stringify(notification_prefs));
+    }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
@@ -250,11 +254,11 @@ router.put('/:id', authenticate, async (req, res) => {
     values.push(id);
     const result = await query(
       `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIdx} 
-       RETURNING id, username, callsign, avatar_url, role, level, xp, rank`,
+       RETURNING id, username, callsign, avatar_url, role, level, xp, rank, notification_prefs`,
       values
     );
 
-    res.json({ user: result.rows[0] });
+    res.json({ user: { ...result.rows[0], notificationPrefs: result.rows[0].notification_prefs } });
 
   } catch (err) {
     console.error('[USERS] Update profile error:', err);

@@ -448,6 +448,52 @@ router.post('/login', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// PUT /api/auth/change-password
+// Changes the logged-in user's password after verifying the
+// current one. Requires a valid JWT (authenticate middleware).
+// ─────────────────────────────────────────────────────────────
+router.put('/change-password', authenticate, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'Missing fields',
+        message: 'Current and new password are required.'
+      });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: 'Weak password',
+        message: 'New password must be at least 8 characters.'
+      });
+    }
+
+    const result = await query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+    if (!isMatch) {
+      return res.status(401).json({
+        error: 'Invalid password',
+        message: 'Current password is incorrect.'
+      });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const newHash = await bcrypt.hash(newPassword, salt);
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('[AUTH] Change password error:', err);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // GET /api/auth/me
 // Returns the current user's profile from their JWT
 // ─────────────────────────────────────────────────────────────
@@ -513,6 +559,7 @@ function buildUserProfile(user, history = []) {
     rank: user.rank || 'Forest Explorer',
     avatar: user.avatar_url,
     badges: user.badges || ['Forest Ranger'],
+    notificationPrefs: user.notification_prefs || { heistInvites: true, weeklySummary: true, friendRequests: true },
     stats: {
       missionsCompleted: user.missions_completed || 0,
       winRate: user.win_rate || 100,

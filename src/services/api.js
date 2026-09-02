@@ -138,6 +138,14 @@ export const authAPI = {
     return apiFetch('/auth/me');
   },
 
+  /** Change password for the logged-in user */
+  async changePassword(currentPassword, newPassword) {
+    return apiFetch('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+  },
+
   /** Logout — clear token */
   logout() {
     clearToken();

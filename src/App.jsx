@@ -7,7 +7,8 @@ import {
   Radio, Terminal, ChevronRight, Award, Star, AlertTriangle, Flame, RefreshCw, Volume2, VolumeX,
   Video, VideoOff, Eye, Sliders, Sun, Trees, Flower2, Leaf, FlaskConical, Key, Activity, Send, ArrowRight, Plus,
   Menu, X, PanelLeftClose, PanelLeftOpen, ArrowLeft, LogOut, Home, BarChart3, User, UserCheck, LogIn,
-  Mic, MicOff, Headphones, PhoneCall, PhoneOff, Copy, Check, Share2, Globe, Shield, RefreshCw as RefreshIcon
+  Mic, MicOff, Headphones, PhoneCall, PhoneOff, Copy, Check, Share2, Globe, Shield, RefreshCw as RefreshIcon,
+  Settings, KeyRound, Bell
 } from 'lucide-react';
 import bgVideo from './assets/backgroundnew.mp4';
 import { 
@@ -37,7 +38,7 @@ import StatsDashboard from './components/StatsDashboard';
 import GraphicalRoadmap from './components/GraphicalRoadmap';
 import OperativeDirectoryModal from './components/OperativeDirectoryModal';
 import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
-import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI } from './services/api.js';
+import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
 import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
 
 // Specialist role configurations for multiplayer synchronization
@@ -106,6 +107,12 @@ export default function App() {
   }, []);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState({ heistInvites: true, weeklySummary: true, friendRequests: true });
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [bgVideoActive, setBgVideoActive] = useState(true);
   const [bgDimMode, setBgDimMode] = useState('vivid'); 
   const videoRef = useRef(null);
@@ -459,6 +466,49 @@ export default function App() {
     toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPasswordInput || !newPasswordInput) {
+      toast.error('Fill in both current and new password.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      toast.error('New passwords do not match.');
+      return;
+    }
+    if (newPasswordInput.length < 8) {
+      toast.error('New password must be at least 8 characters.');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await authAPI.changePassword(currentPasswordInput, newPasswordInput);
+      toast.success('Password updated successfully.');
+      setCurrentPasswordInput('');
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to change password.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleSaveNotificationPrefs = async () => {
+    if (!currentUser?.id) return;
+    setIsSavingPrefs(true);
+    try {
+      const res = await userAPI.updateProfile(currentUser.id, { notification_prefs: notifPrefs });
+      const updated = { ...currentUser, notificationPrefs: res?.user?.notificationPrefs || notifPrefs };
+      setCurrentUser(updated);
+      localStorage.setItem('vault_current_user', JSON.stringify(updated));
+      toast.success('Notification preferences saved.');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save preferences.');
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
   // Auto-login from JWT token on mount if returning user
   useEffect(() => {
     if (!currentUser && authAPI.isAuthenticated()) {
@@ -735,6 +785,12 @@ export default function App() {
   useEffect(() => {
     heistAudio.toggleSound(soundEnabled);
   }, [soundEnabled]);
+
+  useEffect(() => {
+    if (currentUser?.notificationPrefs) {
+      setNotifPrefs(currentUser.notificationPrefs);
+    }
+  }, [currentUser?.id]);
 
   useEffect(() => {
     localStorage.setItem('kh_missions_subject_v4', JSON.stringify(missions));
@@ -1683,7 +1739,8 @@ export default function App() {
                   { id: 'topics', label: 'Disciplines', icon: BookOpen },
                   { id: 'map', label: 'Canopy Map', icon: MapPin },
                   { id: 'builder', label: 'Architect', icon: Terminal },
-                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket }
+                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket },
+                  { id: 'settings', label: 'Settings', icon: Settings }
                 ].map(tab => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -3113,6 +3170,138 @@ export default function App() {
                   {builderSaving ? "Compiling Blueprint..." : "Publish Expedition Blueprint"}
                 </button>
               </form>
+            </motion.div>
+          )}
+
+          {activeTab === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-5 max-w-2xl mx-auto"
+            >
+              <div className="flex items-center space-x-3">
+                <Settings className="w-7 h-7 text-[#10B981]" />
+                <h2 className="text-2xl font-black uppercase tracking-tight text-[#F0FDF4]">
+                  Settings
+                </h2>
+              </div>
+
+              {/* Sound */}
+              <div className="forest-card p-5 space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  <span>Sound</span>
+                </h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-emerald-200">Sound effects &amp; audio cues</span>
+                  <button
+                    onClick={() => setSoundEnabled(v => !v)}
+                    className={`w-12 h-6 flex items-center px-0.5 transition-colors border-2 border-[#03140C] ${
+                      soundEnabled ? 'bg-[#10B981] justify-end' : 'bg-[#0A261B] justify-start'
+                    }`}
+                  >
+                    <span className="w-4 h-4 bg-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Account: change password */}
+              {currentUser && (
+                <div className="forest-card p-5 space-y-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                    <KeyRound className="w-4 h-4" />
+                    <span>Change Password</span>
+                  </h3>
+                  <input
+                    type="password"
+                    value={currentPasswordInput}
+                    onChange={e => setCurrentPasswordInput(e.target.value)}
+                    placeholder="Current password"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={newPasswordInput}
+                    onChange={e => setNewPasswordInput(e.target.value)}
+                    placeholder="New password (min. 8 characters)"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPasswordInput}
+                    onChange={e => setConfirmPasswordInput(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                  />
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50"
+                  >
+                    {isChangingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              )}
+
+              {/* Notification preferences */}
+              {currentUser && (
+                <div className="forest-card p-5 space-y-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                    <Bell className="w-4 h-4" />
+                    <span>Notifications</span>
+                  </h3>
+                  {[
+                    { key: 'heistInvites', label: 'Heist invites from squadmates' },
+                    { key: 'friendRequests', label: 'Friend requests' },
+                    { key: 'weeklySummary', label: 'Weekly progress summary email' }
+                  ].map(pref => (
+                    <div key={pref.key} className="flex items-center justify-between">
+                      <span className="text-sm text-emerald-200">{pref.label}</span>
+                      <button
+                        onClick={() => setNotifPrefs(prev => ({ ...prev, [pref.key]: !prev[pref.key] }))}
+                        className={`w-12 h-6 flex items-center px-0.5 transition-colors border-2 border-[#03140C] ${
+                          notifPrefs[pref.key] ? 'bg-[#10B981] justify-end' : 'bg-[#0A261B] justify-start'
+                        }`}
+                      >
+                        <span className="w-4 h-4 bg-white" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleSaveNotificationPrefs}
+                    disabled={isSavingPrefs}
+                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50"
+                  >
+                    {isSavingPrefs ? 'Saving...' : 'Save Preferences'}
+                  </button>
+                </div>
+              )}
+
+              {/* Account actions */}
+              {currentUser ? (
+                <div className="forest-card p-5">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center space-x-2 bg-[#3B0D14] text-[#FCA5A5] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#4C0F1A] uppercase text-xs"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="forest-card p-5 text-center space-y-2">
+                  <p className="text-sm text-emerald-200">Sign in to manage your account settings.</p>
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="bg-[#FBBF24] text-[#02140D] font-black py-2 px-6 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] uppercase text-xs"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 

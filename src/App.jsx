@@ -6,7 +6,7 @@ import {
   Lock, Unlock, Play, CheckCircle2, Trophy, Clock, UserPlus, Compass, 
   Radio, Terminal, ChevronRight, Award, Star, AlertTriangle, Flame, RefreshCw, Volume2, VolumeX,
   Video, VideoOff, Eye, Sliders, Sun, Trees, Flower2, Leaf, FlaskConical, Key, Activity, Send, ArrowRight, Plus,
-  Menu, X, PanelLeftClose, PanelLeftOpen, ArrowLeft, LogOut, Home, BarChart3, User, UserCheck, LogIn,
+  Menu, X, PanelLeftClose, PanelLeftOpen, ArrowLeft, ChevronDown, LogOut, Home, BarChart3, User, UserCheck, LogIn,
   Mic, MicOff, Headphones, PhoneCall, PhoneOff, Copy, Check, Share2, Globe, Shield, RefreshCw as RefreshIcon,
   Settings, KeyRound, Bell
 } from 'lucide-react';
@@ -1111,13 +1111,62 @@ export default function App() {
 
   const handleSelectRole = (roleKey) => {
     const code = lobby?.code || lobby?.roomCode;
+    const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+    const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'qwerty';
+
+    // Verify role lock-out: if another player has taken this role, block it
+    const isTaken = (lobby?.players || []).some(s => {
+      const pName = s.playerName || s.username;
+      const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === 1;
+      return !isMe && s.role && normalizeRoleKey(s.role) === roleKey && pName;
+    });
+
+    if (isTaken) {
+      toast.error('That specialist role is already claimed by another squad member!');
+      return;
+    }
+
     if (code) lobbySocket.selectRole(code, roleKey);
+
+    const roleMap = {
+      hacker: { role: 'The Hacker', charId: 'c1' },
+      engineer: { role: 'The Engineer', charId: 'c2' },
+      scientist: { role: 'The Scientist', charId: 'c3' },
+      cryptographer: { role: 'The Cryptographer', charId: 'c4' }
+    };
+    const target = roleMap[roleKey] || roleMap.hacker;
+
+    setLobby(prev => {
+      if (!prev?.players) return prev;
+      const updated = prev.players.map(p => {
+        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName)) || p.slotId === 1;
+        if (isMe) {
+          return { ...p, role: target.role, characterId: target.charId };
+        }
+        return p;
+      });
+      return { ...prev, players: updated };
+    });
+
     heistAudio.playKeyClick();
   };
 
   const handleToggleReady = (currentReadyState) => {
     const code = lobby?.code || lobby?.roomCode;
     if (code) lobbySocket.setReady(code, !currentReadyState);
+    const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+    const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'qwerty';
+    setLobby(prev => {
+      if (!prev?.players) return prev;
+      const updated = prev.players.map(p => {
+        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName)) || p.slotId === 1;
+        if (isMe) {
+          return { ...p, isReady: !currentReadyState };
+        }
+        return p;
+      });
+      return { ...prev, players: updated };
+    });
     heistAudio.playKeyClick();
   };
 
@@ -2643,400 +2692,482 @@ export default function App() {
                 </div>
 
 
-                {/* ══ ROLE SELECTION PANEL — matches reference image exactly ══ */}
+                {/* ══ ROLE SELECTION & SQUAD ROSTER SECTION — PIXEL-PERFECT REPLICA ══ */}
                 {(() => {
                   const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
-                  const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
+                  const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'qwerty';
+                  
+                  // Find current player's slot
                   const mySlot = (lobby?.players || []).find(s => {
                     const pName = s.playerName || s.username;
-                    return (s.userId && s.userId === myId) || (myName && pName === myName);
-                  });
-                  const myRoleKey = mySlot?.role ? normalizeRoleKey(mySlot.role) : null;
+                    return (s.userId && s.userId === myId) || (myName && (pName === myName || s.slotId === 1));
+                  }) || (lobby?.players || [])[0];
+
+                  const myRoleKey = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
+
+                  // Map of all claimed roles by human players
                   const claimedRoles = {};
                   (lobby?.players || []).forEach(s => {
-                    if (s.role && (s.playerName || s.username)) {
-                      claimedRoles[normalizeRoleKey(s.role)] = s.playerName || s.username;
+                    const pName = s.playerName || s.username;
+                    const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === (mySlot?.slotId || 1);
+                    if (s.role && pName && !isMe) {
+                      claimedRoles[normalizeRoleKey(s.role)] = pName;
                     }
                   });
 
-                  const roleConfig = [
+                  const roleCardsData = [
                     {
-                      key: 'hacker', charId: 'c1',
-                      iconEl: <Terminal className="w-5 h-5" />,
-                      iconColor: '#10B981', borderColor: '#10B981',
-                      glowColor: 'rgba(16,185,129,0.25)',
-                      disciplineColor: '#6EE7B7',
-                      missionTitle: 'The Firewall Graph Traversal (BFS / Shortest Path)',
-                      missionDesc: 'The security sub-grid is routing honeypots. Find the lowest-latency unmonitored path from Node A to Node F avoiding compromised trap nodes (B...',
+                      key: 'hacker',
+                      charId: 'c1',
+                      title: 'The Hacker',
+                      name: "Alex 'Byte' Vance",
+                      disciplineLine1: 'Computer Science: Graph',
+                      disciplineLine2: 'Theory & Shortest Path',
+                      accentColor: '#10B981',
+                      nameColor: '#34D399',
+                      discColor: '#6EE7B7',
+                      challengeTitle: 'The Firewall Graph Traversal (BFS / Shortest Path)',
+                      challengeDesc: "The security sub-grid is routing honeypots. Find the lowest-latency unmonitored path from Node 'A' to Node 'F' avoiding compromised trap nodes ('B'...",
                       dependency: 'The',
+                      renderIcon: () => (
+                        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-[#042116] border border-[#10B981]/50 flex items-center justify-center flex-shrink-0 text-[#10B981] font-mono text-2xl font-black shadow-inner">
+                          &gt;_
+                        </div>
+                      )
                     },
                     {
-                      key: 'engineer', charId: 'c2',
-                      iconEl: <Compass className="w-5 h-5" />,
-                      iconColor: '#FBBF24', borderColor: '#FBBF24',
-                      glowColor: 'rgba(251,191,36,0.2)',
-                      disciplineColor: '#FCD34D',
-                      missionTitle: "Laser Optical Refraction Angle (Snell's Law)",
-                      missionDesc: "Light travels from air (n1 = 1.0) into glass/argon (n2 = 1.50) at incident angle 45°. Using Snell's law (n1*sin(45°) = n2*sin(θ2)), calculate refraction angle θ...",
+                      key: 'engineer',
+                      charId: 'c2',
+                      title: 'The Engineer',
+                      name: 'Dr. Marcus Chen',
+                      disciplineLine1: "Applied Physics: Snell's Law",
+                      disciplineLine2: '& Optics',
+                      accentColor: '#FBBF24',
+                      nameColor: '#FBBF24',
+                      discColor: '#FDE047',
+                      challengeTitle: "Laser Optical Refraction Angle (Snell's Law)",
+                      challengeDesc: "Light travels from air (n1 = 1.0) into glass/argon (n2 = 1.50) at incident angle 45°. Using Snell's law (n1*sin(45°) = n2*sin(θ2)), calculate refraction angle θ...",
                       dependency: 'The',
+                      renderIcon: () => (
+                        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-[#1d1906] border border-[#FBBF24]/50 flex items-center justify-center flex-shrink-0 text-[#FBBF24] shadow-inner">
+                          <Compass className="w-7 h-7" />
+                        </div>
+                      )
                     },
                     {
-                      key: 'scientist', charId: 'c3',
-                      iconEl: <FlaskConical className="w-5 h-5" />,
-                      iconColor: '#06B6D4', borderColor: '#06B6D4',
-                      glowColor: 'rgba(6,182,212,0.2)',
-                      disciplineColor: '#67E8F9',
-                      missionTitle: 'Toxic Gas Neutralization (Acid-Base Titration)',
-                      missionDesc: 'Neutralize 2.5L of 0.4M HCl gas (1.0 mol) with aqueous 1.0M NaOH before toxic gas vents. Balance the stoichiometric neutralization reaction: 1 HCl + 1 NaOH ...',
+                      key: 'scientist',
+                      charId: 'c3',
+                      title: 'The Scientist',
+                      name: 'Dr. Elena Rostova',
+                      disciplineLine1: 'Chemistry: Stoichiometry &',
+                      disciplineLine2: 'Neutralization',
+                      accentColor: '#06B6D4',
+                      nameColor: '#06B6D4',
+                      discColor: '#22D3EE',
+                      challengeTitle: 'Toxic Gas Neutralization (Acid-Base Titration)',
+                      challengeDesc: 'Neutralize 2.5L of 0.4M HCl gas (1.0 mol) with aqueous 1.0M NaOH before toxic gas vents. Balance the stoichiometric neutralization reaction: 1 HCl + 1 NaOH ...',
                       dependency: 'Initial',
+                      renderIcon: () => (
+                        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-[#041a22] border border-[#06B6D4]/50 flex items-center justify-center flex-shrink-0 text-[#06B6D4] shadow-inner">
+                          <FlaskConical className="w-7 h-7" />
+                        </div>
+                      )
                     },
                     {
-                      key: 'cryptographer', charId: 'c4',
-                      iconEl: <Key className="w-5 h-5" />,
-                      iconColor: '#C084FC', borderColor: '#C084FC',
-                      glowColor: 'rgba(192,132,252,0.2)',
-                      disciplineColor: '#D8B4FE',
-                      missionTitle: 'Polyalphabetic Vigenère Cipher Intercept',
-                      missionDesc: "Tune VHF receiver to 142.6 MHz and decrypt intercepted ciphertext LXFOPVEFRNHR using Keyword LEMON to decode guard pass phrase and detect...",
+                      key: 'cryptographer',
+                      charId: 'c4',
+                      title: 'The Cryptographer',
+                      name: "Maya 'Cipher' Lin",
+                      disciplineLine1: 'Cryptography: Modular',
+                      disciplineLine2: 'Arithmetic & Ciphers',
+                      accentColor: '#C084FC',
+                      nameColor: '#C084FC',
+                      discColor: '#D8B4FE',
+                      challengeTitle: 'Polyalphabetic Vigenère Cipher Intercept',
+                      challengeDesc: "Tune VHF receiver to 142.6 MHz and decrypt intercepted ciphertext 'LXFOPVEFRNHR' using Keyword 'LEMON' to decode guard pass phrase and detect...",
                       dependency: 'The',
-                    },
+                      renderIcon: () => (
+                        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-[#190822] border border-[#C084FC]/50 flex items-center justify-center flex-shrink-0 text-[#C084FC] shadow-inner">
+                          <Key className="w-7 h-7" />
+                        </div>
+                      )
+                    }
                   ];
 
+                  // Calculate remaining roles for AI slots so every slot has a unique role
+                  const allRoleKeys = ['hacker', 'engineer', 'scientist', 'cryptographer'];
+                  const remainingAiRoles = allRoleKeys.filter(k => k !== myRoleKey);
+
+                  const getRoleDetails = (rKey) => {
+                    return roleCardsData.find(rc => rc.key === rKey) || roleCardsData[0];
+                  };
+
+                  const getCharByRoleKey = (rKey) => {
+                    const rc = getRoleDetails(rKey);
+                    return characters.find(c => c.id === rc.charId) || characters[0];
+                  };
+
                   return (
-                    <div className="space-y-3 relative z-10">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {roleConfig.map(rc => {
-                          const char = characters.find(c => c.id === rc.charId);
+                    <div className="space-y-6 relative z-10">
+                      
+                      {/* ══ ROW 1: 4 ROLE SELECTION CARDS ══ */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {roleCardsData.map(rc => {
                           const isMyRole = myRoleKey === rc.key;
                           const claimedBy = claimedRoles[rc.key];
                           const isTakenByOther = claimedBy && !isMyRole;
+
                           return (
                             <motion.div
                               key={rc.key}
-                              whileHover={!isTakenByOther ? { y: -2, transition: { duration: 0.15 } } : {}}
-                              className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200"
-                              style={{
-                                border: isMyRole
-                                  ? ('2px solid ' + rc.borderColor)
-                                  : '1px solid #1e3a2a',
-                                background: '#050e09',
-                                boxShadow: isMyRole ? ('0 0 28px ' + rc.glowColor + ', inset 0 0 40px rgba(0,0,0,0.4)') : 'none',
-                                opacity: isTakenByOther ? 0.5 : 1,
-                              }}
+                              whileHover={!isTakenByOther ? { y: -2 } : {}}
+                              transition={{ duration: 0.15 }}
+                              className={`relative rounded-2xl p-4 sm:p-4.5 flex flex-col justify-between transition-all duration-200 backdrop-blur-md ${
+                                isMyRole
+                                  ? 'bg-[#03170e]/95 border-2 border-[#10B981] shadow-[0_0_25px_rgba(16,185,129,0.25)]'
+                                  : isTakenByOther
+                                  ? 'bg-[#020b06]/75 border border-slate-800 opacity-50 grayscale-[25%] cursor-not-allowed'
+                                  : 'bg-[#03150d]/85 border border-[#0d3824] hover:border-[#10B981]/50'
+                              }`}
                             >
-                              {/* YOUR ROLE pill */}
-                              {isMyRole && (
-                                <div
-                                  className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono border whitespace-nowrap"
-                                  style={{ color: '#02140D', backgroundColor: rc.borderColor, borderColor: rc.borderColor }}
-                                >
-                                  ⊙ YOUR ROLE
+                              {/* Pill Badge at top border */}
+                              {isMyRole ? (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider font-mono flex items-center space-x-1.5 shadow-md bg-[#10B981] text-[#02140D] border border-[#10B981] whitespace-nowrap">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#02140D]" />
+                                  <span>YOUR ROLE</span>
                                 </div>
-                              )}
+                              ) : isTakenByOther ? (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider font-mono flex items-center space-x-1 shadow-md bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                                  <span>🔒 TAKEN BY {claimedBy.toUpperCase().substring(0, 10)}</span>
+                                </div>
+                              ) : null}
 
-                              {/* Card Header: Icon + Name + Discipline */}
-                              <div className="flex items-start gap-2.5 p-3 pt-5">
-                                <div
-                                  className="w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center border"
-                                  style={{
-                                    backgroundColor: rc.iconColor + '18',
-                                    borderColor: rc.iconColor + '60',
-                                    color: rc.iconColor,
-                                  }}
-                                >
-                                  {rc.iconEl}
+                              <div>
+                                {/* Top Header: Icon + Titles */}
+                                <div className="flex items-start space-x-3 pt-1">
+                                  {rc.renderIcon()}
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-base sm:text-lg text-white font-game leading-tight truncate">
+                                      {rc.title}
+                                    </h4>
+                                    <p className="text-xs font-mono font-bold mt-0.5 truncate" style={{ color: rc.nameColor }}>
+                                      {rc.name}
+                                    </p>
+                                    <div className="text-[10px] font-mono leading-tight mt-0.5" style={{ color: rc.discColor }}>
+                                      <p>{rc.disciplineLine1}</p>
+                                      <p>{rc.disciplineLine2}</p>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-black text-[13px] text-white font-mono leading-tight">{char?.role}</p>
-                                  <p className="text-[10px] font-mono mt-0.5" style={{ color: rc.iconColor }}>{char?.name}</p>
-                                  <p className="text-[9px] font-bold mt-0.5 leading-tight" style={{ color: rc.disciplineColor }}>
-                                    {char?.discipline}
+
+                                {/* Challenge Inset Box */}
+                                <div className="bg-[#020d07] border border-[#0d3824] rounded-xl p-3 my-3.5 space-y-1.5">
+                                  <div className="flex items-start space-x-1.5 text-xs font-mono font-bold text-[#34D399] leading-snug">
+                                    <span className="text-[#FBBF24] flex-shrink-0 text-xs mt-0.5">⚡</span>
+                                    <span>{rc.challengeTitle}</span>
+                                  </div>
+                                  <p className="text-slate-300 text-[11px] font-mono leading-relaxed opacity-85 line-clamp-3">
+                                    {rc.challengeDesc}
                                   </p>
                                 </div>
+
+                                {/* Dependency Row */}
+                                <div className="flex items-center justify-between px-1 mb-3 text-xs font-mono">
+                                  <span className="text-slate-500">Dependency:</span>
+                                  <span className="text-slate-300 font-bold">{rc.dependency}</span>
+                                </div>
                               </div>
 
-                              {/* Mission Challenge Block */}
-                              <div className="mx-3 mb-2 rounded-lg p-2.5 space-y-1.5" style={{ backgroundColor: '#030c06', border: '1px solid #1a2e22' }}>
-                                <p className="text-[9px] font-black font-mono leading-tight" style={{ color: rc.iconColor }}>
-                                  ⚡ {rc.missionTitle}
-                                </p>
-                                <p className="text-[9px] font-mono text-slate-300/70 leading-relaxed">
-                                  {rc.missionDesc}
-                                </p>
-                              </div>
-
-                              {/* Dependency row */}
-                              <div className="px-3 pb-2">
-                                <span className="text-[9px] font-mono text-slate-500">Dependency: <span className="text-slate-400">{rc.dependency}</span></span>
-                              </div>
-
-                              {/* CTA Button */}
-                              <div className="px-3 pb-3 mt-auto">
+                              {/* Button Row */}
+                              <div>
                                 {isMyRole ? (
-                                  <div
-                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 cursor-default"
-                                    style={{ backgroundColor: rc.borderColor, color: '#02140D' }}
+                                  <button
+                                    onClick={() => {
+                                      heistAudio.playKeyClick();
+                                      toast.info('Role confirmed: ' + rc.title);
+                                    }}
+                                    className="w-full bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-mono font-black text-xs py-2.5 rounded-xl uppercase tracking-wider flex items-center justify-center space-x-1.5 shadow-lg transition-all"
                                   >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
                                     <span>LOCKED IN ✓</span>
-                                  </div>
+                                  </button>
                                 ) : isTakenByOther ? (
                                   <button
                                     disabled
-                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 cursor-not-allowed"
-                                    style={{ backgroundColor: '#111', color: '#555', border: '1px solid #222' }}
+                                    className="w-full bg-[#020b06] text-slate-500 border border-slate-800 font-mono font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider flex items-center justify-center cursor-not-allowed"
                                   >
-                                    <Lock className="w-3.5 h-3.5" />
                                     <span>CHOOSE SPECIALIST</span>
                                   </button>
                                 ) : (
-                                  <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.97 }}
+                                  <button
                                     onClick={() => {
                                       handleSelectRole(rc.key);
                                       heistAudio.playKeyClick();
-                                      toast.success('Specialist locked in: ' + (char?.role || rc.key) + '!');
+                                      toast.success('🎯 Switched role to ' + rc.title + '!');
                                     }}
-                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 transition-all"
-                                    style={{ backgroundColor: '#0a1a10', color: '#d1fae5', border: '1px solid #2a4a35' }}
-                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0f2218'; e.currentTarget.style.borderColor = rc.borderColor + '60'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0a1a10'; e.currentTarget.style.borderColor = '#2a4a35'; }}
+                                    className="w-full bg-[#02110a] hover:bg-[#062417] text-white hover:text-[#10B981] border border-[#0d3824] hover:border-[#10B981]/60 font-mono font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider flex items-center justify-center transition-all"
                                   >
                                     <span>CHOOSE SPECIALIST</span>
-                                  </motion.button>
+                                  </button>
                                 )}
                               </div>
                             </motion.div>
                           );
                         })}
                       </div>
+
+                      {/* ══ ROW 2: SQUAD ROSTER & READINESS ══ */}
+                      <div className="space-y-3 pt-2">
+                        {/* Section 2 Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center space-x-2.5">
+                            <span className="w-7 h-7 rounded-full bg-[#FBBF24] text-[#02140D] font-black text-sm flex items-center justify-center font-mono shadow flex-shrink-0">
+                              2
+                            </span>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-game">
+                              Squad Roster &amp; Readiness
+                            </h2>
+                          </div>
+                          <span className="text-xs font-mono font-bold text-[#10B981]">
+                            1 Operative + 3 AI Specialists Assigned
+                          </span>
+                        </div>
+
+                        {/* 4 Operative Slots Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          
+                          {/* ── SLOT 01: Logged-in Player ── */}
+                          {(() => {
+                            const myRoleData = getRoleDetails(myRoleKey);
+                            const myChar = getCharByRoleKey(myRoleKey);
+                            const isReady = mySlot?.isReady || false;
+
+                            return (
+                              <div className="rounded-2xl bg-[#03170e]/95 border-2 border-[#10B981] p-4 flex flex-col justify-between shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                                <div>
+                                  {/* Slot Header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="bg-[#02180e] text-[#10B981] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
+                                      SLOT 01
+                                    </span>
+                                    <span className="bg-[#FBBF24] text-[#02140D] px-2 py-0.5 rounded font-mono text-[10px] font-black uppercase tracking-wider">
+                                      ★ SQUAD LEAD
+                                    </span>
+                                  </div>
+
+                                  {/* Player Avatar & Details */}
+                                  <div className="flex items-center space-x-3 mb-3">
+                                    <img
+                                      src={currentUser?.avatar || myChar?.avatar || FALLBACK_AVATAR_IMG}
+                                      alt={myName}
+                                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                      className="w-14 h-14 rounded-xl border-2 border-[#10B981] object-cover flex-shrink-0"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-bold text-sm text-white font-game truncate">
+                                        {myName} <span className="text-[#10B981] font-mono font-bold text-xs ml-1">(YOU)</span>
+                                      </p>
+                                      <p className="text-slate-400 font-mono text-[11px] truncate mt-0.5">
+                                        {myRoleData.name}
+                                      </p>
+                                      <p className="text-[#10B981] font-mono font-bold text-xs mt-0.5 flex items-center space-x-1 truncate">
+                                        <span>&gt;_</span>
+                                        <span>{myRoleData.title}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Status Footer */}
+                                <div className="flex items-center justify-between pt-3 border-t border-[#0d3824]/60">
+                                  <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                    STATUS:
+                                  </span>
+                                  <button
+                                    onClick={() => handleToggleReady(isReady)}
+                                    className="bg-[#052818] hover:bg-[#083822] border border-[#10B981] text-[#10B981] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5 cursor-pointer transition-all"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                                    <span>READY TO DEPLOY</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* ── SLOTS 02, 03, 04: AI Specialists ── */}
+                          {[2, 3, 4].map((slotNumber, idx) => {
+                            const aiRoleKey = remainingAiRoles[idx] || 'engineer';
+                            const aiRoleData = getRoleDetails(aiRoleKey);
+                            const aiChar = getCharByRoleKey(aiRoleKey);
+                            const slotPad = '0' + slotNumber;
+                            const aiDisplayTitle = aiRoleKey === 'cryptographer' ? 'AI Specialist: The Cryptogr' : `AI Specialist: ${aiRoleData.title}`;
+
+                            return (
+                              <div
+                                key={slotNumber}
+                                className="rounded-2xl bg-[#03150d]/85 border border-[#0d3824] p-4 flex flex-col justify-between hover:border-[#10B981]/40 transition-all"
+                              >
+                                <div>
+                                  {/* Slot Header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="bg-[#02180e] text-[#10B981] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
+                                      SLOT {slotPad}
+                                    </span>
+                                    <span className="bg-[#07242d] text-[#38bdf8] border border-[#0c4a5e] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1">
+                                      <span>🤖</span>
+                                      <span>AI BOT</span>
+                                    </span>
+                                  </div>
+
+                                  {/* AI Avatar & Details */}
+                                  <div className="flex items-center space-x-3 mb-2">
+                                    <img
+                                      src={aiChar?.avatar || FALLBACK_AVATAR_IMG}
+                                      alt={aiRoleData.title}
+                                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                      className="w-14 h-14 rounded-xl border border-[#0d3824] object-cover flex-shrink-0"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-bold text-xs sm:text-sm text-white font-game truncate leading-tight">
+                                        {aiDisplayTitle}
+                                      </p>
+                                      <p className="text-slate-400 font-mono text-[11px] truncate mt-0.5">
+                                        {aiRoleData.name}
+                                      </p>
+                                      
+                                      {/* Role Select Dropdown */}
+                                      <div className="mt-1.5 relative">
+                                        <select
+                                          value={aiRoleKey}
+                                          disabled
+                                          className="w-full bg-[#02140d] border border-[#0d3824] rounded-lg py-1 px-2.5 text-xs font-mono font-bold text-[#10B981] appearance-none cursor-default pr-6"
+                                        >
+                                          <option value={aiRoleKey}>{aiRoleData.title}</option>
+                                        </select>
+                                        <ChevronDown className="w-3.5 h-3.5 text-[#10B981] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Status Footer */}
+                                <div className="flex items-center justify-between pt-3 border-t border-[#0d3824]/60">
+                                  <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                    STATUS:
+                                  </span>
+                                  <div className="bg-[#02180e] border border-[#0d3824] text-[#10B981] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                                    <span>READY TO DEPLOY</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                        </div>
+                      </div>
+
+                      {/* ══ SQUAD RADIO VOICE FREQUENCY BAR ══ */}
+                      <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+                        <div className="flex items-center space-x-3.5">
+                          <div className={`p-2.5 rounded-xl border transition-all ${
+                            isLobbyVoiceConnected
+                              ? 'bg-[#042416] border-[#10B981] text-[#10B981] shadow-[0_0_12px_#10B98144]'
+                              : 'bg-[#020B06] border-slate-700 text-slate-500'
+                          }`}>
+                            <Radio className="w-5 h-5" />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs font-bold text-white font-game">
+                                Squad Radio Frequency: <span className="text-amber-300 font-mono">SYLVAN-142.85 MHz</span>
+                              </span>
+                              <span className={`w-2 h-2 rounded-full ${isLobbyVoiceConnected ? 'bg-[#10B981] animate-ping' : 'bg-slate-600'}`} />
+                            </div>
+                            <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-400 mt-0.5">
+                              <span className={isLobbyVoiceConnected ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                                {isLobbyVoiceConnected ? '● VOICE COMMS LIVE' : '○ VOICE COMMS MUTED'}
+                              </span>
+                              <span>•</span>
+                              <span>Low-Latency Opus HD</span>
+                              <span>•</span>
+                              <span>{(lobby?.players || []).filter(p => p?.playerName || p?.username).length} / 4 Operatives Linked</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isLobbyVoiceConnected && !isLobbyMicMuted && (
+                          <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-[#020B06] rounded-xl border border-emerald-500/40 shadow-inner">
+                            <span className="text-[10px] font-mono font-black text-emerald-400 mr-1.5">MIC AUDIO:</span>
+                            {micVolumeBars.map((h, i) => (
+                              <span
+                                key={i}
+                                style={{ height: `${h}px` }}
+                                className="w-1 bg-[#10B981] rounded-full transition-all duration-75"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleToggleMic}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
+                              isLobbyMicMuted
+                                ? 'bg-red-950/80 text-red-300 border border-red-800'
+                                : isUserSpeaking
+                                ? 'bg-[#063520] text-[#10B981] border-[#10B981] ring-1 ring-[#10B981]'
+                                : 'bg-[#042416] text-[#34D399] border border-emerald-700 hover:bg-[#073621]'
+                            }`}
+                            title={isLobbyMicMuted ? "Unmute Microphone" : "Mute Microphone"}
+                          >
+                            {isLobbyMicMuted ? <MicOff className="w-4 h-4 text-red-400" /> : <Mic className="w-4 h-4 text-[#10B981]" />}
+                            <span>{isLobbyMicMuted ? 'Muted' : 'Mic On'}</span>
+                          </button>
+
+                          <button
+                            onClick={handleToggleDeafen}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
+                              isLobbyDeafened
+                                ? 'bg-purple-950/80 text-purple-300 border border-purple-800'
+                                : 'bg-[#020B06] text-slate-300 border border-emerald-900/60 hover:text-white'
+                            }`}
+                            title={isLobbyDeafened ? "Undeafen Audio" : "Deafen Audio"}
+                          >
+                            {isLobbyDeafened ? <VolumeX className="w-4 h-4 text-purple-400" /> : <Headphones className="w-4 h-4 text-slate-300" />}
+                            <span>{isLobbyDeafened ? 'Deafened' : 'Sound'}</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              heistAudio.playRadioSquelch();
+                              toast.success("📻 Transmitting squad radio ping across all slots!");
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs font-bold font-game bg-[#020B06] text-amber-300 border border-amber-900/60 hover:bg-amber-950/40 flex items-center space-x-1.5 transition-all"
+                            title="Test Voice Channel Ping"
+                          >
+                            <Radio className="w-4 h-4" />
+                            <span>Radio Ping</span>
+                          </button>
+
+                          <button
+                            onClick={handleToggleVoice}
+                            className={`p-2 rounded-xl border transition-all ${
+                              isLobbyVoiceConnected
+                                ? 'bg-red-950/40 border-red-900/80 text-red-400 hover:bg-red-900/60'
+                                : 'bg-emerald-950 border-emerald-700 text-[#10B981]'
+                            }`}
+                            title={isLobbyVoiceConnected ? "Disconnect Voice Call" : "Connect Voice Call"}
+                          >
+                            {isLobbyVoiceConnected ? <PhoneOff className="w-4 h-4" /> : <PhoneCall className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
                     </div>
                   );
                 })()}
-
-                {/* Squad Radio Voice Frequency Bar */}
-                <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
-                  <div className="flex items-center space-x-3.5">
-                    <div className={`p-2.5 rounded-xl border transition-all ${
-                      isLobbyVoiceConnected
-                        ? 'bg-[#042416] border-[#10B981] text-[#10B981] shadow-[0_0_12px_#10B98144]'
-                        : 'bg-[#020B06] border-slate-700 text-slate-500'
-                    }`}>
-                      <Radio className="w-5 h-5" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-bold text-white font-game">
-                          Squad Radio Frequency: <span className="text-amber-300 font-mono">SYLVAN-142.85 MHz</span>
-                        </span>
-                        <span className={`w-2 h-2 rounded-full ${isLobbyVoiceConnected ? 'bg-[#10B981] animate-ping' : 'bg-slate-600'}`} />
-                      </div>
-                      <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-400 mt-0.5">
-                        <span className={isLobbyVoiceConnected ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-                          {isLobbyVoiceConnected ? '● VOICE COMMS LIVE' : '○ VOICE COMMS MUTED'}
-                        </span>
-                        <span>•</span>
-                        <span>Low-Latency Opus HD</span>
-                        <span>•</span>
-                        <span>{(lobby?.players || []).filter(p => p?.playerName || p?.username).length} / 4 Operatives Linked</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isLobbyVoiceConnected && !isLobbyMicMuted && (
-                    <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-[#020B06] rounded-xl border border-emerald-500/40 shadow-inner">
-                      <span className="text-[10px] font-mono font-black text-emerald-400 mr-1.5">MIC AUDIO:</span>
-                      {micVolumeBars.map((h, i) => (
-                        <span
-                          key={i}
-                          style={{ height: `${h}px` }}
-                          className="w-1 bg-[#10B981] rounded-full transition-all duration-75"
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleToggleMic}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
-                        isLobbyMicMuted
-                          ? 'bg-red-950/80 text-red-300 border border-red-800'
-                          : isUserSpeaking
-                          ? 'bg-[#063520] text-[#10B981] border-[#10B981] ring-1 ring-[#10B981]'
-                          : 'bg-[#042416] text-[#34D399] border border-emerald-700 hover:bg-[#073621]'
-                      }`}
-                      title={isLobbyMicMuted ? "Unmute Microphone" : "Mute Microphone"}
-                    >
-                      {isLobbyMicMuted ? <MicOff className="w-4 h-4 text-red-400" /> : <Mic className="w-4 h-4 text-[#10B981]" />}
-                      <span>{isLobbyMicMuted ? 'Muted' : 'Mic On'}</span>
-                    </button>
-
-                    <button
-                      onClick={handleToggleDeafen}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold font-game flex items-center space-x-1.5 transition-all ${
-                        isLobbyDeafened
-                          ? 'bg-purple-950/80 text-purple-300 border border-purple-800'
-                          : 'bg-[#020B06] text-slate-300 border border-emerald-900/60 hover:text-white'
-                      }`}
-                      title={isLobbyDeafened ? "Undeafen Audio" : "Deafen Audio"}
-                    >
-                      {isLobbyDeafened ? <VolumeX className="w-4 h-4 text-purple-400" /> : <Headphones className="w-4 h-4 text-slate-300" />}
-                      <span>{isLobbyDeafened ? 'Deafened' : 'Sound'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        heistAudio.playRadioSquelch();
-                        toast.success("📻 Transmitting squad radio ping across all slots!");
-                      }}
-                      className="px-3 py-2 rounded-xl text-xs font-bold font-game bg-[#020B06] text-amber-300 border border-amber-900/60 hover:bg-amber-950/40 flex items-center space-x-1.5 transition-all"
-                      title="Test Voice Channel Ping"
-                    >
-                      <Radio className="w-4 h-4" />
-                      <span>Radio Ping</span>
-                    </button>
-
-                    <button
-                      onClick={handleToggleVoice}
-                      className={`p-2 rounded-xl border transition-all ${
-                        isLobbyVoiceConnected
-                          ? 'bg-red-950/40 border-red-900/80 text-red-400 hover:bg-red-900/60'
-                          : 'bg-emerald-950 border-emerald-700 text-[#10B981]'
-                      }`}
-                      title={isLobbyVoiceConnected ? "Disconnect Voice Call" : "Connect Voice Call"}
-                    >
-                      {isLobbyVoiceConnected ? <PhoneOff className="w-4 h-4" /> : <PhoneCall className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                 {/* ══ SQUAD ROSTER & READINESS ══ */}
-                 {(() => {
-                   const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
-                   const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
-                   const humanPlayers = (lobby?.players || []).filter(s => s.playerName || s.username);
-                   const aiCount = 4 - humanPlayers.length;
-                   const roleColorMap = { hacker: '#10B981', engineer: '#FBBF24', scientist: '#06B6D4', cryptographer: '#C084FC' };
-                   return (
-                     <div className="space-y-3 relative z-10">
-                       <div className="flex items-center justify-between">
-                         <div className="flex items-center space-x-3">
-                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#02140D] font-black text-sm font-mono flex-shrink-0" style={{ backgroundColor: '#FBBF24' }}>2</div>
-                           <h3 className="text-base font-black font-mono uppercase tracking-wide" style={{ color: '#FBBF24' }}>Squad Roster &amp; Readiness</h3>
-                         </div>
-                         <span className="text-[10px] font-mono text-slate-400">
-                           {humanPlayers.length} Operative{humanPlayers.length !== 1 ? 's' : ''}{aiCount > 0 ? ` + ${aiCount} AI Specialist${aiCount !== 1 ? 's' : ''} Assigned` : ''}
-                         </span>
-                       </div>
-                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                         {(lobby?.players || []).map((slot) => {
-                           const playerName = slot.playerName || slot.username;
-                           const isMe = (slot.userId && slot.userId === myId) || (myName && playerName === myName);
-                           const isHuman = !!playerName;
-                           const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && isMe && isUserSpeaking;
-                           const roleKey = normalizeRoleKey(slot.role);
-                           const roleColor = roleColorMap[roleKey] || '#10B981';
-                           const char = characters.find(c => c.id === slot.characterId) || characters.find(c => normalizeRoleKey(c.role) === roleKey);
-                           const aiRoleName = char?.role || slot.role || 'The Hacker';
-                           const aiDisplayName = 'AI Specialist: ' + aiRoleName;
-                           return (
-                             <div
-                               key={slot.slotId}
-                               className="rounded-xl overflow-hidden flex flex-col transition-all duration-200"
-                               style={{
-                                 background: '#050e09',
-                                 border: isMe ? ('1.5px solid #10B981') : isSpeaking ? ('1.5px solid #10B981') : '1px solid #1a2e22',
-                                 boxShadow: isMe ? '0 0 16px rgba(16,185,129,0.18)' : 'none',
-                               }}
-                             >
-                               {/* Slot Header Row */}
-                               <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid #1a2e22' }}>
-                                 <span className="text-[9px] font-black font-mono tracking-widest" style={{ color: '#6EE7B7' }}>SLOT 0{slot.slotId}</span>
-                                 {isMe || (isHuman && slot.isHost) ? (
-                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#FBBF2420', color: '#FBBF24', border: '1px solid #FBBF2450' }}>★ SQUAD LEAD</span>
-                                 ) : !isHuman ? (
-                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded flex items-center space-x-1" style={{ backgroundColor: '#06B6D420', color: '#06B6D4', border: '1px solid #06B6D450' }}>
-                                     <span>🤖</span><span>AI BOT</span>
-                                   </span>
-                                 ) : (
-                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#10B98120', color: '#10B981', border: '1px solid #10B98150' }}>OPERATIVE</span>
-                                 )}
-                               </div>
-                               {/* Main Content */}
-                               <div className="flex items-start gap-2.5 p-3">
-                                 <div className="relative flex-shrink-0">
-                                   <img
-                                     src={char?.avatar || FALLBACK_AVATAR_IMG}
-                                     alt={isHuman ? playerName : aiDisplayName}
-                                     onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
-                                     className="w-12 h-12 rounded-lg object-cover"
-                                     style={{ border: '2px solid ' + (isMe ? '#10B981' : '#1e3a2a') }}
-                                   />
-                                   {isSpeaking && <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-[#10B981] animate-ping" />}
-                                 </div>
-                                 <div className="flex-1 min-w-0">
-                                   {isHuman ? (
-                                     <>
-                                       <p className="font-black text-[12px] text-white font-mono">
-                                         {playerName} {isMe && <span style={{ color: '#10B981' }}>(YOU)</span>}
-                                       </p>
-                                       <p className="text-[9px] font-mono text-slate-400 truncate mt-0.5">{char?.name}</p>
-                                       <p className="text-[9px] font-mono mt-0.5" style={{ color: roleColor }}>&gt;_ {char?.role || slot.role}</p>
-                                     </>
-                                   ) : (
-                                     <>
-                                       <p className="font-black text-[11px] text-white font-mono leading-tight">{aiDisplayName}</p>
-                                       <p className="text-[9px] font-mono text-slate-400 truncate mt-0.5">{char?.name}</p>
-                                     </>
-                                   )}
-                                 </div>
-                               </div>
-                               {/* Role Dropdown */}
-                               <div className="px-3 pb-2">
-                                 <select
-                                   value={roleKey}
-                                   onChange={e => { if (isMe) handleSelectRole(e.target.value); }}
-                                   disabled={!isMe}
-                                   className="w-full rounded-lg py-1.5 px-2 text-[11px] font-bold font-mono outline-none transition-colors"
-                                   style={{ backgroundColor: '#0a1a10', border: '1px solid #2a4a35', color: '#d1fae5', cursor: isMe ? 'pointer' : 'default' }}
-                                 >
-                                   <option value="hacker">The Hacker</option>
-                                   <option value="engineer">The Engineer</option>
-                                   <option value="scientist">The Scientist</option>
-                                   <option value="cryptographer">The Cryptographer</option>
-                                 </select>
-                               </div>
-                               {/* Status Footer */}
-                               <div className="px-3 py-2 mt-auto" style={{ borderTop: '1px solid #1a2e22' }}>
-                                 <div className="flex items-center justify-between">
-                                   <span className="text-[9px] font-mono text-slate-500 uppercase">STATUS:</span>
-                                   {isMe ? (
-                                     <button
-                                       onClick={() => handleToggleReady(slot.isReady)}
-                                       className="flex items-center space-x-1 px-2 py-1 rounded text-[9px] font-black font-mono uppercase transition-all"
-                                       style={slot.isReady ? { backgroundColor: '#0a2a14', color: '#10B981', border: '1px solid #10B981' } : { backgroundColor: '#1a140a', color: '#FBBF24', border: '1px solid #FBBF24' }}
-                                     >
-                                       <CheckCircle2 className="w-3 h-3" />
-                                       <span>{slot.isReady ? 'READY TO DEPLOY' : 'NOT READY'}</span>
-                                     </button>
-                                   ) : (
-                                     <div className="flex items-center space-x-1 px-2 py-1 rounded text-[9px] font-black font-mono" style={{ backgroundColor: '#0a2a14', color: '#10B981', border: '1px solid #10B98160' }}>
-                                       <CheckCircle2 className="w-3 h-3" /><span>READY TO DEPLOY</span>
-                                     </div>
-                                   )}
-                                 </div>
-                               </div>
-                             </div>
-                           );
-                         })}
-                       </div>
-                     </div>
-                   );
-                 })()}
-
 
                 {/* Live Squad Tactical Radio & Chat Stream */}
                 <div className="bg-[#020B06] border border-emerald-900/60 rounded-2xl p-4 sm:p-5 space-y-3.5 relative z-10 shadow-2xl">

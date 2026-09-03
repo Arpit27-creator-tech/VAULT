@@ -3439,12 +3439,18 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-emerald-200">Sound effects &amp; audio cues</span>
                   <button
+                    type="button"
                     onClick={() => setSoundEnabled(v => !v)}
-                    className={`w-12 h-6 flex items-center px-0.5 transition-colors border-2 border-[#03140C] ${
-                      soundEnabled ? 'bg-[#10B981] justify-end' : 'bg-[#0A261B] justify-start'
+                    className={`w-12 h-6 flex items-center p-0.5 rounded-full transition-colors border-2 border-[#03140C] ${
+                      soundEnabled ? 'bg-[#10B981]' : 'bg-[#0A261B]'
                     }`}
+                    aria-label="Toggle Sound"
                   >
-                    <span className="w-4 h-4 bg-white" />
+                    <span 
+                      className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out ${
+                        soundEnabled ? 'translate-x-6' : 'translate-x-0'
+                      }`} 
+                    />
                   </button>
                 </div>
               </div>
@@ -3461,26 +3467,26 @@ export default function App() {
                     value={currentPasswordInput}
                     onChange={e => setCurrentPasswordInput(e.target.value)}
                     placeholder="Current password"
-                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none rounded-lg"
                   />
                   <input
                     type="password"
                     value={newPasswordInput}
                     onChange={e => setNewPasswordInput(e.target.value)}
                     placeholder="New password (min. 8 characters)"
-                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none rounded-lg"
                   />
                   <input
                     type="password"
                     value={confirmPasswordInput}
                     onChange={e => setConfirmPasswordInput(e.target.value)}
                     placeholder="Confirm new password"
-                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none"
+                    className="w-full bg-[#020B06] border-2 border-[#03140C] p-2.5 text-emerald-100 font-mono text-sm focus:border-[#10B981] outline-none rounded-lg"
                   />
                   <button
                     onClick={handleChangePassword}
                     disabled={isChangingPassword}
-                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50"
+                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50 rounded-lg"
                   >
                     {isChangingPassword ? 'Updating...' : 'Update Password'}
                   </button>
@@ -3502,19 +3508,25 @@ export default function App() {
                     <div key={pref.key} className="flex items-center justify-between">
                       <span className="text-sm text-emerald-200">{pref.label}</span>
                       <button
+                        type="button"
                         onClick={() => setNotifPrefs(prev => ({ ...prev, [pref.key]: !prev[pref.key] }))}
-                        className={`w-12 h-6 flex items-center px-0.5 transition-colors border-2 border-[#03140C] ${
-                          notifPrefs[pref.key] ? 'bg-[#10B981] justify-end' : 'bg-[#0A261B] justify-start'
+                        className={`w-12 h-6 flex items-center p-0.5 rounded-full transition-colors border-2 border-[#03140C] ${
+                          notifPrefs[pref.key] ? 'bg-[#10B981]' : 'bg-[#0A261B]'
                         }`}
+                        aria-label={`Toggle ${pref.label}`}
                       >
-                        <span className="w-4 h-4 bg-white" />
+                        <span 
+                          className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out ${
+                            notifPrefs[pref.key] ? 'translate-x-6' : 'translate-x-0'
+                          }`} 
+                        />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={handleSaveNotificationPrefs}
                     disabled={isSavingPrefs}
-                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50"
+                    className="w-full bg-[#10B981] text-[#02140D] font-black py-2.5 border-[3px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#0EA271] uppercase text-xs disabled:opacity-50 rounded-lg"
                   >
                     {isSavingPrefs ? 'Saving...' : 'Save Preferences'}
                   </button>

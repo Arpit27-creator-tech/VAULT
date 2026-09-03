@@ -1845,10 +1845,11 @@ export default function App() {
                   <div className="w-8 border-t border-[#10B981]/20" />
 
                   {/* Navigation Icon List */}
-                  <nav className="flex flex-col items-center space-y-3.5 w-full">
+                  <nav className="flex flex-col items-center space-y-2.5 w-full">
                     {[
                       { id: 'home', label: 'Home HQ', icon: Home },
                       { id: 'missions', label: 'Expeditions', icon: Compass },
+                      { id: 'lobby', label: 'Squad Lobby', icon: Users },
                       { id: 'characters', label: '4 Roles', icon: Zap },
                       { id: 'map', label: 'Canopy Map', icon: MapPin },
                       { id: 'topics', label: 'Disciplines', icon: BookOpen },

@@ -1854,6 +1854,7 @@ export default function App() {
                       { id: 'topics', label: 'Disciplines', icon: BookOpen },
                       { id: 'builder', label: 'Architect', icon: Terminal },
                       { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket },
+                      { id: 'settings', label: 'Settings', icon: Settings },
                     ].map(tab => {
                       const Icon = tab.icon;
                       const isActive = activeTab === tab.id;

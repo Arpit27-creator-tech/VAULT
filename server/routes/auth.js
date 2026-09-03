@@ -561,6 +561,8 @@ function buildUserProfile(user, history = []) {
     badges: user.badges || ['Forest Ranger'],
     notificationPrefs: user.notification_prefs || { heistInvites: true, weeklySummary: true, friendRequests: true },
     equippedTheme: user.equipped_theme || 'default',
+    skillPoints: user.skill_points || 0,
+    unlockedPerks: user.unlocked_perks || [],
     stats: {
       missionsCompleted: user.missions_completed || 0,
       winRate: user.win_rate || 100,

@@ -61,6 +61,17 @@ const VAULT_THEMES = [
   { id: 'golden', name: 'Golden Syndicate', primary: '#CA8A04', accent: '#FDE68A', unlockText: 'Crack 25 vaults' }
 ];
 
+// Role perks — spend earned skill points (1 per level gained) to unlock
+// a passive bonus for the role you're currently playing. Cost/ids here
+// must match server/routes/users.js exactly, since the server enforces
+// the actual spend.
+const PERKS = [
+  { id: 'hacker_quick_fingers', role: 'hacker', name: 'Quick Fingers', desc: '+10s starting timer when you play Hacker', cost: 1 },
+  { id: 'engineer_reinforced_rig', role: 'engineer', name: 'Reinforced Rig', desc: 'Your first alarm trip is forgiven when you play Engineer', cost: 1 },
+  { id: 'scientist_steady_hands', role: 'scientist', name: 'Steady Hands', desc: '+50 bonus XP on victory when you play Scientist', cost: 1 },
+  { id: 'cryptographer_head_start', role: 'cryptographer', name: 'Cipher Instinct', desc: 'Start with a 1x combo head start when you play Cryptographer', cost: 1 }
+];
+
 function normalizeRoleKey(role) {
   if (!role) return 'hacker';
   const r = role.toLowerCase();
@@ -126,6 +137,8 @@ export default function App() {
   const [notifPrefs, setNotifPrefs] = useState({ heistInvites: true, weeklySummary: true, friendRequests: true });
   const [unlockedThemes, setUnlockedThemes] = useState(['default']);
   const [isEquippingTheme, setIsEquippingTheme] = useState(null);
+  const [isUnlockingPerk, setIsUnlockingPerk] = useState(null);
+  const [engineerAlarmForgiven, setEngineerAlarmForgiven] = useState(false);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [bgVideoActive, setBgVideoActive] = useState(true);
   const [bgDimMode, setBgDimMode] = useState('vivid'); 
@@ -385,10 +398,11 @@ export default function App() {
 
       setIsMatchVictory(solvedCount > 0);
       const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
+      const scientistPerkBonus = (activeCockpitRole === 'scientist' && solvedCount > 0 && (currentUser?.unlockedPerks || []).includes('scientist_steady_hands')) ? 50 : 0;
       setAnalyticsStats({
         hackerXp: solved.hacker ? 350 : 100,
         engineerXp: solved.engineer ? 350 : 100,
-        scientistXp: solved.scientist ? 350 : 100,
+        scientistXp: (solved.scientist ? 350 : 100) + scientistPerkBonus,
         cryptoXp: solved.cryptographer ? 350 : 100,
         timeElapsed: timeStr,
         accuracy: alarmFails === 0 ? "100%" : `${Math.max(50, 100 - alarmFails * 10)}%`,
@@ -398,7 +412,7 @@ export default function App() {
       });
 
       if (currentUser) {
-        const gainedXp = (solvedCount > 0 ? 450 : 150) + comboBonus;
+        const gainedXp = (solvedCount > 0 ? 450 : 150) + comboBonus + scientistPerkBonus;
         const resultLabel = solvedCount > 0 ? 'VICTORY' : 'CONCLUDED';
         const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
         const newRecord = {
@@ -548,6 +562,26 @@ export default function App() {
       toast.error(err?.message || 'That theme is not unlocked yet.');
     } finally {
       setIsEquippingTheme(null);
+    }
+  };
+
+  const handleUnlockPerk = async (perkId) => {
+    if (!currentUser?.id || isUnlockingPerk) return;
+    setIsUnlockingPerk(perkId);
+    try {
+      const res = await userAPI.unlockPerk(currentUser.id, perkId);
+      const updated = {
+        ...currentUser,
+        skillPoints: res?.skillPoints ?? currentUser.skillPoints,
+        unlockedPerks: res?.unlockedPerks || currentUser.unlockedPerks
+      };
+      setCurrentUser(updated);
+      localStorage.setItem('vault_current_user', JSON.stringify(updated));
+      toast.success(`Unlocked: ${PERKS.find(p => p.id === perkId)?.name}`);
+    } catch (err) {
+      toast.error(err?.message || 'Could not unlock that perk.');
+    } finally {
+      setIsUnlockingPerk(null);
     }
   };
 
@@ -1164,17 +1198,23 @@ export default function App() {
   const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null) => {
     setCurrentStageIdx(stageIdx);
     const stage = allStages[stageIdx] || heistStages[0];
-    setTimeLeft(stage.timeLimit || 180);
-    setIsTimerRunning(true);
-    setAlarmLevel('LOW_SECURITY');
-    setAlarmFails(0);
-    setComboStreak(0);
-    setMaxCombo(0);
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
       : ['hacker', 'engineer', 'scientist', 'cryptographer'];
-    
     const chosenRole = overrideRole || activeCockpitRole || activeRoles[0] || 'hacker';
+    const myPerks = currentUser?.unlockedPerks || [];
+
+    // Apply role perk effects for the role the player is actually about
+    // to play this stage as.
+    const timerBonus = (chosenRole === 'hacker' && myPerks.includes('hacker_quick_fingers')) ? 10 : 0;
+    setTimeLeft((stage.timeLimit || 180) + timerBonus);
+    setIsTimerRunning(true);
+    setAlarmLevel('LOW_SECURITY');
+    setAlarmFails(0);
+    setComboStreak((chosenRole === 'cryptographer' && myPerks.includes('cryptographer_head_start')) ? 1 : 0);
+    setMaxCombo(0);
+    setEngineerAlarmForgiven(chosenRole === 'engineer' && myPerks.includes('engineer_reinforced_rig'));
+
     setActiveCockpitRole(chosenRole);
     setActiveTab('liveheist');
     enterHeistFullscreen();
@@ -1319,21 +1359,32 @@ export default function App() {
   };
 
   const handleRolePuzzleFailed = (role, reason) => {
-    const newFails = alarmFails + 1;
-    setAlarmFails(newFails);
     setComboStreak(0);
-    
     setTimeLeft(prev => Math.max(5, prev - 12));
 
-    let nextAlert = 'LOW_SECURITY';
-    if (newFails >= 4) {
-      nextAlert = 'HIGH_LOCKDOWN';
-      heistAudio.startTensionBeat('HIGH_LOCKDOWN');
-    } else if (newFails >= 2) {
-      nextAlert = 'MEDIUM_ALERT';
-      heistAudio.startTensionBeat('MEDIUM_ALERT');
+    // Engineer's "Reinforced Rig" perk forgives their own first alarm trip
+    // this heist — the wrong answer still costs time (above), but doesn't
+    // count toward the alarm total or escalate the lockdown level.
+    const isForgivenTrip = role === 'engineer' && role === activeCockpitRole && engineerAlarmForgiven;
+    if (isForgivenTrip) {
+      setEngineerAlarmForgiven(false);
+      toast.info('🛡️ Reinforced Rig absorbed that alarm trip.');
     }
-    setAlarmLevel(nextAlert);
+
+    const newFails = isForgivenTrip ? alarmFails : alarmFails + 1;
+    if (!isForgivenTrip) {
+      setAlarmFails(newFails);
+
+      let nextAlert = 'LOW_SECURITY';
+      if (newFails >= 4) {
+        nextAlert = 'HIGH_LOCKDOWN';
+        heistAudio.startTensionBeat('HIGH_LOCKDOWN');
+      } else if (newFails >= 2) {
+        nextAlert = 'MEDIUM_ALERT';
+        heistAudio.startTensionBeat('MEDIUM_ALERT');
+      }
+      setAlarmLevel(nextAlert);
+    }
 
     const failerName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'Specialist';
     try {
@@ -1346,12 +1397,17 @@ export default function App() {
       {
         sender: "SECURITY SYSTEM",
         role: "alert",
-        text: `[ALARM +1] ${role.toUpperCase()} trigger fail by ${failerName}: "${reason}" (-12s Penalty)`,
+        text: isForgivenTrip
+          ? `[ALARM FORGIVEN] ${role.toUpperCase()} misfire by ${failerName} absorbed by Reinforced Rig (-12s Penalty)`
+          : `[ALARM +1] ${role.toUpperCase()} trigger fail by ${failerName}: "${reason}" (-12s Penalty)`,
         time: timeStr
       }
     ]);
-    heistAudio.playAlarmChime();
-    toast.error(`🚨 ALARM ESCALATED! ${role.toUpperCase()} misfire!`);
+
+    if (!isForgivenTrip) {
+      heistAudio.playAlarmChime();
+      toast.error(`🚨 ALARM ESCALATED! ${role.toUpperCase()} misfire!`);
+    }
 
     if (newFails >= 6) {
       handleHeistTimeout();
@@ -1370,14 +1426,15 @@ export default function App() {
 
     const xpReward = 500 + (currentStageIdx + 1) * 250;
     const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
-    setXp(prev => prev + xpReward + comboBonus);
+    const scientistPerkBonus = (activeCockpitRole === 'scientist' && (currentUser?.unlockedPerks || []).includes('scientist_steady_hands')) ? 50 : 0;
+    setXp(prev => prev + xpReward + comboBonus + scientistPerkBonus);
     setStreak(prev => prev + 1);
 
     setIsMatchVictory(true);
     setAnalyticsStats({
       hackerXp: 350 + (currentStageIdx + 1) * 50,
       engineerXp: 350 + (currentStageIdx + 1) * 50,
-      scientistXp: 350 + (currentStageIdx + 1) * 50,
+      scientistXp: 350 + (currentStageIdx + 1) * 50 + scientistPerkBonus,
       cryptoXp: 350 + (currentStageIdx + 1) * 50,
       timeElapsed: timeStr,
       accuracy: alarmFails === 0 ? "100%" : `${Math.max(65, 100 - alarmFails * 8)}%`,
@@ -3420,6 +3477,60 @@ export default function App() {
                               <Lock className="w-3 h-3" />
                               <span>Locked</span>
                             </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Skill Tree — spend points earned from leveling up on role perks */}
+              {currentUser && (
+                <div className="forest-card p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                      <Zap className="w-4 h-4" />
+                      <span>Skill Tree</span>
+                    </h3>
+                    <span className="text-xs font-mono font-black text-emerald-300">
+                      {currentUser.skillPoints || 0} pt{(currentUser.skillPoints || 0) === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-300/70">
+                    Earn 1 skill point every time you level up. Perks apply while you're playing that role.
+                  </p>
+                  <div className="space-y-2.5">
+                    {PERKS.map(perk => {
+                      const isUnlocked = (currentUser.unlockedPerks || []).includes(perk.id);
+                      const canAfford = (currentUser.skillPoints || 0) >= perk.cost;
+                      const roleConfig = ROLE_CONFIGS.find(r => r.key === perk.role);
+                      return (
+                        <div key={perk.id} className="flex items-center justify-between p-3 border-2 border-[#03140C] bg-[#020B06]">
+                          <div className="flex items-center space-x-3">
+                            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: roleConfig?.color || '#10B981' }} />
+                            <div>
+                              <p className="text-xs font-black uppercase text-emerald-100">{perk.name}</p>
+                              <p className="text-[10px] text-emerald-400/70">{perk.desc}</p>
+                            </div>
+                          </div>
+                          {isUnlocked ? (
+                            <span className="text-[10px] font-black uppercase text-[#10B981] flex items-center space-x-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Unlocked</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleUnlockPerk(perk.id)}
+                              disabled={!canAfford || isUnlockingPerk === perk.id}
+                              className={`text-[10px] font-black uppercase px-3 py-1.5 border-2 border-[#03140C] ${
+                                canAfford
+                                  ? 'bg-[#FBBF24] text-[#02140D] hover:bg-[#F59E0B]'
+                                  : 'bg-[#0A261B] text-emerald-700 cursor-not-allowed'
+                              } disabled:opacity-60`}
+                            >
+                              {isUnlockingPerk === perk.id ? '...' : `${perk.cost} pt`}
+                            </button>
                           )}
                         </div>
                       );

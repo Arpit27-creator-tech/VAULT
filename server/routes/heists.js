@@ -217,6 +217,9 @@ router.post('/complete', authenticate, async (req, res) => {
     const xpGained = Number.isFinite(xp_earned) ? xp_earned : 0;
 
     const updatedUser = await transaction(async (client) => {
+      const beforeResult = await client.query('SELECT level FROM users WHERE id = $1', [req.user.id]);
+      const levelBefore = beforeResult.rows[0]?.level || 1;
+
       await client.query(
         `INSERT INTO heist_history (user_id, heist_id, mission_title, role, result, xp_earned, time_elapsed, accuracy, alarms_tripped)
          VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8)`,
@@ -226,9 +229,20 @@ router.post('/complete', authenticate, async (req, res) => {
       const userResult = await client.query(
         `UPDATE users SET xp = xp + $1, level = GREATEST(1, CAST(FLOOR((xp + $1) / 1000.0) AS INTEGER) + 1)
          WHERE id = $2
-         RETURNING id, username, callsign, avatar_url, role, level, xp, rank, badges`,
+         RETURNING id, username, callsign, avatar_url, role, level, xp, rank, badges, skill_points, unlocked_perks`,
         [xpGained, req.user.id]
       );
+
+      const levelAfter = userResult.rows[0].level;
+      const pointsAwarded = Math.max(0, levelAfter - levelBefore);
+      if (pointsAwarded > 0) {
+        const pointsResult = await client.query(
+          'UPDATE users SET skill_points = skill_points + $1 WHERE id = $2 RETURNING skill_points, unlocked_perks',
+          [pointsAwarded, req.user.id]
+        );
+        userResult.rows[0].skill_points = pointsResult.rows[0].skill_points;
+        userResult.rows[0].unlocked_perks = pointsResult.rows[0].unlocked_perks;
+      }
 
       await client.query(
         `UPDATE user_stats SET
@@ -260,7 +274,9 @@ router.post('/complete', authenticate, async (req, res) => {
         level: updatedUser.level,
         xp: updatedUser.xp,
         rank: updatedUser.rank,
-        badges: updatedUser.badges
+        badges: updatedUser.badges,
+        skillPoints: updatedUser.skill_points,
+        unlockedPerks: updatedUser.unlocked_perks
       }
     });
   } catch (err) {

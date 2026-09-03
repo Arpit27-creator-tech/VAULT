@@ -184,6 +184,13 @@ export const userAPI = {
     return apiFetch(`/users/${userId}/unlocks`);
   },
 
+  async unlockPerk(userId, perkId) {
+    return apiFetch(`/users/${userId}/perks/unlock`, {
+      method: 'POST',
+      body: JSON.stringify({ perkId })
+    });
+  },
+
   async getHistory(userId, page = 1, limit = 20) {
     return apiFetch(`/users/${userId}/history?page=${page}&limit=${limit}`);
   },

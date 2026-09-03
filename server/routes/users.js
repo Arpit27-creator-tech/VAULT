@@ -3,7 +3,7 @@
 // ============================================================
 
 import { Router } from 'express';
-import { query } from '../db/index.js';
+import { query, transaction } from '../db/index.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
@@ -378,6 +378,69 @@ router.get('/:id/unlocks', authenticate, async (req, res) => {
   } catch (err) {
     console.error('[USERS] Get unlocks error:', err);
     res.status(500).json({ error: 'Failed to fetch unlocks' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/users/:id/perks/unlock — Spend a skill point to
+// unlock a role perk. Cost and validity are enforced here, not
+// trusted from the client.
+// ─────────────────────────────────────────────────────────────
+const PERK_DEFINITIONS = {
+  hacker_quick_fingers: { cost: 1 },
+  engineer_reinforced_rig: { cost: 1 },
+  scientist_steady_hands: { cost: 1 },
+  cryptographer_head_start: { cost: 1 }
+};
+
+router.post('/:id/perks/unlock', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { perkId } = req.body;
+
+    if (id !== req.user.id) {
+      return res.status(403).json({ error: 'Cannot modify another user\'s perks' });
+    }
+
+    const perk = PERK_DEFINITIONS[perkId];
+    if (!perk) {
+      return res.status(400).json({ error: 'Unknown perk' });
+    }
+
+    const result = await transaction(async (client) => {
+      const userResult = await client.query(
+        'SELECT skill_points, unlocked_perks FROM users WHERE id = $1 FOR UPDATE',
+        [id]
+      );
+      if (userResult.rows.length === 0) {
+        throw new Error('User not found');
+      }
+      const { skill_points: skillPoints, unlocked_perks: unlockedPerks } = userResult.rows[0];
+      const currentPerks = Array.isArray(unlockedPerks) ? unlockedPerks : [];
+
+      if (currentPerks.includes(perkId)) {
+        throw new Error('Perk already unlocked');
+      }
+      if (skillPoints < perk.cost) {
+        throw new Error('Not enough skill points');
+      }
+
+      const newPerks = [...currentPerks, perkId];
+      const updateResult = await client.query(
+        `UPDATE users SET skill_points = skill_points - $1, unlocked_perks = $2::jsonb
+         WHERE id = $3 RETURNING skill_points, unlocked_perks`,
+        [perk.cost, JSON.stringify(newPerks), id]
+      );
+      return updateResult.rows[0];
+    });
+
+    res.json({ skillPoints: result.skill_points, unlockedPerks: result.unlocked_perks });
+  } catch (err) {
+    if (err.message === 'Perk already unlocked' || err.message === 'Not enough skill points') {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error('[USERS] Unlock perk error:', err);
+    res.status(500).json({ error: 'Failed to unlock perk' });
   }
 });
 

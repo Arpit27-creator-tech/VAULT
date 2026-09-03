@@ -2642,6 +2642,116 @@ export default function App() {
                   </div>
                 </div>
 
+
+                {/* ══ ROLE SELECTION PANEL ══ */}
+                {(() => {
+                  const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+                  const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
+                  const mySlot = (lobby?.players || []).find(s => {
+                    const pName = s.playerName || s.username;
+                    return (s.userId && s.userId === myId) || (myName && pName === myName);
+                  });
+                  const myRoleKey = mySlot?.role ? normalizeRoleKey(mySlot.role) : null;
+                  const claimedRoles = {};
+                  (lobby?.players || []).forEach(s => {
+                    if (s.role && (s.playerName || s.username)) {
+                      claimedRoles[normalizeRoleKey(s.role)] = s.playerName || s.username;
+                    }
+                  });
+                  const roleConfig = [
+                    { key: 'hacker', charId: 'c1', icon: '>_', iconColor: '#10B981', borderColor: '#10B981', glowColor: 'rgba(16,185,129,0.22)', tagCls: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/60' },
+                    { key: 'engineer', charId: 'c2', icon: 'O', iconColor: '#FBBF24', borderColor: '#FBBF24', glowColor: 'rgba(251,191,36,0.16)', tagCls: 'bg-amber-900/60 text-amber-300 border-amber-700/60' },
+                    { key: 'scientist', charId: 'c3', icon: 'X', iconColor: '#06B6D4', borderColor: '#06B6D4', glowColor: 'rgba(6,182,212,0.16)', tagCls: 'bg-cyan-900/60 text-cyan-300 border-cyan-700/60' },
+                    { key: 'cryptographer', charId: 'c4', icon: 'S', iconColor: '#C084FC', borderColor: '#C084FC', glowColor: 'rgba(192,132,252,0.16)', tagCls: 'bg-purple-900/60 text-purple-300 border-purple-700/60' },
+                  ];
+                  const playersInRoom = (lobby?.players || []).filter(s => s.playerName || s.username).length;
+                  return (
+                    <div className="space-y-3 relative z-10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-1.5 h-6 bg-[#10B981] rounded-full" />
+                          <h3 className="text-sm font-black uppercase tracking-widest text-[#F0FDF4] font-mono">Choose Your Specialist Role</h3>
+                        </div>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-lg">
+                          {playersInRoom} / 4 Operatives
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {roleConfig.map(rc => {
+                          const char = characters.find(c => c.id === rc.charId);
+                          const isMyRole = myRoleKey === rc.key;
+                          const claimedBy = claimedRoles[rc.key];
+                          const isTakenByOther = claimedBy && !isMyRole;
+                          return (
+                            <motion.div
+                              key={rc.key}
+                              whileHover={!isTakenByOther ? { y: -3 } : {}}
+                              transition={{ duration: 0.15 }}
+                              className={'relative flex flex-col rounded-xl border-2 overflow-hidden transition-all duration-200' + (isTakenByOther ? ' opacity-50' : '')}
+                              style={{
+                                borderColor: isMyRole ? rc.borderColor : '#1a2e22',
+                                background: isMyRole ? 'linear-gradient(160deg,#051C12 0%,#020B06 100%)' : '#030F08',
+                                boxShadow: isMyRole ? ('0 0 24px ' + rc.glowColor) : 'none',
+                              }}
+                            >
+                              {isMyRole && (
+                                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono border-2 whitespace-nowrap" style={{ color: '#02140D', backgroundColor: rc.borderColor, borderColor: rc.borderColor }}>
+                                  YOUR ROLE
+                                </div>
+                              )}
+                              {isTakenByOther && (
+                                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
+                                  TAKEN
+                                </div>
+                              )}
+                              <div className="p-3 pt-9 space-y-2 flex-1">
+                                <div className="flex items-start space-x-2.5">
+                                  <div className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center font-black text-sm border-2 font-mono" style={{ backgroundColor: rc.iconColor + '15', borderColor: rc.iconColor + '50', color: rc.iconColor }}>
+                                    {rc.icon}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-black text-[11px] uppercase tracking-wide text-white font-mono leading-tight">{char?.role || rc.key}</p>
+                                    <p className="text-[10px] font-semibold mt-0.5 truncate" style={{ color: rc.iconColor }}>{char?.name}</p>
+                                  </div>
+                                </div>
+                                <div className={'inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase border font-mono ' + rc.tagCls}>{char?.discipline}</div>
+                                <p className="text-[9px] font-mono text-slate-300/80 leading-relaxed line-clamp-3">
+                                  {char?.specialAbility}
+                                </p>
+                              </div>
+                              <div className="px-3 pb-3 mt-auto">
+                                {isMyRole ? (
+                                  <div className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border-2 flex items-center justify-center space-x-1.5 cursor-default" style={{ backgroundColor: rc.borderColor, color: '#02140D', borderColor: rc.borderColor }}>
+                                    <CheckCircle2 className="w-3.5 h-3.5" /><span>LOCKED IN</span>
+                                  </div>
+                                ) : isTakenByOther ? (
+                                  <button disabled className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border border-slate-700/60 bg-slate-900/60 text-slate-500 cursor-not-allowed flex items-center justify-center space-x-1.5">
+                                    <Lock className="w-3.5 h-3.5" /><span>UNAVAILABLE</span>
+                                  </button>
+                                ) : (
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => { handleSelectRole(rc.key); heistAudio.playKeyClick(); toast.success('Specialist selected: ' + (char?.role || rc.key)); }}
+                                    className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border-2 bg-transparent transition-all flex items-center justify-center space-x-1.5"
+                                    style={{ borderColor: rc.borderColor + '45', color: rc.iconColor }}
+                                  >
+                                    <UserPlus className="w-3.5 h-3.5" /><span>CHOOSE SPECIALIST</span>
+                                  </motion.button>
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center space-x-2.5 pt-1">
+                        <div className="w-1.5 h-6 bg-[#FBBF24] rounded-full" />
+                        <h3 className="text-sm font-black uppercase tracking-widest text-[#F0FDF4] font-mono">Squad Roster &amp; Readiness</h3>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Squad Radio Voice Frequency Bar */}
                 <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
                   <div className="flex items-center space-x-3.5">

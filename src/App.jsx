@@ -1893,7 +1893,7 @@ export default function App() {
                   </nav>
                 </div>
 
-                {/* Bottom Stats / Dossier Button */}
+                {/* Bottom User Profile / Dossier Button */}
                 <div className="flex flex-col items-center w-full pt-4">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -1905,13 +1905,25 @@ export default function App() {
                         setSidebarOpen(false);
                       }
                     }}
-                    className={`w-11 h-11 rounded-xl border-2 border-[#10B981] bg-[#04160E] hover:bg-[#10B981]/25 flex items-center justify-center text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all ${
-                      activeTab === 'stats' ? 'bg-[#10B981]/30 ring-2 ring-[#34D399]' : ''
+                    className={`w-11 h-11 rounded-xl border-2 border-[#10B981] bg-[#04160E] hover:bg-[#10B981]/25 flex items-center justify-center overflow-hidden text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all relative group p-0.5 ${
+                      activeTab === 'stats' ? 'bg-[#10B981]/30 ring-2 ring-[#34D399] border-[#34D399]' : ''
                     }`}
-                    title="My Stats / Operative Dossier"
+                    title={currentUser ? `${currentUser.callsign}'s Dossier & Stats` : "My Stats / Operative Dossier"}
                     aria-label="Operative Dossier"
                   >
-                    <BarChart3 className="w-5 h-5 stroke-[2.2]" />
+                    {currentUser?.avatar ? (
+                      <img
+                        src={currentUser.avatar}
+                        alt={currentUser.callsign || "User Profile"}
+                        className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-200"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = FALLBACK_AVATAR_IMG;
+                        }}
+                      />
+                    ) : (
+                      <BarChart3 className="w-5 h-5 stroke-[2.2]" />
+                    )}
                   </motion.button>
                 </div>
               </div>

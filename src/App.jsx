@@ -2643,7 +2643,7 @@ export default function App() {
                 </div>
 
 
-                {/* ══ ROLE SELECTION PANEL ══ */}
+                {/* ══ ROLE SELECTION PANEL — matches reference image exactly ══ */}
                 {(() => {
                   const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
                   const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
@@ -2658,24 +2658,52 @@ export default function App() {
                       claimedRoles[normalizeRoleKey(s.role)] = s.playerName || s.username;
                     }
                   });
+
                   const roleConfig = [
-                    { key: 'hacker', charId: 'c1', icon: '>_', iconColor: '#10B981', borderColor: '#10B981', glowColor: 'rgba(16,185,129,0.22)', tagCls: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/60' },
-                    { key: 'engineer', charId: 'c2', icon: 'O', iconColor: '#FBBF24', borderColor: '#FBBF24', glowColor: 'rgba(251,191,36,0.16)', tagCls: 'bg-amber-900/60 text-amber-300 border-amber-700/60' },
-                    { key: 'scientist', charId: 'c3', icon: 'X', iconColor: '#06B6D4', borderColor: '#06B6D4', glowColor: 'rgba(6,182,212,0.16)', tagCls: 'bg-cyan-900/60 text-cyan-300 border-cyan-700/60' },
-                    { key: 'cryptographer', charId: 'c4', icon: 'S', iconColor: '#C084FC', borderColor: '#C084FC', glowColor: 'rgba(192,132,252,0.16)', tagCls: 'bg-purple-900/60 text-purple-300 border-purple-700/60' },
+                    {
+                      key: 'hacker', charId: 'c1',
+                      iconEl: <Terminal className="w-5 h-5" />,
+                      iconColor: '#10B981', borderColor: '#10B981',
+                      glowColor: 'rgba(16,185,129,0.25)',
+                      disciplineColor: '#6EE7B7',
+                      missionTitle: 'The Firewall Graph Traversal (BFS / Shortest Path)',
+                      missionDesc: 'The security sub-grid is routing honeypots. Find the lowest-latency unmonitored path from Node A to Node F avoiding compromised trap nodes (B...',
+                      dependency: 'The',
+                    },
+                    {
+                      key: 'engineer', charId: 'c2',
+                      iconEl: <Compass className="w-5 h-5" />,
+                      iconColor: '#FBBF24', borderColor: '#FBBF24',
+                      glowColor: 'rgba(251,191,36,0.2)',
+                      disciplineColor: '#FCD34D',
+                      missionTitle: "Laser Optical Refraction Angle (Snell's Law)",
+                      missionDesc: "Light travels from air (n1 = 1.0) into glass/argon (n2 = 1.50) at incident angle 45°. Using Snell's law (n1*sin(45°) = n2*sin(θ2)), calculate refraction angle θ...",
+                      dependency: 'The',
+                    },
+                    {
+                      key: 'scientist', charId: 'c3',
+                      iconEl: <FlaskConical className="w-5 h-5" />,
+                      iconColor: '#06B6D4', borderColor: '#06B6D4',
+                      glowColor: 'rgba(6,182,212,0.2)',
+                      disciplineColor: '#67E8F9',
+                      missionTitle: 'Toxic Gas Neutralization (Acid-Base Titration)',
+                      missionDesc: 'Neutralize 2.5L of 0.4M HCl gas (1.0 mol) with aqueous 1.0M NaOH before toxic gas vents. Balance the stoichiometric neutralization reaction: 1 HCl + 1 NaOH ...',
+                      dependency: 'Initial',
+                    },
+                    {
+                      key: 'cryptographer', charId: 'c4',
+                      iconEl: <Key className="w-5 h-5" />,
+                      iconColor: '#C084FC', borderColor: '#C084FC',
+                      glowColor: 'rgba(192,132,252,0.2)',
+                      disciplineColor: '#D8B4FE',
+                      missionTitle: 'Polyalphabetic Vigenère Cipher Intercept',
+                      missionDesc: "Tune VHF receiver to 142.6 MHz and decrypt intercepted ciphertext LXFOPVEFRNHR using Keyword LEMON to decode guard pass phrase and detect...",
+                      dependency: 'The',
+                    },
                   ];
-                  const playersInRoom = (lobby?.players || []).filter(s => s.playerName || s.username).length;
+
                   return (
                     <div className="space-y-3 relative z-10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2.5">
-                          <div className="w-1.5 h-6 bg-[#10B981] rounded-full" />
-                          <h3 className="text-sm font-black uppercase tracking-widest text-[#F0FDF4] font-mono">Choose Your Specialist Role</h3>
-                        </div>
-                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-lg">
-                          {playersInRoom} / 4 Operatives
-                        </span>
-                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         {roleConfig.map(rc => {
                           const char = characters.find(c => c.id === rc.charId);
@@ -2685,68 +2713,103 @@ export default function App() {
                           return (
                             <motion.div
                               key={rc.key}
-                              whileHover={!isTakenByOther ? { y: -3 } : {}}
-                              transition={{ duration: 0.15 }}
-                              className={'relative flex flex-col rounded-xl border-2 overflow-hidden transition-all duration-200' + (isTakenByOther ? ' opacity-50' : '')}
+                              whileHover={!isTakenByOther ? { y: -2, transition: { duration: 0.15 } } : {}}
+                              className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200"
                               style={{
-                                borderColor: isMyRole ? rc.borderColor : '#1a2e22',
-                                background: isMyRole ? 'linear-gradient(160deg,#051C12 0%,#020B06 100%)' : '#030F08',
-                                boxShadow: isMyRole ? ('0 0 24px ' + rc.glowColor) : 'none',
+                                border: isMyRole
+                                  ? ('2px solid ' + rc.borderColor)
+                                  : '1px solid #1e3a2a',
+                                background: '#050e09',
+                                boxShadow: isMyRole ? ('0 0 28px ' + rc.glowColor + ', inset 0 0 40px rgba(0,0,0,0.4)') : 'none',
+                                opacity: isTakenByOther ? 0.5 : 1,
                               }}
                             >
+                              {/* YOUR ROLE pill */}
                               {isMyRole && (
-                                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono border-2 whitespace-nowrap" style={{ color: '#02140D', backgroundColor: rc.borderColor, borderColor: rc.borderColor }}>
-                                  YOUR ROLE
+                                <div
+                                  className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono border whitespace-nowrap"
+                                  style={{ color: '#02140D', backgroundColor: rc.borderColor, borderColor: rc.borderColor }}
+                                >
+                                  ⊙ YOUR ROLE
                                 </div>
                               )}
-                              {isTakenByOther && (
-                                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-mono bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
-                                  TAKEN
+
+                              {/* Card Header: Icon + Name + Discipline */}
+                              <div className="flex items-start gap-2.5 p-3 pt-5">
+                                <div
+                                  className="w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center border"
+                                  style={{
+                                    backgroundColor: rc.iconColor + '18',
+                                    borderColor: rc.iconColor + '60',
+                                    color: rc.iconColor,
+                                  }}
+                                >
+                                  {rc.iconEl}
                                 </div>
-                              )}
-                              <div className="p-3 pt-9 space-y-2 flex-1">
-                                <div className="flex items-start space-x-2.5">
-                                  <div className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center font-black text-sm border-2 font-mono" style={{ backgroundColor: rc.iconColor + '15', borderColor: rc.iconColor + '50', color: rc.iconColor }}>
-                                    {rc.icon}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-black text-[11px] uppercase tracking-wide text-white font-mono leading-tight">{char?.role || rc.key}</p>
-                                    <p className="text-[10px] font-semibold mt-0.5 truncate" style={{ color: rc.iconColor }}>{char?.name}</p>
-                                  </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-black text-[13px] text-white font-mono leading-tight">{char?.role}</p>
+                                  <p className="text-[10px] font-mono mt-0.5" style={{ color: rc.iconColor }}>{char?.name}</p>
+                                  <p className="text-[9px] font-bold mt-0.5 leading-tight" style={{ color: rc.disciplineColor }}>
+                                    {char?.discipline}
+                                  </p>
                                 </div>
-                                <div className={'inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase border font-mono ' + rc.tagCls}>{char?.discipline}</div>
-                                <p className="text-[9px] font-mono text-slate-300/80 leading-relaxed line-clamp-3">
-                                  {char?.specialAbility}
+                              </div>
+
+                              {/* Mission Challenge Block */}
+                              <div className="mx-3 mb-2 rounded-lg p-2.5 space-y-1.5" style={{ backgroundColor: '#030c06', border: '1px solid #1a2e22' }}>
+                                <p className="text-[9px] font-black font-mono leading-tight" style={{ color: rc.iconColor }}>
+                                  ⚡ {rc.missionTitle}
+                                </p>
+                                <p className="text-[9px] font-mono text-slate-300/70 leading-relaxed">
+                                  {rc.missionDesc}
                                 </p>
                               </div>
+
+                              {/* Dependency row */}
+                              <div className="px-3 pb-2">
+                                <span className="text-[9px] font-mono text-slate-500">Dependency: <span className="text-slate-400">{rc.dependency}</span></span>
+                              </div>
+
+                              {/* CTA Button */}
                               <div className="px-3 pb-3 mt-auto">
                                 {isMyRole ? (
-                                  <div className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border-2 flex items-center justify-center space-x-1.5 cursor-default" style={{ backgroundColor: rc.borderColor, color: '#02140D', borderColor: rc.borderColor }}>
-                                    <CheckCircle2 className="w-3.5 h-3.5" /><span>LOCKED IN</span>
+                                  <div
+                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 cursor-default"
+                                    style={{ backgroundColor: rc.borderColor, color: '#02140D' }}
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>LOCKED IN ✓</span>
                                   </div>
                                 ) : isTakenByOther ? (
-                                  <button disabled className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border border-slate-700/60 bg-slate-900/60 text-slate-500 cursor-not-allowed flex items-center justify-center space-x-1.5">
-                                    <Lock className="w-3.5 h-3.5" /><span>UNAVAILABLE</span>
+                                  <button
+                                    disabled
+                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 cursor-not-allowed"
+                                    style={{ backgroundColor: '#111', color: '#555', border: '1px solid #222' }}
+                                  >
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>CHOOSE SPECIALIST</span>
                                   </button>
                                 ) : (
                                   <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.97 }}
-                                    onClick={() => { handleSelectRole(rc.key); heistAudio.playKeyClick(); toast.success('Specialist selected: ' + (char?.role || rc.key)); }}
-                                    className="w-full py-2 rounded-lg text-xs font-black uppercase tracking-wider font-mono border-2 bg-transparent transition-all flex items-center justify-center space-x-1.5"
-                                    style={{ borderColor: rc.borderColor + '45', color: rc.iconColor }}
+                                    onClick={() => {
+                                      handleSelectRole(rc.key);
+                                      heistAudio.playKeyClick();
+                                      toast.success('Specialist locked in: ' + (char?.role || rc.key) + '!');
+                                    }}
+                                    className="w-full py-2 rounded-lg text-[11px] font-black uppercase tracking-widest font-mono flex items-center justify-center space-x-1.5 transition-all"
+                                    style={{ backgroundColor: '#0a1a10', color: '#d1fae5', border: '1px solid #2a4a35' }}
+                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0f2218'; e.currentTarget.style.borderColor = rc.borderColor + '60'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0a1a10'; e.currentTarget.style.borderColor = '#2a4a35'; }}
                                   >
-                                    <UserPlus className="w-3.5 h-3.5" /><span>CHOOSE SPECIALIST</span>
+                                    <span>CHOOSE SPECIALIST</span>
                                   </motion.button>
                                 )}
                               </div>
                             </motion.div>
                           );
                         })}
-                      </div>
-                      <div className="flex items-center space-x-2.5 pt-1">
-                        <div className="w-1.5 h-6 bg-[#FBBF24] rounded-full" />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-[#F0FDF4] font-mono">Squad Roster &amp; Readiness</h3>
                       </div>
                     </div>
                   );
@@ -2850,181 +2913,130 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 4 Squad Operatives Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-                  {(lobby?.players || []).map((slot) => {
-                    const char = characters.find(c => c.id === slot.characterId);
-                    const playerName = slot.playerName || slot.username;
-                    const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
-                    const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
-                    const isMe = (slot.userId && slot.userId === myId) || (myName && playerName === myName);
-                    const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && isMe && isUserSpeaking;
+                 {/* ══ SQUAD ROSTER & READINESS ══ */}
+                 {(() => {
+                   const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+                   const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
+                   const humanPlayers = (lobby?.players || []).filter(s => s.playerName || s.username);
+                   const aiCount = 4 - humanPlayers.length;
+                   const roleColorMap = { hacker: '#10B981', engineer: '#FBBF24', scientist: '#06B6D4', cryptographer: '#C084FC' };
+                   return (
+                     <div className="space-y-3 relative z-10">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-3">
+                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#02140D] font-black text-sm font-mono flex-shrink-0" style={{ backgroundColor: '#FBBF24' }}>2</div>
+                           <h3 className="text-base font-black font-mono uppercase tracking-wide" style={{ color: '#FBBF24' }}>Squad Roster &amp; Readiness</h3>
+                         </div>
+                         <span className="text-[10px] font-mono text-slate-400">
+                           {humanPlayers.length} Operative{humanPlayers.length !== 1 ? 's' : ''}{aiCount > 0 ? ` + ${aiCount} AI Specialist${aiCount !== 1 ? 's' : ''} Assigned` : ''}
+                         </span>
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                         {(lobby?.players || []).map((slot) => {
+                           const playerName = slot.playerName || slot.username;
+                           const isMe = (slot.userId && slot.userId === myId) || (myName && playerName === myName);
+                           const isHuman = !!playerName;
+                           const isSpeaking = isLobbyVoiceConnected && !isLobbyMicMuted && isMe && isUserSpeaking;
+                           const roleKey = normalizeRoleKey(slot.role);
+                           const roleColor = roleColorMap[roleKey] || '#10B981';
+                           const char = characters.find(c => c.id === slot.characterId) || characters.find(c => normalizeRoleKey(c.role) === roleKey);
+                           const aiRoleName = char?.role || slot.role || 'The Hacker';
+                           const aiDisplayName = 'AI Specialist: ' + aiRoleName;
+                           return (
+                             <div
+                               key={slot.slotId}
+                               className="rounded-xl overflow-hidden flex flex-col transition-all duration-200"
+                               style={{
+                                 background: '#050e09',
+                                 border: isMe ? ('1.5px solid #10B981') : isSpeaking ? ('1.5px solid #10B981') : '1px solid #1a2e22',
+                                 boxShadow: isMe ? '0 0 16px rgba(16,185,129,0.18)' : 'none',
+                               }}
+                             >
+                               {/* Slot Header Row */}
+                               <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid #1a2e22' }}>
+                                 <span className="text-[9px] font-black font-mono tracking-widest" style={{ color: '#6EE7B7' }}>SLOT 0{slot.slotId}</span>
+                                 {isMe || (isHuman && slot.isHost) ? (
+                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#FBBF2420', color: '#FBBF24', border: '1px solid #FBBF2450' }}>★ SQUAD LEAD</span>
+                                 ) : !isHuman ? (
+                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded flex items-center space-x-1" style={{ backgroundColor: '#06B6D420', color: '#06B6D4', border: '1px solid #06B6D450' }}>
+                                     <span>🤖</span><span>AI BOT</span>
+                                   </span>
+                                 ) : (
+                                   <span className="text-[8px] font-black font-mono px-2 py-0.5 rounded" style={{ backgroundColor: '#10B98120', color: '#10B981', border: '1px solid #10B98150' }}>OPERATIVE</span>
+                                 )}
+                               </div>
+                               {/* Main Content */}
+                               <div className="flex items-start gap-2.5 p-3">
+                                 <div className="relative flex-shrink-0">
+                                   <img
+                                     src={char?.avatar || FALLBACK_AVATAR_IMG}
+                                     alt={isHuman ? playerName : aiDisplayName}
+                                     onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                     className="w-12 h-12 rounded-lg object-cover"
+                                     style={{ border: '2px solid ' + (isMe ? '#10B981' : '#1e3a2a') }}
+                                   />
+                                   {isSpeaking && <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-[#10B981] animate-ping" />}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                   {isHuman ? (
+                                     <>
+                                       <p className="font-black text-[12px] text-white font-mono">
+                                         {playerName} {isMe && <span style={{ color: '#10B981' }}>(YOU)</span>}
+                                       </p>
+                                       <p className="text-[9px] font-mono text-slate-400 truncate mt-0.5">{char?.name}</p>
+                                       <p className="text-[9px] font-mono mt-0.5" style={{ color: roleColor }}>&gt;_ {char?.role || slot.role}</p>
+                                     </>
+                                   ) : (
+                                     <>
+                                       <p className="font-black text-[11px] text-white font-mono leading-tight">{aiDisplayName}</p>
+                                       <p className="text-[9px] font-mono text-slate-400 truncate mt-0.5">{char?.name}</p>
+                                     </>
+                                   )}
+                                 </div>
+                               </div>
+                               {/* Role Dropdown */}
+                               <div className="px-3 pb-2">
+                                 <select
+                                   value={roleKey}
+                                   onChange={e => { if (isMe) handleSelectRole(e.target.value); }}
+                                   disabled={!isMe}
+                                   className="w-full rounded-lg py-1.5 px-2 text-[11px] font-bold font-mono outline-none transition-colors"
+                                   style={{ backgroundColor: '#0a1a10', border: '1px solid #2a4a35', color: '#d1fae5', cursor: isMe ? 'pointer' : 'default' }}
+                                 >
+                                   <option value="hacker">The Hacker</option>
+                                   <option value="engineer">The Engineer</option>
+                                   <option value="scientist">The Scientist</option>
+                                   <option value="cryptographer">The Cryptographer</option>
+                                 </select>
+                               </div>
+                               {/* Status Footer */}
+                               <div className="px-3 py-2 mt-auto" style={{ borderTop: '1px solid #1a2e22' }}>
+                                 <div className="flex items-center justify-between">
+                                   <span className="text-[9px] font-mono text-slate-500 uppercase">STATUS:</span>
+                                   {isMe ? (
+                                     <button
+                                       onClick={() => handleToggleReady(slot.isReady)}
+                                       className="flex items-center space-x-1 px-2 py-1 rounded text-[9px] font-black font-mono uppercase transition-all"
+                                       style={slot.isReady ? { backgroundColor: '#0a2a14', color: '#10B981', border: '1px solid #10B981' } : { backgroundColor: '#1a140a', color: '#FBBF24', border: '1px solid #FBBF24' }}
+                                     >
+                                       <CheckCircle2 className="w-3 h-3" />
+                                       <span>{slot.isReady ? 'READY TO DEPLOY' : 'NOT READY'}</span>
+                                     </button>
+                                   ) : (
+                                     <div className="flex items-center space-x-1 px-2 py-1 rounded text-[9px] font-black font-mono" style={{ backgroundColor: '#0a2a14', color: '#10B981', border: '1px solid #10B98160' }}>
+                                       <CheckCircle2 className="w-3 h-3" /><span>READY TO DEPLOY</span>
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   );
+                 })()}
 
-                    return (
-                      <div
-                        key={slot.slotId}
-                        className={`p-5 rounded-2xl border transition-all relative flex flex-col justify-between ${
-                          playerName 
-                            ? isSpeaking
-                              ? 'bg-[#042416] border-[#10B981] shadow-[0_0_18px_#10B98144]'
-                              : 'bg-[#051C12] border-emerald-800/50 shadow-md' 
-                            : 'bg-[#020B06]/70 border-dashed border-emerald-950'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="bg-[#020B06] text-emerald-300 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-900">
-                              SLOT 0{slot.slotId}
-                            </span>
-                            
-                            {playerName && isLobbyVoiceConnected && (
-                              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
-                                isSpeaking
-                                  ? 'bg-[#10B981] text-[#02140D] animate-pulse'
-                                  : isLobbyMicMuted && isMe
-                                  ? 'bg-red-950 text-red-300 border border-red-800'
-                                  : 'bg-[#020B06] text-emerald-400 border border-emerald-900'
-                              }`}>
-                                {isSpeaking ? (
-                                  <>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#02140D] animate-ping" />
-                                    <span>SPEAKING</span>
-                                  </>
-                                ) : isLobbyMicMuted && isMe ? (
-                                  <>
-                                    <MicOff className="w-2.5 h-2.5 text-red-300" />
-                                    <span>MUTED</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Mic className="w-2.5 h-2.5 text-[#10B981]" />
-                                    <span>VOICE READY</span>
-                                  </>
-                                )}
-                              </span>
-                            )}
-                          </div>
-
-                          {playerName ? (
-                            <div className="space-y-3 text-center">
-                              <div className="relative w-16 h-16 mx-auto">
-                                <img 
-                                  src={char?.avatar || FALLBACK_AVATAR_IMG} 
-                                  alt={playerName} 
-                                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
-                                  className={`w-16 h-16 rounded-2xl border-2 object-cover transition-all ${
-                                    isSpeaking ? 'border-[#10B981] ring-4 ring-[#10B981]/30 scale-105' : 'border-emerald-800'
-                                  }`}
-                                />
-                                {slot.isHost && (
-                                  <span className="absolute -top-1.5 -right-1.5 bg-[#FBBF24] text-[#02140D] text-[9px] font-black px-1.5 py-0.5 rounded-full shadow">
-                                    ★ HOST
-                                  </span>
-                                )}
-                                {isMe && (
-                                  <span className="absolute -bottom-1.5 -left-1.5 bg-[#10B981] text-[#02140D] text-[9px] font-black px-1.5 py-0.5 rounded-full shadow">
-                                    YOU
-                                  </span>
-                                )}
-                              </div>
-
-                              <div>
-                                <h4 className="font-bold text-base text-white font-game">{playerName}</h4>
-                                
-                                {(() => {
-                                  const isRegisteredUser = slot.userId && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(slot.userId);
-                                  const slotTag = slot.agentId || (isRegisteredUser ? `VAULT-${slot.userId.replace(/-/g, '').substring(0, 8).toUpperCase()}` : null);
-                                  
-                                  return slotTag ? (
-                                    <div className="flex items-center justify-center space-x-1 mt-0.5">
-                                      <span className="text-[9px] font-mono font-bold text-[#FBBF24] bg-[#020B06] px-1.5 py-0.2 rounded border border-emerald-900/60">
-                                        {slotTag}
-                                      </span>
-                                      <button
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(slotTag);
-                                          heistAudio.playKeyClick();
-                                          toast.success(`📋 Copied ${playerName}'s ID: ${slotTag}`);
-                                        }}
-                                        className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
-                                        title="Copy Operative ID"
-                                      >
-                                        <Copy className="w-2.5 h-2.5" />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-center mt-0.5">
-                                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-[#020B06] px-1.5 py-0.2 rounded border border-slate-800">
-                                        GUEST
-                                      </span>
-                                    </div>
-                                  );
-                                })()}
-                                
-                                {isMe ? (
-                                  <div className="mt-1.5">
-                                    <label className="text-[9px] font-mono text-emerald-400 block mb-0.5 font-bold uppercase">Role Selector</label>
-                                    <select
-                                      value={normalizeRoleKey(slot.role)}
-                                      onChange={(e) => handleSelectRole(e.target.value)}
-                                      className="w-full bg-[#020B06] border border-emerald-700/80 rounded-lg py-1 px-2 text-[11px] font-bold text-[#6EE7B7] uppercase font-mono outline-none cursor-pointer focus:border-[#10B981]"
-                                    >
-                                      <option value="hacker">Hacker (CS & Logic)</option>
-                                      <option value="engineer">Engineer (Optics & Physics)</option>
-                                      <option value="scientist">Scientist (Chemistry)</option>
-                                      <option value="cryptographer">Cryptographer (Math)</option>
-                                    </select>
-                                  </div>
-                                ) : (
-                                  <div className="inline-block bg-[#10B981]/20 border border-[#10B981]/40 px-2.5 py-0.5 rounded text-[11px] font-bold uppercase text-[#6EE7B7] mt-1 font-mono">
-                                    {slot.role}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="py-8 text-center space-y-2">
-                              <UserPlus className="w-8 h-8 text-emerald-700 mx-auto" />
-                              <p className="text-xs font-bold text-emerald-500 font-game">Empty Operative Slot</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-4 pt-3 border-t border-emerald-950">
-                          {playerName ? (
-                            isMe ? (
-                              <button
-                                onClick={() => handleToggleReady(slot.isReady)}
-                                className={`w-full py-2 rounded-lg text-xs font-bold font-game uppercase transition-all flex items-center justify-center space-x-1.5 ${
-                                  slot.isReady
-                                    ? 'bg-[#042416] text-[#10B981] border border-emerald-600 hover:bg-emerald-950'
-                                    : 'bg-[#FBBF24] text-[#02140D] hover:bg-[#F59E0B]'
-                                }`}
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                                <span>{slot.isReady ? 'READY (Click to Standby)' : 'CLICK TO READY'}</span>
-                              </button>
-                            ) : (
-                              <div className="flex items-center justify-center space-x-1.5 text-xs font-bold font-game">
-                                <CheckCircle2 className={`w-4 h-4 ${slot.isReady ? 'text-[#10B981]' : 'text-amber-400'}`} />
-                                <span className={slot.isReady ? 'text-[#10B981]' : 'text-amber-400'}>
-                                  {slot.isReady ? 'SYNCED & READY' : 'STANDBY'}
-                                </span>
-                              </div>
-                            )
-                          ) : (
-                            <button
-                              onClick={() => handleClaimSlot(slot.slotId)}
-                              className="w-full bg-[#FBBF24] text-[#02140D] font-bold text-xs py-2 rounded-lg hover:bg-[#F59E0B] uppercase font-game transition-all"
-                            >
-                              + Claim Slot
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
 
                 {/* Live Squad Tactical Radio & Chat Stream */}
                 <div className="bg-[#020B06] border border-emerald-900/60 rounded-2xl p-4 sm:p-5 space-y-3.5 relative z-10 shadow-2xl">

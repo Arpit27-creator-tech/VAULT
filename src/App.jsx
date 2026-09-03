@@ -1624,7 +1624,7 @@ export default function App() {
                 <button 
                   onClick={handleGoBack}
                   disabled={activeTab === 'home' && tabHistory.length === 0}
-                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-all active:translate-x-0.5 active:translate-y-0.5 ${
+                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-all active:translate-x-0.5 active:translate-y-0.5 ${
                     activeTab === 'home' && tabHistory.length === 0
                       ? 'bg-[#051811] text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
                       : 'bg-[#FBBF24] text-[#02140D] hover:bg-[#F59E0B]'
@@ -1633,7 +1633,7 @@ export default function App() {
                   aria-label="Go Back"
                 >
                   <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-                  <span className="hidden sm:inline">BACK</span>
+                  <span>BACK</span>
                 </button>
               )}
 
@@ -1647,16 +1647,16 @@ export default function App() {
                     heistAudio.playKeyClick();
                     if (window.innerWidth < 768) setSidebarOpen(false);
                   }}
-                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-colors ${
+                  className={`flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-colors ${
                     activeTab === 'home'
-                      ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#FBBF24]'
+                      ? 'bg-[#062417] text-[#34D399] border-[#10B981]/50 shadow-[2px_2px_0px_#10B981]'
                       : 'bg-[#0A261B] text-[#6EE7B7] hover:bg-[#10B981]/20 hover:text-white'
                   }`}
                   title="Mission HQ / Home Page"
                   aria-label="Home Section"
                 >
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">HOME</span>
+                  <Home className="w-4 h-4 text-[#34D399]" />
+                  <span>HOME</span>
                 </motion.button>
               )}
 
@@ -1666,30 +1666,11 @@ export default function App() {
                     setSidebarOpen(!sidebarOpen);
                     heistAudio.playKeyClick();
                   }}
-                  className="md:hidden p-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#FBBF24] shadow-[2px_2px_0px_#020C07] hover:bg-[#10B981] hover:text-[#02140D] active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="md:hidden p-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#FBBF24] shadow-[2px_2px_0px_#020C07] hover:bg-[#10B981] hover:text-[#02140D] active:translate-x-0.5 active:translate-y-0.5 transition-all rounded-lg"
                   title={sidebarOpen ? "Close Syndicate Menu" : "Open Syndicate Menu"}
                   aria-label="Toggle navigation menu"
                 >
                   {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              )}
-
-              {currentUser && (
-                <button 
-                  onClick={() => {
-                    setSidebarCollapsed(!sidebarCollapsed);
-                    heistAudio.playKeyClick();
-                  }}
-                  className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 border-2 border-[#03140C] font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] transition-all active:translate-x-0.5 active:translate-y-0.5 ${
-                    sidebarCollapsed
-                      ? 'bg-[#10B981] text-[#02140D] hover:bg-[#34D399] shadow-[2px_2px_0px_#FBBF24]'
-                      : 'bg-[#0A261B] text-[#6EE7B7] hover:text-[#FBBF24] hover:bg-[#0E3526]'
-                  }`}
-                  title={sidebarCollapsed ? "Open Syndicate Sidebar Menu" : "Minimize / Hide Sidebar Menu Completely"}
-                  aria-label="Toggle sidebar visibility"
-                >
-                  {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-                  <span>{sidebarCollapsed ? "MENU" : "HIDE"}</span>
                 </button>
               )}
 
@@ -1740,7 +1721,7 @@ export default function App() {
                     setIsAgentDirectoryOpen(true);
                     heistAudio.playKeyClick();
                   }}
-                  className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D] font-mono font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] active:translate-x-0.5 transition-all"
+                  className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-2 border-[#03140C] bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D] font-mono font-black text-xs uppercase shadow-[2px_2px_0px_#020C07] active:translate-x-0.5 transition-all rounded-lg"
                   title="Search and identify syndicate operatives by unique Agent ID"
                 >
                   <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
@@ -1756,7 +1737,7 @@ export default function App() {
                       navigateToTab('stats');
                       heistAudio.playKeyClick();
                     }}
-                    className={`flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 border-2 border-[#03140C] font-mono shadow-[2px_2px_0px_#020C07] transition-all ${
+                    className={`flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 border-2 border-[#03140C] font-mono shadow-[2px_2px_0px_#020C07] transition-all rounded-lg ${
                       activeTab === 'stats' 
                         ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#FBBF24]' 
                         : 'bg-[#0A261B] text-[#F0FDF4] hover:bg-[#10B981]/20'
@@ -1766,7 +1747,7 @@ export default function App() {
                     <img 
                       src={currentUser.avatar} 
                       alt={currentUser.callsign} 
-                      className="w-5 h-5 object-cover border border-[#03140C]" 
+                      className="w-5 h-5 object-cover border border-[#03140C] rounded" 
                     />
                     <div className="text-left hidden md:block leading-tight">
                       <span className="text-[11px] font-black uppercase block truncate max-w-[90px]">{currentUser.callsign}</span>
@@ -1779,7 +1760,7 @@ export default function App() {
                       setIsCustomHeistModalOpen(true);
                       heistAudio.playKeyClick();
                     }}
-                    className="hidden sm:flex bg-[#FBBF24] text-[#02140D] font-black px-2.5 sm:px-4 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 active:translate-y-0.5 transition-all items-center space-x-1 sm:space-x-1.5 text-xs sm:text-sm"
+                    className="hidden sm:flex bg-[#FBBF24] text-[#02140D] font-black px-2.5 sm:px-4 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#F59E0B] active:translate-x-0.5 active:translate-y-0.5 transition-all items-center space-x-1 sm:space-x-1.5 text-xs sm:text-sm rounded-lg"
                     title="Create a custom multi-role heist with selected roles"
                   >
                     <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
@@ -1790,7 +1771,7 @@ export default function App() {
                   {activeTab !== 'liveheist' && (
                     <button
                       onClick={() => handleStartHeistStage(0)}
-                      className="bg-[#FF4D6D] text-white font-black px-3 sm:px-5 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                      className="bg-[#FF4D6D] text-white font-black px-3 sm:px-5 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm rounded-lg"
                     >
                       <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
                       <span className="hidden sm:inline">LAUNCH STAGE 1</span>
@@ -1804,7 +1785,7 @@ export default function App() {
                     setIsAuthModalOpen(true);
                     heistAudio.playKeyClick();
                   }}
-                  className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2"
+                  className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2 rounded-lg"
                   title="Sign In with email or username and password"
                 >
                   <LogIn className="w-4 h-4" />
@@ -1836,119 +1817,217 @@ export default function App() {
               overflow-y-auto overflow-x-hidden flex-shrink-0
               ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
               ${sidebarCollapsed 
-                ? 'md:-translate-x-full md:w-0 md:opacity-0 md:pointer-events-none md:border-r-0 md:overflow-hidden' 
-                : 'w-72 md:w-60 lg:w-64 md:opacity-100'
+                ? 'w-72 md:w-16' 
+                : 'w-72 md:w-60 lg:w-64'
               }
             `}>
             
-            <div className="flex-1 w-72 md:w-60 lg:w-64">
-              
-              <div className="p-3.5 border-b-2 border-[#03140C] bg-[#04160E]/80 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
-                  <span className="text-[11px] font-black uppercase font-mono tracking-wider text-[#34D399]">
-                    SYNDICATE MENU
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] font-mono bg-[#0A261B] text-[#FBBF24] px-2 py-0.5 border border-[#03140C] font-bold">
-                    9 OPS
-                  </span>
-                  <button
+            {sidebarCollapsed ? (
+              /* Collapsed / Minimized Vertical Rail */
+              <div className="flex flex-col items-center justify-between h-full py-4 px-2 w-full select-none">
+                <div className="flex flex-col items-center w-full space-y-4">
+                  {/* Expand Sidebar Toggle Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
                     onClick={() => {
-                      setSidebarCollapsed(true);
+                      setSidebarCollapsed(false);
                       heistAudio.playKeyClick();
                     }}
-                    className="hidden md:flex p-1 text-slate-400 hover:text-white hover:bg-[#0E3526] border border-[#03140C]"
-                    title="Minimize Sidebar"
+                    className="w-10 h-10 rounded-xl border border-[#10B981]/50 bg-[#04160E] hover:bg-[#10B981]/20 flex items-center justify-center text-[#34D399] shadow-[0_0_12px_rgba(16,185,129,0.15)] transition-all"
+                    title="Expand Sidebar Menu"
+                    aria-label="Expand Sidebar Menu"
                   >
-                    <PanelLeftClose className="w-3.5 h-3.5" />
+                    <PanelLeftOpen className="w-5 h-5 text-[#34D399]" />
+                  </motion.button>
+
+                  {/* Divider Line */}
+                  <div className="w-8 border-t border-[#10B981]/20" />
+
+                  {/* Navigation Icon List */}
+                  <nav className="flex flex-col items-center space-y-3.5 w-full">
+                    {[
+                      { id: 'home', label: 'Home HQ', icon: Home },
+                      { id: 'missions', label: 'Expeditions', icon: Compass },
+                      { id: 'characters', label: '4 Roles', icon: Zap },
+                      { id: 'map', label: 'Canopy Map', icon: MapPin },
+                      { id: 'topics', label: 'Disciplines', icon: BookOpen },
+                      { id: 'builder', label: 'Architect', icon: Terminal },
+                      { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket },
+                    ].map(tab => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+
+                      return (
+                        <motion.button
+                          key={tab.id}
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.92 }}
+                          transition={{ duration: 0.12 }}
+                          onClick={() => {
+                            if (isHeistLocked && tab.id !== 'liveheist') {
+                              toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
+                              return;
+                            }
+                            navigateToTab(tab.id);
+                            heistAudio.playKeyClick();
+                            if (tab.id === 'liveheist' && !isTimerRunning) {
+                              setIsTimerRunning(true);
+                            }
+                            if (window.innerWidth < 768) {
+                              setSidebarOpen(false);
+                            }
+                          }}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                            isActive
+                              ? 'text-[#34D399] bg-[#10B981]/20 border border-[#10B981]/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                              : 'text-[#6EE7B7]/70 hover:text-white hover:bg-[#10B981]/15'
+                          }`}
+                          title={tab.label}
+                          aria-label={tab.label}
+                        >
+                          <Icon className="w-5 h-5 stroke-[2]" />
+                        </motion.button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                {/* Bottom Stats / Dossier Button */}
+                <div className="flex flex-col items-center w-full pt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => {
+                      navigateToTab('stats');
+                      heistAudio.playKeyClick();
+                      if (window.innerWidth < 768) {
+                        setSidebarOpen(false);
+                      }
+                    }}
+                    className={`w-11 h-11 rounded-xl border-2 border-[#10B981] bg-[#04160E] hover:bg-[#10B981]/25 flex items-center justify-center text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all ${
+                      activeTab === 'stats' ? 'bg-[#10B981]/30 ring-2 ring-[#34D399]' : ''
+                    }`}
+                    title="My Stats / Operative Dossier"
+                    aria-label="Operative Dossier"
+                  >
+                    <BarChart3 className="w-5 h-5 stroke-[2.2]" />
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              /* Expanded Sidebar */
+              <>
+                <div className="flex-1 w-72 md:w-60 lg:w-64">
+                  
+                  <div className="p-3.5 border-b-2 border-[#03140C] bg-[#04160E]/80 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                      <span className="text-[11px] font-black uppercase font-mono tracking-wider text-[#34D399]">
+                        SYNDICATE MENU
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-[10px] font-mono bg-[#0A261B] text-[#FBBF24] px-2 py-0.5 border border-[#03140C] font-bold">
+                        9 OPS
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSidebarCollapsed(true);
+                          heistAudio.playKeyClick();
+                        }}
+                        className="hidden md:flex p-1 text-slate-400 hover:text-white hover:bg-[#0E3526] border border-[#03140C] rounded"
+                        title="Minimize Sidebar"
+                      >
+                        <PanelLeftClose className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <nav className="p-2.5 sm:p-3 space-y-1">
+                    {[
+                      { id: 'home', label: 'Home HQ', icon: Home },
+                      { id: 'stats', label: 'My Stats', icon: BarChart3, highlight: !!currentUser },
+                      { id: 'missions', label: 'Expeditions', icon: Compass },
+                      { id: 'lobby', label: 'Squad Lobby', icon: Users },
+                      { id: 'characters', label: '4 Roles', icon: Zap },
+                      { id: 'topics', label: 'Disciplines', icon: BookOpen },
+                      { id: 'map', label: 'Canopy Map', icon: MapPin },
+                      { id: 'builder', label: 'Architect', icon: Terminal },
+                      { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket },
+                      { id: 'settings', label: 'Settings', icon: Settings }
+                    ].map(tab => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+
+                      return (
+                        <motion.button
+                          key={tab.id}
+                          whileHover={{ x: 3 }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                          onClick={() => {
+                            if (isHeistLocked && tab.id !== 'liveheist') {
+                              toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
+                              return;
+                            }
+                            navigateToTab(tab.id);
+                            heistAudio.playKeyClick();
+                            if (tab.id === 'liveheist' && !isTimerRunning) {
+                              setIsTimerRunning(true);
+                            }
+                            if (window.innerWidth < 768) {
+                              setSidebarOpen(false);
+                            }
+                          }}
+                          className={`w-full flex items-center p-2.5 transition-colors text-left rounded-md ${
+                            isHeistLocked && tab.id !== 'liveheist'
+                              ? 'text-[#D1FAE5]/30 cursor-not-allowed opacity-40'
+                              : isActive
+                              ? 'bg-[var(--vault-primary,#10B981)] text-[#02140D] font-black border-l-[3px] border-[var(--vault-accent,#FBBF24)] shadow-[2px_2px_0px_#020C07]'
+                              : 'text-[#D1FAE5]/80 hover:bg-[#10B981]/10 hover:text-white border-l-[3px] border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                            <Icon className={`w-4 h-4 flex-shrink-0 ${
+                              isActive ? 'text-[#02140D]' : tab.highlight ? 'text-[#FBBF24]' : 'text-[#34D399]'
+                            }`} />
+                            <span className="text-xs font-bold uppercase tracking-wider truncate flex items-center space-x-1.5">
+                              <span>{tab.label}</span>
+                              {tab.highlight && (
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-[#02140D]' : 'bg-red-500'} animate-pulse`} />
+                              )}
+                            </span>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </nav>
+
+                </div>
+
+                <div className="p-3 border-t-2 border-[#03140C] bg-[#04160E]/90 space-y-2.5 w-72 md:w-60 lg:w-64">
+                  <div className="p-2 bg-[#020B06] border border-[#03140C] flex items-center justify-between text-[11px] font-mono font-bold">
+                    <div className="flex items-center space-x-1.5 text-[#34D399]">
+                      <Radio className="w-3.5 h-3.5 text-[#10B981] animate-pulse" />
+                      <span>RADAR ACTIVE</span>
+                    </div>
+                    <span className="text-[#FBBF24] text-[10px]">4.8K CO-OP</span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      handleStartHeistStage(0);
+                      if (window.innerWidth < 768) setSidebarOpen(false);
+                    }}
+                    className="w-full bg-[#FF4D6D] text-white font-black text-xs py-2 px-2.5 border-[2px] border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 flex items-center justify-center space-x-1.5 uppercase rounded"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>LAUNCH CO-OP</span>
                   </button>
                 </div>
-              </div>
-
-              <nav className="p-2.5 sm:p-3 space-y-1">
-                {[
-                  { id: 'home', label: 'Home HQ', icon: Home },
-                  { id: 'stats', label: 'My Stats', icon: BarChart3, highlight: !!currentUser },
-                  { id: 'missions', label: 'Expeditions', icon: Compass },
-                  { id: 'lobby', label: 'Squad Lobby', icon: Users },
-                  { id: 'characters', label: '4 Roles', icon: Sparkles },
-                  { id: 'topics', label: 'Disciplines', icon: BookOpen },
-                  { id: 'map', label: 'Canopy Map', icon: MapPin },
-                  { id: 'builder', label: 'Architect', icon: Terminal },
-                  { id: 'waitlist', label: 'Syndicate Pass', icon: Rocket },
-                  { id: 'settings', label: 'Settings', icon: Settings }
-                ].map(tab => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      whileHover={{ x: 3 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => {
-                        if (isHeistLocked && tab.id !== 'liveheist') {
-                          toast.warning("🔒 Navigation locked! Complete or quit the heist to leave.");
-                          return;
-                        }
-                        navigateToTab(tab.id);
-                        heistAudio.playKeyClick();
-                        if (tab.id === 'liveheist' && !isTimerRunning) {
-                          setIsTimerRunning(true);
-                        }
-                        if (window.innerWidth < 768) {
-                          setSidebarOpen(false);
-                        }
-                      }}
-                      className={`w-full flex items-center p-2.5 transition-colors text-left ${
-                        isHeistLocked && tab.id !== 'liveheist'
-                          ? 'text-[#D1FAE5]/30 cursor-not-allowed opacity-40'
-                          : isActive
-                          ? 'bg-[var(--vault-primary,#10B981)] text-[#02140D] font-black border-l-[3px] border-[var(--vault-accent,#FBBF24)] shadow-[2px_2px_0px_#020C07]'
-                          : 'text-[#D1FAE5]/80 hover:bg-[#10B981]/10 hover:text-white border-l-[3px] border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-                        <Icon className={`w-4 h-4 flex-shrink-0 ${
-                          isActive ? 'text-[#02140D]' : tab.highlight ? 'text-[#FBBF24]' : 'text-[#34D399]'
-                        }`} />
-                        <span className="text-xs font-bold uppercase tracking-wider truncate flex items-center space-x-1.5">
-                          <span>{tab.label}</span>
-                          {tab.highlight && (
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-[#02140D]' : 'bg-red-500'} animate-pulse`} />
-                          )}
-                        </span>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </nav>
-
-            </div>
-
-            <div className="p-3 border-t-2 border-[#03140C] bg-[#04160E]/90 space-y-2.5 w-72 md:w-60 lg:w-64">
-              <div className="p-2 bg-[#020B06] border border-[#03140C] flex items-center justify-between text-[11px] font-mono font-bold">
-                <div className="flex items-center space-x-1.5 text-[#34D399]">
-                  <Radio className="w-3.5 h-3.5 text-[#10B981] animate-pulse" />
-                  <span>RADAR ACTIVE</span>
-                </div>
-                <span className="text-[#FBBF24] text-[10px]">4.8K CO-OP</span>
-              </div>
-
-              <button
-                onClick={() => {
-                  handleStartHeistStage(0);
-                  if (window.innerWidth < 768) setSidebarOpen(false);
-                }}
-                className="w-full bg-[#FF4D6D] text-white font-black text-xs py-2 px-2.5 border-[2px] border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 flex items-center justify-center space-x-1.5 uppercase"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>LAUNCH CO-OP</span>
-              </button>
-            </div>
+              </>
+            )}
 
           </aside>
           )}

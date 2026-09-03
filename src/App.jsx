@@ -2578,7 +2578,7 @@ export default function App() {
                     <span>Leave Squad</span>
                   </button>
 
-                  <div className="bg-[#051C12] border border-emerald-800/40 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 relative overflow-hidden">
+                  <div className="bg-[#051C12]/50 backdrop-blur-xl border border-emerald-800/30 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 relative overflow-hidden">
                     {/* Background ambient grid pattern */}
                     <div className="absolute inset-0 bg-[radial-gradient(#10b98115_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-40" />
 
@@ -2824,10 +2824,10 @@ export default function App() {
                               transition={{ duration: 0.15 }}
                               className={`relative rounded-2xl p-4 sm:p-4.5 flex flex-col justify-between transition-all duration-200 backdrop-blur-md ${
                                 isMyRole
-                                  ? 'bg-[#03170e]/95 border-2 border-[#10B981] shadow-[0_0_25px_rgba(16,185,129,0.25)]'
+                                  ? 'bg-[#03170e]/70 border-2 border-[#10B981] shadow-[0_0_25px_rgba(16,185,129,0.25)]'
                                   : isTakenByOther
-                                  ? 'bg-[#020b06]/75 border border-slate-800 opacity-50 grayscale-[25%] cursor-not-allowed'
-                                  : 'bg-[#03150d]/85 border border-[#0d3824] hover:border-[#10B981]/50'
+                                  ? 'bg-[#020b06]/40 border border-slate-800/60 opacity-50 grayscale-[25%] cursor-not-allowed'
+                                  : 'bg-[#03150d]/50 border border-[#0d3824]/80 hover:border-[#10B981]/50'
                               }`}
                             >
                               {/* Pill Badge at top border */}
@@ -2861,7 +2861,7 @@ export default function App() {
                                 </div>
 
                                 {/* Challenge Inset Box */}
-                                <div className="bg-[#020d07] border border-[#0d3824] rounded-xl p-3 my-3.5 space-y-1.5">
+                                <div className="bg-[#020d07]/60 backdrop-blur-sm border border-[#0d3824]/70 rounded-xl p-3 my-3.5 space-y-1.5">
                                   <div className="flex items-start space-x-1.5 text-xs font-mono font-bold text-[#34D399] leading-snug">
                                     <span className="text-[#FBBF24] flex-shrink-0 text-xs mt-0.5">⚡</span>
                                     <span>{rc.challengeTitle}</span>
@@ -2904,7 +2904,7 @@ export default function App() {
                                       heistAudio.playKeyClick();
                                       toast.success('🎯 Switched role to ' + rc.title + '!');
                                     }}
-                                    className="w-full bg-[#02110a] hover:bg-[#062417] text-white hover:text-[#10B981] border border-[#0d3824] hover:border-[#10B981]/60 font-mono font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider flex items-center justify-center transition-all"
+                                    className="w-full bg-[#02110a]/60 hover:bg-[#062417]/80 backdrop-blur-sm text-white hover:text-[#10B981] border border-[#0d3824] hover:border-[#10B981]/60 font-mono font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider flex items-center justify-center transition-all"
                                   >
                                     <span>CHOOSE SPECIALIST</span>
                                   </button>
@@ -2942,7 +2942,7 @@ export default function App() {
                             const isReady = mySlot?.isReady || false;
 
                             return (
-                              <div className="rounded-2xl bg-[#03170e]/95 border-2 border-[#10B981] p-4 flex flex-col justify-between shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                              <div className="rounded-2xl bg-[#03170e]/70 backdrop-blur-md border-2 border-[#10B981] p-4 flex flex-col justify-between shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                                 <div>
                                   {/* Slot Header */}
                                   <div className="flex items-center justify-between mb-3">
@@ -3005,7 +3005,7 @@ export default function App() {
                             return (
                               <div
                                 key={slotNumber}
-                                className="rounded-2xl bg-[#03150d]/85 border border-[#0d3824] p-4 flex flex-col justify-between hover:border-[#10B981]/40 transition-all"
+                                className="rounded-2xl bg-[#03150d]/50 backdrop-blur-md border border-[#0d3824]/80 p-4 flex flex-col justify-between hover:border-[#10B981]/40 transition-all"
                               >
                                 <div>
                                   {/* Slot Header */}
@@ -3040,7 +3040,7 @@ export default function App() {
                                         <select
                                           value={aiRoleKey}
                                           disabled
-                                          className="w-full bg-[#02140d] border border-[#0d3824] rounded-lg py-1 px-2.5 text-xs font-mono font-bold text-[#10B981] appearance-none cursor-default pr-6"
+                                          className="w-full bg-[#02140d]/60 backdrop-blur-sm border border-[#0d3824] rounded-lg py-1 px-2.5 text-xs font-mono font-bold text-[#10B981] appearance-none cursor-default pr-6"
                                         >
                                           <option value={aiRoleKey}>{aiRoleData.title}</option>
                                         </select>
@@ -3068,7 +3068,7 @@ export default function App() {
                       </div>
 
                       {/* ══ SQUAD RADIO VOICE FREQUENCY BAR ══ */}
-                      <div className="bg-[#020E08] border border-emerald-800/60 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+                      <div className="bg-[#020E08]/60 backdrop-blur-md border border-emerald-800/50 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
                         <div className="flex items-center space-x-3.5">
                           <div className={`p-2.5 rounded-xl border transition-all ${
                             isLobbyVoiceConnected

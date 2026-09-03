@@ -1888,6 +1888,14 @@ button, input, select, textarea {
   border-color: rgb(13 56 36 / 0.6);
 }
 
+.border-\[\#0d3824\]\/70 {
+  border-color: rgb(13 56 36 / 0.7);
+}
+
+.border-\[\#0d3824\]\/80 {
+  border-color: rgb(13 56 36 / 0.8);
+}
+
 .border-\[\#10B981\] {
   --tw-border-opacity: 1;
   border-color: rgb(16 185 129 / var(--tw-border-opacity, 1));
@@ -2103,6 +2111,10 @@ button, input, select, textarea {
   border-color: rgb(6 95 70 / var(--tw-border-opacity, 1));
 }
 
+.border-emerald-800\/30 {
+  border-color: rgb(6 95 70 / 0.3);
+}
+
 .border-emerald-800\/40 {
   border-color: rgb(6 95 70 / 0.4);
 }
@@ -2221,6 +2233,10 @@ button, input, select, textarea {
   border-color: rgb(30 41 59 / var(--tw-border-opacity, 1));
 }
 
+.border-slate-800\/60 {
+  border-color: rgb(30 41 59 / 0.6);
+}
+
 .border-transparent {
   border-color: transparent;
 }
@@ -2277,18 +2293,21 @@ button, input, select, textarea {
   background-color: rgb(2 14 8 / var(--tw-bg-opacity, 1));
 }
 
+.bg-\[\#020E08\]\/60 {
+  background-color: rgb(2 14 8 / 0.6);
+}
+
 .bg-\[\#020b06\] {
   --tw-bg-opacity: 1;
   background-color: rgb(2 11 6 / var(--tw-bg-opacity, 1));
 }
 
-.bg-\[\#020b06\]\/75 {
-  background-color: rgb(2 11 6 / 0.75);
+.bg-\[\#020b06\]\/40 {
+  background-color: rgb(2 11 6 / 0.4);
 }
 
-.bg-\[\#020d07\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(2 13 7 / var(--tw-bg-opacity, 1));
+.bg-\[\#020d07\]\/60 {
+  background-color: rgb(2 13 7 / 0.6);
 }
 
 .bg-\[\#020d08\]\/50 {
@@ -2299,9 +2318,8 @@ button, input, select, textarea {
   background-color: rgb(2 13 8 / 0.6);
 }
 
-.bg-\[\#02110a\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(2 17 10 / var(--tw-bg-opacity, 1));
+.bg-\[\#02110a\]\/60 {
+  background-color: rgb(2 17 10 / 0.6);
 }
 
 .bg-\[\#02140D\] {
@@ -2309,9 +2327,8 @@ button, input, select, textarea {
   background-color: rgb(2 20 13 / var(--tw-bg-opacity, 1));
 }
 
-.bg-\[\#02140d\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(2 20 13 / var(--tw-bg-opacity, 1));
+.bg-\[\#02140d\]\/60 {
+  background-color: rgb(2 20 13 / 0.6);
 }
 
 .bg-\[\#02180E\] {
@@ -2346,12 +2363,12 @@ button, input, select, textarea {
   background-color: rgb(3 21 13 / 0.4);
 }
 
-.bg-\[\#03150d\]\/85 {
-  background-color: rgb(3 21 13 / 0.85);
+.bg-\[\#03150d\]\/50 {
+  background-color: rgb(3 21 13 / 0.5);
 }
 
-.bg-\[\#03170e\]\/95 {
-  background-color: rgb(3 23 14 / 0.95);
+.bg-\[\#03170e\]\/70 {
+  background-color: rgb(3 23 14 / 0.7);
 }
 
 .bg-\[\#04160E\] {
@@ -2424,6 +2441,10 @@ button, input, select, textarea {
 .bg-\[\#051C12\] {
   --tw-bg-opacity: 1;
   background-color: rgb(5 28 18 / var(--tw-bg-opacity, 1));
+}
+
+.bg-\[\#051C12\]\/50 {
+  background-color: rgb(5 28 18 / 0.5);
 }
 
 .bg-\[\#051C12\]\/60 {
@@ -4708,9 +4729,8 @@ table tr, table td, table th {
   background-color: rgb(3 28 18 / 0.6);
 }
 
-.hover\:bg-\[\#062417\]:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(6 36 23 / var(--tw-bg-opacity, 1));
+.hover\:bg-\[\#062417\]\/80:hover {
+  background-color: rgb(6 36 23 / 0.8);
 }
 
 .hover\:bg-\[\#06291B\]\/60:hover {

@@ -180,6 +180,10 @@ export const userAPI = {
     return apiFetch(`/users/${userId}/stats`);
   },
 
+  async getUnlocks(userId) {
+    return apiFetch(`/users/${userId}/unlocks`);
+  },
+
   async getHistory(userId, page = 1, limit = 20) {
     return apiFetch(`/users/${userId}/history?page=${page}&limit=${limit}`);
   },

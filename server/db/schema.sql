@@ -38,6 +38,7 @@ CREATE TABLE users (
   rank          VARCHAR(50)  DEFAULT 'Forest Explorer',
   badges        JSONB        DEFAULT '["Forest Ranger"]'::jsonb,
   notification_prefs JSONB   DEFAULT '{"heistInvites": true, "weeklySummary": true, "friendRequests": true}'::jsonb,
+  equipped_theme VARCHAR(50) DEFAULT 'default',
   is_verified   BOOLEAN      DEFAULT FALSE,
   created_at    TIMESTAMPTZ  DEFAULT NOW(),
   updated_at    TIMESTAMPTZ  DEFAULT NOW()

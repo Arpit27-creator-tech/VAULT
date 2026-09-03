@@ -560,6 +560,7 @@ function buildUserProfile(user, history = []) {
     avatar: user.avatar_url,
     badges: user.badges || ['Forest Ranger'],
     notificationPrefs: user.notification_prefs || { heistInvites: true, weeklySummary: true, friendRequests: true },
+    equippedTheme: user.equipped_theme || 'default',
     stats: {
       missionsCompleted: user.missions_completed || 0,
       winRate: user.win_rate || 100,

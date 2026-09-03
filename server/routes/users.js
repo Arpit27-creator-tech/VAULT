@@ -224,7 +224,7 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden', message: 'You can only update your own profile.' });
     }
 
-    const { callsign, avatar_url, role, notification_prefs } = req.body;
+    const { callsign, avatar_url, role, notification_prefs, equipped_theme } = req.body;
 
     const fields = [];
     const values = [];
@@ -246,6 +246,38 @@ router.put('/:id', authenticate, async (req, res) => {
       fields.push(`notification_prefs = $${paramIdx++}::jsonb`);
       values.push(JSON.stringify(notification_prefs));
     }
+    if (equipped_theme) {
+      // Validate against real unlock conditions server-side, so equipping
+      // a theme can't be spoofed by calling this endpoint directly.
+      const VALID_THEMES = ['default', 'ember', 'crimson', 'azure', 'golden'];
+      if (!VALID_THEMES.includes(equipped_theme)) {
+        return res.status(400).json({ error: 'Unknown theme' });
+      }
+      if (equipped_theme !== 'default') {
+        const userLevelResult = await query('SELECT level FROM users WHERE id = $1', [id]);
+        const level = userLevelResult.rows[0]?.level || 1;
+        const statsRes = await query('SELECT missions_completed, vaults_cracked FROM user_stats WHERE user_id = $1', [id]);
+        const missionsCompleted = statsRes.rows[0]?.missions_completed || 0;
+        const vaultsCracked = statsRes.rows[0]?.vaults_cracked || 0;
+        const flawlessRes = await query(
+          `SELECT EXISTS(SELECT 1 FROM heist_history WHERE user_id = $1 AND result = 'VICTORY' AND alarms_tripped = 0) AS has_flawless`,
+          [id]
+        );
+        const hasFlawless = flawlessRes.rows[0]?.has_flawless || false;
+
+        const conditionsMet = {
+          ember: level >= 3,
+          crimson: hasFlawless,
+          azure: missionsCompleted >= 10,
+          golden: vaultsCracked >= 25
+        };
+        if (!conditionsMet[equipped_theme]) {
+          return res.status(403).json({ error: 'Theme not yet unlocked' });
+        }
+      }
+      fields.push(`equipped_theme = $${paramIdx++}`);
+      values.push(equipped_theme);
+    }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
@@ -254,11 +286,11 @@ router.put('/:id', authenticate, async (req, res) => {
     values.push(id);
     const result = await query(
       `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIdx} 
-       RETURNING id, username, callsign, avatar_url, role, level, xp, rank, notification_prefs`,
+       RETURNING id, username, callsign, avatar_url, role, level, xp, rank, notification_prefs, equipped_theme`,
       values
     );
 
-    res.json({ user: { ...result.rows[0], notificationPrefs: result.rows[0].notification_prefs } });
+    res.json({ user: { ...result.rows[0], notificationPrefs: result.rows[0].notification_prefs, equippedTheme: result.rows[0].equipped_theme } });
 
   } catch (err) {
     console.error('[USERS] Update profile error:', err);
@@ -303,6 +335,49 @@ router.get('/:id/stats', authenticate, async (req, res) => {
   } catch (err) {
     console.error('[USERS] Get stats error:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/users/:id/unlocks — Which vault themes this user has
+// unlocked, computed from real stats (not stored/faked).
+// ─────────────────────────────────────────────────────────────
+router.get('/:id/unlocks', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const userResult = await query('SELECT level FROM users WHERE id = $1', [id]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const level = userResult.rows[0].level || 1;
+
+    const statsResult = await query(
+      'SELECT missions_completed, vaults_cracked FROM user_stats WHERE user_id = $1',
+      [id]
+    );
+    const missionsCompleted = statsResult.rows[0]?.missions_completed || 0;
+    const vaultsCracked = statsResult.rows[0]?.vaults_cracked || 0;
+
+    const flawlessResult = await query(
+      `SELECT EXISTS(
+         SELECT 1 FROM heist_history
+         WHERE user_id = $1 AND result = 'VICTORY' AND alarms_tripped = 0
+       ) AS has_flawless`,
+      [id]
+    );
+    const hasFlawlessVictory = flawlessResult.rows[0]?.has_flawless || false;
+
+    const unlocked = ['default'];
+    if (level >= 3) unlocked.push('ember');
+    if (hasFlawlessVictory) unlocked.push('crimson');
+    if (missionsCompleted >= 10) unlocked.push('azure');
+    if (vaultsCracked >= 25) unlocked.push('golden');
+
+    res.json({ unlocked, progress: { level, missionsCompleted, vaultsCracked, hasFlawlessVictory } });
+  } catch (err) {
+    console.error('[USERS] Get unlocks error:', err);
+    res.status(500).json({ error: 'Failed to fetch unlocks' });
   }
 });
 

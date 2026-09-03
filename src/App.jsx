@@ -50,6 +50,17 @@ const ROLE_CONFIGS = [
   { key: 'cryptographer', label: 'The Cryptographer', title: 'Cipher Specialist', charId: 'c4', discipline: 'Math & Ciphers', color: '#C084FC' }
 ];
 
+// Vault Themes — cosmetic color palettes for the sidebar accent and heist
+// HUD. Unlock conditions here must match server/routes/users.js exactly,
+// since the server is the authority on what's actually equippable.
+const VAULT_THEMES = [
+  { id: 'default', name: 'Forest Ranger', primary: '#10B981', accent: '#FBBF24', unlockText: 'Unlocked by default' },
+  { id: 'ember', name: 'Ember Vault', primary: '#F97316', accent: '#FDE047', unlockText: 'Reach Level 3' },
+  { id: 'crimson', name: 'Crimson Lockdown', primary: '#E11D48', accent: '#FB7185', unlockText: 'Win a heist with zero alarms tripped' },
+  { id: 'azure', name: 'Azure Frequency', primary: '#0EA5E9', accent: '#7DD3FC', unlockText: 'Complete 10 missions' },
+  { id: 'golden', name: 'Golden Syndicate', primary: '#CA8A04', accent: '#FDE68A', unlockText: 'Crack 25 vaults' }
+];
+
 function normalizeRoleKey(role) {
   if (!role) return 'hacker';
   const r = role.toLowerCase();
@@ -113,6 +124,8 @@ export default function App() {
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ heistInvites: true, weeklySummary: true, friendRequests: true });
+  const [unlockedThemes, setUnlockedThemes] = useState(['default']);
+  const [isEquippingTheme, setIsEquippingTheme] = useState(null);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [bgVideoActive, setBgVideoActive] = useState(true);
   const [bgDimMode, setBgDimMode] = useState('vivid'); 
@@ -522,6 +535,22 @@ export default function App() {
     }
   };
 
+  const handleEquipTheme = async (themeId) => {
+    if (!currentUser?.id || isEquippingTheme) return;
+    setIsEquippingTheme(themeId);
+    try {
+      const res = await userAPI.updateProfile(currentUser.id, { equipped_theme: themeId });
+      const updated = { ...currentUser, equippedTheme: res?.user?.equippedTheme || themeId };
+      setCurrentUser(updated);
+      localStorage.setItem('vault_current_user', JSON.stringify(updated));
+      toast.success(`Equipped: ${VAULT_THEMES.find(t => t.id === themeId)?.name}`);
+    } catch (err) {
+      toast.error(err?.message || 'That theme is not unlocked yet.');
+    } finally {
+      setIsEquippingTheme(null);
+    }
+  };
+
   // Auto-login from JWT token on mount if returning user
   useEffect(() => {
     if (!currentUser && authAPI.isAuthenticated()) {
@@ -804,6 +833,25 @@ export default function App() {
       setNotifPrefs(currentUser.notificationPrefs);
     }
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setUnlockedThemes(['default']);
+      return;
+    }
+    userAPI.getUnlocks(currentUser.id)
+      .then(res => {
+        if (res?.unlocked) setUnlockedThemes(res.unlocked);
+      })
+      .catch(() => {}); // non-critical — collection just won't refresh this session
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    const themeId = currentUser?.equippedTheme || 'default';
+    const theme = VAULT_THEMES.find(t => t.id === themeId) || VAULT_THEMES[0];
+    document.documentElement.style.setProperty('--vault-primary', theme.primary);
+    document.documentElement.style.setProperty('--vault-accent', theme.accent);
+  }, [currentUser?.equippedTheme]);
 
   useEffect(() => {
     localStorage.setItem('kh_missions_subject_v4', JSON.stringify(missions));
@@ -1802,7 +1850,7 @@ export default function App() {
                         isHeistLocked && tab.id !== 'liveheist'
                           ? 'text-[#D1FAE5]/30 cursor-not-allowed opacity-40'
                           : isActive
-                          ? 'bg-[#10B981] text-[#02140D] font-black border-l-[3px] border-[#FBBF24] shadow-[2px_2px_0px_#020C07]'
+                          ? 'bg-[var(--vault-primary,#10B981)] text-[#02140D] font-black border-l-[3px] border-[var(--vault-accent,#FBBF24)] shadow-[2px_2px_0px_#020C07]'
                           : 'text-[#D1FAE5]/80 hover:bg-[#10B981]/10 hover:text-white border-l-[3px] border-transparent'
                       }`}
                     >
@@ -1982,7 +2030,7 @@ export default function App() {
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="bg-[#10B981] text-[#02140D] font-bold text-[10px] px-2.5 py-0.5 rounded uppercase font-mono">
+                    <span className="bg-[var(--vault-primary,#10B981)] text-[#02140D] font-bold text-[10px] px-2.5 py-0.5 rounded uppercase font-mono">
                       Active Mission
                     </span>
                     <span className="text-xs font-mono text-emerald-300">
@@ -3321,6 +3369,62 @@ export default function App() {
                   >
                     {isSavingPrefs ? 'Saving...' : 'Save Preferences'}
                   </button>
+                </div>
+              )}
+
+              {/* Vault Themes — cosmetic unlocks tied to real achievements */}
+              {currentUser && (
+                <div className="forest-card p-5 space-y-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Vault Themes</span>
+                  </h3>
+                  <p className="text-xs text-emerald-300/70">
+                    Unlocked by real progress — not bought, not given.
+                  </p>
+                  <div className="space-y-2.5">
+                    {VAULT_THEMES.map(theme => {
+                      const isUnlocked = unlockedThemes.includes(theme.id);
+                      const isEquipped = (currentUser.equippedTheme || 'default') === theme.id;
+                      return (
+                        <div
+                          key={theme.id}
+                          className={`flex items-center justify-between p-3 border-2 ${
+                            isEquipped ? 'border-[var(--vault-accent,#FBBF24)]' : 'border-[#03140C]'
+                          } bg-[#020B06]`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="flex space-x-1">
+                              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.primary }} />
+                              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.accent }} />
+                            </div>
+                            <div>
+                              <p className="text-xs font-black uppercase text-emerald-100">{theme.name}</p>
+                              <p className="text-[10px] text-emerald-400/70">{theme.unlockText}</p>
+                            </div>
+                          </div>
+                          {isUnlocked ? (
+                            <button
+                              onClick={() => handleEquipTheme(theme.id)}
+                              disabled={isEquipped || isEquippingTheme === theme.id}
+                              className={`text-[10px] font-black uppercase px-3 py-1.5 border-2 border-[#03140C] ${
+                                isEquipped
+                                  ? 'bg-[#0A261B] text-emerald-500 cursor-default'
+                                  : 'bg-[#10B981] text-[#02140D] hover:bg-[#34D399]'
+                              } disabled:opacity-60`}
+                            >
+                              {isEquipped ? 'Equipped' : isEquippingTheme === theme.id ? '...' : 'Equip'}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-black uppercase text-emerald-700 flex items-center space-x-1">
+                              <Lock className="w-3 h-3" />
+                              <span>Locked</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

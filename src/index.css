@@ -3,6 +3,8 @@
 @tailwind utilities;
 @layer base {
   :root {
+    --vault-primary: #10B981;
+    --vault-accent: #FBBF24;
     --background: 154 50% 6%;
     --foreground: 140 60% 98%;
     --card: 155 45% 10%;

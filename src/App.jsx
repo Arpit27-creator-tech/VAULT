@@ -1117,7 +1117,7 @@ export default function App() {
     // Verify role lock-out: if another player has taken this role, block it
     const isTaken = (lobby?.players || []).some(s => {
       const pName = s.playerName || s.username;
-      const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === 1;
+      const isMe = (s.userId && s.userId === myId) || (myName && pName === myName);
       return !isMe && s.role && normalizeRoleKey(s.role) === roleKey && pName;
     });
 
@@ -1139,7 +1139,7 @@ export default function App() {
     setLobby(prev => {
       if (!prev?.players) return prev;
       const updated = prev.players.map(p => {
-        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName)) || p.slotId === 1;
+        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName));
         if (isMe) {
           return { ...p, role: target.role, characterId: target.charId };
         }
@@ -1159,7 +1159,7 @@ export default function App() {
     setLobby(prev => {
       if (!prev?.players) return prev;
       const updated = prev.players.map(p => {
-        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName)) || p.slotId === 1;
+        const isMe = (p.userId && p.userId === myId) || (myName && (p.playerName === myName || p.username === myName));
         if (isMe) {
           return { ...p, isReady: !currentReadyState };
         }
@@ -2697,11 +2697,13 @@ export default function App() {
                   const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
                   const myName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'qwerty';
                   
-                  // Find current player's slot
+                  // Find current player's slot — no fallback to "slot 1" or
+                  // array index 0, since that would misattribute the host's
+                  // identity to a non-host player if matching ever fails.
                   const mySlot = (lobby?.players || []).find(s => {
                     const pName = s.playerName || s.username;
-                    return (s.userId && s.userId === myId) || (myName && (pName === myName || s.slotId === 1));
-                  }) || (lobby?.players || [])[0];
+                    return (s.userId && s.userId === myId) || (myName && pName === myName);
+                  });
 
                   const myRoleKey = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
 
@@ -2709,7 +2711,7 @@ export default function App() {
                   const claimedRoles = {};
                   (lobby?.players || []).forEach(s => {
                     const pName = s.playerName || s.username;
-                    const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === (mySlot?.slotId || 1);
+                    const isMe = mySlot && s.slotId === mySlot.slotId;
                     if (s.role && pName && !isMe) {
                       claimedRoles[normalizeRoleKey(s.role)] = pName;
                     }
@@ -2801,7 +2803,7 @@ export default function App() {
                   // slots and NOT be replaced by AI filler.
                   const otherRealPlayers = (lobby?.players || []).filter(s => {
                     const pName = s.playerName || s.username;
-                    const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === (mySlot?.slotId || 1);
+                    const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || (mySlot && s.slotId === mySlot.slotId);
                     return !isMe && (s.userId || pName);
                   });
                   const rolesClaimedByOthers = new Set(

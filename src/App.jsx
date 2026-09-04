@@ -362,17 +362,22 @@ export default function App() {
     // actually joined, so raw .length is always 4 and would incorrectly
     // force a vote even when testing solo.
     const activePlayers = (lobby?.players || []).filter(p => p.userId || p.username);
+    const roomCode = lobby?.roomCode || lobby?.code;
+
     // If in multiplayer and not forced by a successful vote, propose a vote instead
-    if (!force && activePlayers.length > 1 && activeTab === 'liveheist') {
+    if (!force && activePlayers.length > 1 && activeTab === 'liveheist' && roomCode) {
       const activeSocket = getSocket();
       if (activeSocket) {
         activeSocket.emit('heist:propose-end', {
-          roomCode: lobby.code,
+          roomCode,
           directive: actionType,
           proposedBy: currentUser?.callsign || currentUser?.username || 'A teammate'
         }, (res) => {
           if (res?.error) {
-            toast.error(`Could not propose vote: ${res.error}`);
+            // Server has no heist record (e.g. backend restarted) — fall through to local conclude
+            console.warn('[HEIST] propose-end server error:', res.error, '— falling back to local conclude');
+            toast.info('Ending heist locally (server session expired).');
+            handleConcludeHeist(actionType, true); // force local path
           }
         });
         setIsEndHeistModalOpen(false);

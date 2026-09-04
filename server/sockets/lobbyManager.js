@@ -408,15 +408,15 @@ export function setupLobbyManager(io, socket) {
     const lobby = activeLobbies.get(roomCode);
     if (!lobby) return;
 
-    const player = lobby.players.find(p => p.userId === socket.userId);
-    const sender = player ? `${player.username} (${(player.role || role || 'OPERATIVE').toUpperCase()})` : socket.username;
+    // ── Guard: only current lobby members can broadcast ──
+    const player = lobby.players.find(p => p.userId === socket.userId && p.socketId === socket.id);
+    if (!player) return; // player has left the lobby — silently drop
 
-    // Send a raw timestamp, not a pre-formatted time string — the server's
-    // local timezone is not the same as the players', so formatting must
-    // happen client-side using each viewer's own local time.
+    const sender = `${player.username} (${(player.role || role || 'OPERATIVE').toUpperCase()})`;
+
     const message = {
       sender,
-      role: player?.role || role || 'hacker',
+      role: player.role || role || 'hacker',
       text,
       timestamp: Date.now(),
       userId: socket.userId

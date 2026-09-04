@@ -259,6 +259,15 @@ export function setupHeistEngine(io, socket) {
     const { text, role, sender } = data;
     const state = activeHeists.get(roomCode);
 
+    // ── Guard: verify sender is still an active lobby member ──
+    const lobbyState = getLobbyState(roomCode);
+    if (lobbyState) {
+      const stillInLobby = lobbyState.players.some(
+        p => p.userId === socket.userId && p.socketId === socket.id
+      );
+      if (!stillInLobby) return; // left the squad — silently drop
+    }
+
     let timeStr;
     if (state?.startedAt) {
       const timeElapsed = Math.floor((Date.now() - state.startedAt) / 1000);

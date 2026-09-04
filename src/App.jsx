@@ -2275,19 +2275,39 @@ export default function App() {
                   </div>
 
                   <div className="flex bg-[#020B06] rounded-lg p-1 border border-emerald-900/60">
-                    {allStages.map((stg, sIdx) => (
-                      <button
-                        key={stg.stageId || sIdx}
-                        onClick={() => handleStartHeistStage(sIdx)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded transition-all ${
-                          currentStageIdx === sIdx 
-                            ? 'bg-[#10B981] text-[#02140D]' 
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {stg.isCustom ? 'Custom' : `S0${stg.stageId}`}
-                      </button>
-                    ))}
+                    {allStages.map((stg, sIdx) => {
+                      // A stage is unlocked if it's the first one, or if every role
+                      // puzzle in the PREVIOUS stage has been solved.
+                      const prevStage = sIdx > 0 ? allStages[sIdx - 1] : null;
+                      const prevStageId = prevStage ? (prevStage.stageId || sIdx) : null;
+                      const prevSolved = prevStageId ? (stageSolvedRoles[prevStageId] || {}) : null;
+                      const prevRoles = prevStage?.selectedRoles
+                        ? Object.keys(prevStage.selectedRoles).filter(r => prevStage.selectedRoles[r])
+                        : ['hacker', 'engineer', 'scientist', 'cryptographer'];
+                      const isStageUnlocked = sIdx === 0 || (prevSolved && prevRoles.every(r => !!prevSolved[r]));
+
+                      return (
+                        <button
+                          key={stg.stageId || sIdx}
+                          disabled={!isStageUnlocked}
+                          onClick={() => {
+                            if (!isStageUnlocked) return;
+                            handleStartHeistStage(sIdx);
+                          }}
+                          title={!isStageUnlocked ? `Complete Stage ${sIdx} first to unlock this stage` : (stg.isCustom ? 'Custom Stage' : `Stage ${stg.stageId}`)}
+                          className={`px-2.5 py-1 text-xs font-semibold rounded transition-all flex items-center space-x-1 ${
+                            !isStageUnlocked
+                              ? 'text-slate-700 cursor-not-allowed opacity-50'
+                              : currentStageIdx === sIdx
+                                ? 'bg-[#10B981] text-[#02140D]'
+                                : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {!isStageUnlocked && <Lock className="w-2.5 h-2.5" />}
+                          <span>{stg.isCustom ? 'Custom' : `S0${stg.stageId}`}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <button

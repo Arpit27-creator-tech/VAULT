@@ -2796,7 +2796,18 @@ export default function App() {
 
                   // Calculate remaining roles for AI slots so every slot has a unique role
                   const allRoleKeys = ['hacker', 'engineer', 'scientist', 'cryptographer'];
-                  const remainingAiRoles = allRoleKeys.filter(k => k !== myRoleKey);
+
+                  // Real teammates other than me — these should occupy roster
+                  // slots and NOT be replaced by AI filler.
+                  const otherRealPlayers = (lobby?.players || []).filter(s => {
+                    const pName = s.playerName || s.username;
+                    const isMe = (s.userId && s.userId === myId) || (myName && pName === myName) || s.slotId === (mySlot?.slotId || 1);
+                    return !isMe && (s.userId || pName);
+                  });
+                  const rolesClaimedByOthers = new Set(
+                    otherRealPlayers.map(p => normalizeRoleKey(p.role)).filter(Boolean)
+                  );
+                  const remainingAiRoles = allRoleKeys.filter(k => k !== myRoleKey && !rolesClaimedByOthers.has(k));
 
                   const getRoleDetails = (rKey) => {
                     return roleCardsData.find(rc => rc.key === rKey) || roleCardsData[0];
@@ -2928,7 +2939,8 @@ export default function App() {
                             </h2>
                           </div>
                           <span className="text-xs font-mono font-bold text-[#10B981]">
-                            1 Operative + 3 AI Specialists Assigned
+                            {1 + otherRealPlayers.length} Operative{otherRealPlayers.length === 0 ? '' : 's'}
+                            {(3 - otherRealPlayers.length) > 0 ? ` + ${3 - otherRealPlayers.length} AI Specialist${(3 - otherRealPlayers.length) === 1 ? '' : 's'} Assigned` : ' — Full Squad'}
                           </span>
                         </div>
 
@@ -2994,75 +3006,136 @@ export default function App() {
                             );
                           })()}
 
-                          {/* ── SLOTS 02, 03, 04: AI Specialists ── */}
-                          {[2, 3, 4].map((slotNumber, idx) => {
-                            const aiRoleKey = remainingAiRoles[idx] || 'engineer';
-                            const aiRoleData = getRoleDetails(aiRoleKey);
-                            const aiChar = getCharByRoleKey(aiRoleKey);
-                            const slotPad = '0' + slotNumber;
-                            const aiDisplayTitle = aiRoleKey === 'cryptographer' ? 'AI Specialist: The Cryptogr' : `AI Specialist: ${aiRoleData.title}`;
+                          {/* ── SLOTS 02, 03, 04: Real teammates first, AI fills only empty slots ── */}
+                          {(() => {
+                            let aiCursor = 0;
+                            return [2, 3, 4].map((slotNumber, idx) => {
+                              const realPlayer = otherRealPlayers[idx];
 
-                            return (
-                              <div
-                                key={slotNumber}
-                                className="rounded-2xl bg-[#03150d]/50 backdrop-blur-md border border-[#0d3824]/80 p-4 flex flex-col justify-between hover:border-[#10B981]/40 transition-all"
-                              >
-                                <div>
-                                  {/* Slot Header */}
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="bg-[#02180e] text-[#10B981] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
-                                      SLOT {slotPad}
-                                    </span>
-                                    <span className="bg-[#07242d] text-[#38bdf8] border border-[#0c4a5e] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1">
-                                      <span>🤖</span>
-                                      <span>AI BOT</span>
-                                    </span>
-                                  </div>
+                              if (realPlayer) {
+                                const pName = realPlayer.playerName || realPlayer.username || 'Operative';
+                                const pRoleKey = realPlayer.role ? normalizeRoleKey(realPlayer.role) : 'hacker';
+                                const pRoleData = getRoleDetails(pRoleKey);
+                                const pChar = getCharByRoleKey(pRoleKey);
+                                const slotPad = '0' + slotNumber;
 
-                                  {/* AI Avatar & Details */}
-                                  <div className="flex items-center space-x-3 mb-2">
-                                    <img
-                                      src={aiChar?.avatar || FALLBACK_AVATAR_IMG}
-                                      alt={aiRoleData.title}
-                                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
-                                      className="w-14 h-14 rounded-xl border border-[#0d3824] object-cover flex-shrink-0"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-bold text-xs sm:text-sm text-white font-game truncate leading-tight">
-                                        {aiDisplayTitle}
-                                      </p>
-                                      <p className="text-slate-400 font-mono text-[11px] truncate mt-0.5">
-                                        {aiRoleData.name}
-                                      </p>
-                                      
-                                      {/* Role Select Dropdown */}
-                                      <div className="mt-1.5 relative">
-                                        <select
-                                          value={aiRoleKey}
-                                          disabled
-                                          className="w-full bg-[#02140d]/60 backdrop-blur-sm border border-[#0d3824] rounded-lg py-1 px-2.5 text-xs font-mono font-bold text-[#10B981] appearance-none cursor-default pr-6"
-                                        >
-                                          <option value={aiRoleKey}>{aiRoleData.title}</option>
-                                        </select>
-                                        <ChevronDown className="w-3.5 h-3.5 text-[#10B981] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                return (
+                                  <div
+                                    key={slotNumber}
+                                    className="rounded-2xl bg-[#03170e]/70 backdrop-blur-md border-2 border-[#10B981]/60 p-4 flex flex-col justify-between shadow-[0_0_16px_rgba(16,185,129,0.12)]"
+                                  >
+                                    <div>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <span className="bg-[#02180e] text-[#10B981] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
+                                          SLOT {slotPad}
+                                        </span>
+                                        <span className="bg-[#02180e] text-[#34D399] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
+                                          LIVE
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center space-x-3 mb-3">
+                                        <img
+                                          src={pChar?.avatar || FALLBACK_AVATAR_IMG}
+                                          alt={pName}
+                                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                          className="w-14 h-14 rounded-xl border-2 border-[#10B981]/60 object-cover flex-shrink-0"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-bold text-sm text-white font-game truncate">{pName}</p>
+                                          <p className="text-slate-400 font-mono text-[11px] truncate mt-0.5">{pRoleData.name}</p>
+                                          <p className="text-[#10B981] font-mono font-bold text-xs mt-0.5 flex items-center space-x-1 truncate">
+                                            <span>&gt;_</span>
+                                            <span>{pRoleData.title}</span>
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-3 border-t border-[#0d3824]/60">
+                                      <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                        STATUS:
+                                      </span>
+                                      <div className={`font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5 border ${
+                                        realPlayer.isReady
+                                          ? 'bg-[#052818] border-[#10B981] text-[#10B981]'
+                                          : 'bg-[#2A1608] border-[#FBBF24]/60 text-[#FBBF24]'
+                                      }`}>
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>{realPlayer.isReady ? 'READY TO DEPLOY' : 'STANDING BY'}</span>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
+                                );
+                              }
 
-                                {/* Status Footer */}
-                                <div className="flex items-center justify-between pt-3 border-t border-[#0d3824]/60">
-                                  <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                                    STATUS:
-                                  </span>
-                                  <div className="bg-[#02180e] border border-[#0d3824] text-[#10B981] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
-                                    <span>READY TO DEPLOY</span>
+                              const aiRoleKey = remainingAiRoles[aiCursor] || 'engineer';
+                              aiCursor += 1;
+                              const aiRoleData = getRoleDetails(aiRoleKey);
+                              const aiChar = getCharByRoleKey(aiRoleKey);
+                              const slotPad = '0' + slotNumber;
+                              const aiDisplayTitle = aiRoleKey === 'cryptographer' ? 'AI Specialist: The Cryptogr' : `AI Specialist: ${aiRoleData.title}`;
+
+                              return (
+                                <div
+                                  key={slotNumber}
+                                  className="rounded-2xl bg-[#03150d]/50 backdrop-blur-md border border-[#0d3824]/80 p-4 flex flex-col justify-between hover:border-[#10B981]/40 transition-all"
+                                >
+                                  <div>
+                                    {/* Slot Header */}
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="bg-[#02180e] text-[#10B981] border border-[#0d3824] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider">
+                                        SLOT {slotPad}
+                                      </span>
+                                      <span className="bg-[#07242d] text-[#38bdf8] border border-[#0c4a5e] px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1">
+                                        <span>🤖</span>
+                                        <span>AI BOT</span>
+                                      </span>
+                                    </div>
+
+                                    {/* AI Avatar & Details */}
+                                    <div className="flex items-center space-x-3 mb-2">
+                                      <img
+                                        src={aiChar?.avatar || FALLBACK_AVATAR_IMG}
+                                        alt={aiRoleData.title}
+                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_AVATAR_IMG; }}
+                                        className="w-14 h-14 rounded-xl border border-[#0d3824] object-cover flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-xs sm:text-sm text-white font-game truncate leading-tight">
+                                          {aiDisplayTitle}
+                                        </p>
+                                        <p className="text-slate-400 font-mono text-[11px] truncate mt-0.5">
+                                          {aiRoleData.name}
+                                        </p>
+                                        
+                                        {/* Role Select Dropdown */}
+                                        <div className="mt-1.5 relative">
+                                          <select
+                                            value={aiRoleKey}
+                                            disabled
+                                            className="w-full bg-[#02140d]/60 backdrop-blur-sm border border-[#0d3824] rounded-lg py-1 px-2.5 text-xs font-mono font-bold text-[#10B981] appearance-none cursor-default pr-6"
+                                          >
+                                            <option value={aiRoleKey}>{aiRoleData.title}</option>
+                                          </select>
+                                          <ChevronDown className="w-3.5 h-3.5 text-[#10B981] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Status Footer */}
+                                  <div className="flex items-center justify-between pt-3 border-t border-[#0d3824]/60">
+                                    <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                      STATUS:
+                                    </span>
+                                    <div className="bg-[#02180e] border border-[#0d3824] text-[#10B981] font-mono text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                                      <span>READY TO DEPLOY</span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
 
                         </div>
                       </div>

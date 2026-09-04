@@ -1969,6 +1969,10 @@ button, input, select, textarea {
   border-color: rgb(251 191 36 / 0.5);
 }
 
+.border-\[\#FBBF24\]\/60 {
+  border-color: rgb(251 191 36 / 0.6);
+}
+
 .border-\[\#FF4D6D\] {
   --tw-border-opacity: 1;
   border-color: rgb(255 77 109 / var(--tw-border-opacity, 1));
@@ -2606,6 +2610,11 @@ button, input, select, textarea {
 .bg-\[\#1d1906\] {
   --tw-bg-opacity: 1;
   background-color: rgb(29 25 6 / var(--tw-bg-opacity, 1));
+}
+
+.bg-\[\#2A1608\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(42 22 8 / var(--tw-bg-opacity, 1));
 }
 
 .bg-\[\#34D399\] {
@@ -3812,6 +3821,12 @@ button, input, select, textarea {
 .shadow-\[0_0_15px_rgba\(16\2c 185\2c 129\2c 0\.3\)\] {
   --tw-shadow: 0 0 15px rgba(16,185,129,0.3);
   --tw-shadow-colored: 0 0 15px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0_0_16px_rgba\(16\2c 185\2c 129\2c 0\.12\)\] {
+  --tw-shadow: 0 0 16px rgba(16,185,129,0.12);
+  --tw-shadow-colored: 0 0 16px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 

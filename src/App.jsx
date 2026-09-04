@@ -780,7 +780,16 @@ export default function App() {
     };
 
     const handleVoteState = (data) => {
-      setEndHeistVoteState(data);
+      // Server sends { directive, proposedBy, yesCount, noCount, total }
+      // Vote modal reads { directive, proposedBy, yesVotes[], noVotes[], requiredVotes }
+      // Normalize here so the UI doesn't need to change.
+      const majority = Math.floor((data.total || 2) / 2) + 1;
+      setEndHeistVoteState({
+        ...data,
+        yesVotes: Array.from({ length: data.yesCount || 0 }),
+        noVotes: Array.from({ length: data.noCount || 0 }),
+        requiredVotes: majority
+      });
     };
 
     const handleEndVoted = (data) => {

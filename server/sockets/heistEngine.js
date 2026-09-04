@@ -333,6 +333,132 @@ export function setupHeistEngine(io, socket) {
 
     activeHeists.delete(roomCode);
   });
+
+  // ─────────────────────────────────────────────────────────
+  // heist:propose-end — A player proposes to abort/debrief.
+  // In solo play ends immediately. In squad, broadcasts a
+  // vote prompt and waits for heist:vote-end responses.
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:propose-end', (data, callback) => {
+    try {
+      const roomCode = normCode(data.roomCode);
+      const { directive = 'abort', proposedBy } = data;
+      const state = activeHeists.get(roomCode);
+      if (!state || state.status !== 'active') {
+        return callback?.({ error: 'No active heist found' });
+      }
+
+      // Count how many sockets are in the heist room
+      const roomSockets = io.sockets.adapter.rooms.get(`heist:${roomCode}`);
+      const playerCount = roomSockets ? roomSockets.size : 1;
+
+      // Solo player — end immediately without vote
+      if (playerCount <= 1) {
+        state.status = directive === 'abort' ? 'aborted' : 'concluded';
+        clearHeistTimer(roomCode);
+        const eventName = directive === 'abort' ? 'heist:aborted' : 'heist:concluded';
+        io.to(`heist:${roomCode}`).emit(eventName, { state, message: `Heist ${state.status} by ${proposedBy}.` });
+        io.to(`lobby:${roomCode}`).emit(eventName, { state, message: `Heist ${state.status} by ${proposedBy}.` });
+        activeHeists.delete(roomCode);
+        return callback?.({ success: true });
+      }
+
+      // Multiplayer — initialize vote tracking on the state object
+      state.vote = {
+        directive,
+        proposedBy,
+        proposerId: socket.userId,
+        yes: new Set([socket.userId]), // proposer auto-votes yes
+        no: new Set(),
+        total: playerCount
+      };
+
+      // Broadcast vote prompt to all squad members
+      io.to(`heist:${roomCode}`).emit('heist:vote-state', {
+        directive,
+        proposedBy,
+        yesCount: state.vote.yes.size,
+        noCount: state.vote.no.size,
+        total: playerCount
+      });
+      io.to(`lobby:${roomCode}`).emit('heist:vote-state', {
+        directive,
+        proposedBy,
+        yesCount: state.vote.yes.size,
+        noCount: state.vote.no.size,
+        total: playerCount
+      });
+
+      // If proposer is already a majority (2-person squad), resolve immediately
+      if (state.vote.yes.size > Math.floor(playerCount / 2)) {
+        resolveVote(io, roomCode, state);
+      }
+
+      callback?.({ success: true });
+    } catch (err) {
+      console.error('[HEIST] propose-end error:', err);
+      callback?.({ error: 'Internal error' });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // heist:vote-end — A player casts their vote (yes/no)
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:vote-end', (data) => {
+    const roomCode = normCode(data.roomCode);
+    const { vote } = data; // 'yes' or 'no'
+    const state = activeHeists.get(roomCode);
+    if (!state?.vote) return;
+
+    // Record vote (each player can only vote once)
+    if (vote === 'yes') {
+      state.vote.yes.add(socket.userId);
+      state.vote.no.delete(socket.userId);
+    } else {
+      state.vote.no.add(socket.userId);
+      state.vote.yes.delete(socket.userId);
+    }
+
+    const { yes, no, total } = state.vote;
+
+    // Broadcast updated vote count
+    io.to(`heist:${roomCode}`).emit('heist:vote-state', {
+      directive: state.vote.directive,
+      proposedBy: state.vote.proposedBy,
+      yesCount: yes.size,
+      noCount: no.size,
+      total
+    });
+
+    const majority = Math.floor(total / 2) + 1;
+
+    if (yes.size >= majority) {
+      resolveVote(io, roomCode, state);
+    } else if (no.size >= majority) {
+      // Majority voted no — cancel the vote
+      delete state.vote;
+      io.to(`heist:${roomCode}`).emit('heist:vote-failed', { message: 'Majority voted to continue the mission!' });
+      io.to(`lobby:${roomCode}`).emit('heist:vote-failed', { message: 'Majority voted to continue the mission!' });
+    }
+  });
+}
+
+/**
+ * Resolve a successful end-heist vote and fire the appropriate event.
+ */
+function resolveVote(io, roomCode, state) {
+  const { directive } = state.vote;
+  delete state.vote;
+
+  state.status = directive === 'abort' ? 'aborted' : 'concluded';
+  clearHeistTimer(roomCode);
+
+  const payload = { directive, state, message: `Vote passed — heist ${state.status}.` };
+  io.to(`heist:${roomCode}`).emit('heist:end-voted', payload);
+  io.to(`lobby:${roomCode}`).emit('heist:end-voted', payload);
+
+  activeHeists.delete(roomCode);
+  console.log(`[HEIST] Vote resolved (${directive}): ${roomCode}`);
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -2320,85 +2320,162 @@ export default function App() {
                 roleClues={currentStageClues}
               />
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { id: 'hacker', name: 'The Hacker', icon: Terminal, color: '#10B981', discipline: 'Data Structures' },
-                  { id: 'engineer', name: 'The Engineer', icon: Compass, color: '#FBBF24', discipline: 'Physics & Optics' },
-                  { id: 'scientist', name: 'The Scientist', icon: FlaskConical, color: '#06B6D4', discipline: 'Chemistry & pH' },
-                  { id: 'cryptographer', name: 'The Cryptographer', icon: Key, color: '#C084FC', discipline: 'Math & Ciphers' }
-                ].filter(roleItem => !currentStageData.selectedRoles || currentStageData.selectedRoles[roleItem.id]).map(roleItem => {
-                  const Icon = roleItem.icon;
-                  const isRoleSolved = !!currentStageSolved[roleItem.id];
-                  const isActive = activeCockpitRole === roleItem.id;
+              {/* ── Puzzle unlock chain: scientist → engineer → hacker → cryptographer ── */}
+              {(() => {
+                const UNLOCK_PREREQ = {
+                  scientist: null,
+                  engineer: 'scientist',
+                  hacker: 'engineer',
+                  cryptographer: 'hacker'
+                };
+                const PREREQ_LABEL = {
+                  scientist: null,
+                  engineer: 'Scientist',
+                  hacker: 'Engineer',
+                  cryptographer: 'Hacker'
+                };
+                const isPuzzleLocked = (roleId) => {
+                  const prereq = UNLOCK_PREREQ[roleId];
+                  return prereq ? !currentStageSolved[prereq] : false;
+                };
 
-                  return (
-                    <button
-                      key={roleItem.id}
-                      onClick={() => {
-                        setActiveCockpitRole(roleItem.id);
-                        heistAudio.playKeyClick();
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                        isActive
-                          ? 'bg-[#0A2E1E] border-[#10B981] shadow-md ring-1 ring-[#10B981]'
-                          : 'bg-[#051C12] border-emerald-900/40 hover:bg-[#072418]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-2 min-w-0">
-                          <Icon className="w-4 h-4 flex-shrink-0" style={{ color: roleItem.color }} />
-                          <span className="font-bold text-xs truncate text-white">
-                            {roleItem.name}
-                          </span>
-                        </div>
-                        {isRoleSolved && (
-                          <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-mono mt-1.5">{roleItem.discipline}</p>
-                    </button>
-                  );
-                })}
-              </div>
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      { id: 'hacker', name: 'The Hacker', icon: Terminal, color: '#10B981', discipline: 'Data Structures' },
+                      { id: 'engineer', name: 'The Engineer', icon: Compass, color: '#FBBF24', discipline: 'Physics & Optics' },
+                      { id: 'scientist', name: 'The Scientist', icon: FlaskConical, color: '#06B6D4', discipline: 'Chemistry & pH' },
+                      { id: 'cryptographer', name: 'The Cryptographer', icon: Key, color: '#C084FC', discipline: 'Math & Ciphers' }
+                    ].filter(roleItem => !currentStageData.selectedRoles || currentStageData.selectedRoles[roleItem.id]).map(roleItem => {
+                      const Icon = roleItem.icon;
+                      const isRoleSolved = !!currentStageSolved[roleItem.id];
+                      const isActive = activeCockpitRole === roleItem.id;
+                      const locked = isPuzzleLocked(roleItem.id);
+
+                      return (
+                        <button
+                          key={roleItem.id}
+                          disabled={locked}
+                          onClick={() => {
+                            if (locked) return;
+                            setActiveCockpitRole(roleItem.id);
+                            heistAudio.playKeyClick();
+                          }}
+                          title={locked ? `Waiting for ${PREREQ_LABEL[roleItem.id]} to complete their puzzle first` : roleItem.name}
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between relative overflow-hidden ${
+                            locked
+                              ? 'bg-[#02100A] border-slate-800 opacity-50 cursor-not-allowed'
+                              : isActive
+                                ? 'bg-[#0A2E1E] border-[#10B981] shadow-md ring-1 ring-[#10B981]'
+                                : 'bg-[#051C12] border-emerald-900/40 hover:bg-[#072418]'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: locked ? '#475569' : roleItem.color }} />
+                              <span className={`font-bold text-xs truncate ${locked ? 'text-slate-600' : 'text-white'}`}>
+                                {roleItem.name}
+                              </span>
+                            </div>
+                            {isRoleSolved ? (
+                              <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
+                            ) : locked ? (
+                              <Lock className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
+                            ) : null}
+                          </div>
+                          <p className={`text-[10px] font-mono mt-1.5 ${locked ? 'text-slate-700' : 'text-slate-400'}`}>
+                            {locked ? `Awaiting ${PREREQ_LABEL[roleItem.id]}` : roleItem.discipline}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 
                 <div className="lg:col-span-8 space-y-4">
-                  {activeCockpitRole === 'hacker' && (
-                    <HackerTerminal
-                      puzzle={currentStagePuzzles.hacker || heistStages[0].puzzles.hacker}
-                      isSolved={!!currentStageSolved.hacker}
-                      onSolved={handleRolePuzzleSolved}
-                      onFail={handleRolePuzzleFailed}
-                    />
-                  )}
+                  {/* ── Locked-puzzle overlay helper ── */}
+                  {(() => {
+                    const UNLOCK_PREREQ = {
+                      scientist: null,
+                      engineer: 'scientist',
+                      hacker: 'engineer',
+                      cryptographer: 'hacker'
+                    };
+                    const PREREQ_LABEL = {
+                      engineer: 'Scientist',
+                      hacker: 'Engineer',
+                      cryptographer: 'Hacker'
+                    };
+                    const prereq = UNLOCK_PREREQ[activeCockpitRole];
+                    const isLocked = prereq ? !currentStageSolved[prereq] : false;
 
-                  {activeCockpitRole === 'engineer' && (
-                    <EngineerLaserGrid
-                      puzzle={currentStagePuzzles.engineer || heistStages[0].puzzles.engineer}
-                      isSolved={!!currentStageSolved.engineer}
-                      onSolved={handleRolePuzzleSolved}
-                      onFail={handleRolePuzzleFailed}
-                    />
-                  )}
+                    if (isLocked) {
+                      return (
+                        <div className="flex flex-col items-center justify-center min-h-[320px] rounded-2xl border-2 border-dashed border-slate-700 bg-[#02100A]/80 text-center p-8 space-y-4">
+                          <div className="w-14 h-14 rounded-full bg-[#051811] border-2 border-slate-700 flex items-center justify-center">
+                            <Lock className="w-7 h-7 text-slate-500" />
+                          </div>
+                          <div>
+                            <p className="text-slate-300 font-bold text-sm font-game uppercase tracking-widest mb-1">MODULE LOCKED</p>
+                            <p className="text-slate-500 text-xs font-mono">
+                              Waiting for <span className="text-[#FBBF24] font-bold">{PREREQ_LABEL[activeCockpitRole]}</span> to complete their puzzle first.
+                            </p>
+                            <p className="text-slate-600 text-[11px] font-mono mt-2">
+                              The interdependence pipeline must be satisfied before this module activates.
+                            </p>
+                          </div>
+                          <div className="flex space-x-1">
+                            {[0,1,2].map(i => (
+                              <div key={i} className="w-2 h-2 rounded-full bg-slate-700 animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
 
-                  {activeCockpitRole === 'scientist' && (
-                    <ScientistLab
-                      puzzle={currentStagePuzzles.scientist || heistStages[0].puzzles.scientist}
-                      isSolved={!!currentStageSolved.scientist}
-                      onSolved={handleRolePuzzleSolved}
-                      onFail={handleRolePuzzleFailed}
-                    />
-                  )}
+                    return (
+                      <>
+                        {activeCockpitRole === 'hacker' && (
+                          <HackerTerminal
+                            puzzle={currentStagePuzzles.hacker || heistStages[0].puzzles.hacker}
+                            isSolved={!!currentStageSolved.hacker}
+                            onSolved={handleRolePuzzleSolved}
+                            onFail={handleRolePuzzleFailed}
+                          />
+                        )}
 
-                  {activeCockpitRole === 'cryptographer' && (
-                    <CryptographerDeck
-                      puzzle={currentStagePuzzles.cryptographer || heistStages[0].puzzles.cryptographer}
-                      isSolved={!!currentStageSolved.cryptographer}
-                      onSolved={handleRolePuzzleSolved}
-                      onFail={handleRolePuzzleFailed}
-                    />
-                  )}
+                        {activeCockpitRole === 'engineer' && (
+                          <EngineerLaserGrid
+                            puzzle={currentStagePuzzles.engineer || heistStages[0].puzzles.engineer}
+                            isSolved={!!currentStageSolved.engineer}
+                            onSolved={handleRolePuzzleSolved}
+                            onFail={handleRolePuzzleFailed}
+                          />
+                        )}
+
+                        {activeCockpitRole === 'scientist' && (
+                          <ScientistLab
+                            puzzle={currentStagePuzzles.scientist || heistStages[0].puzzles.scientist}
+                            isSolved={!!currentStageSolved.scientist}
+                            onSolved={handleRolePuzzleSolved}
+                            onFail={handleRolePuzzleFailed}
+                          />
+                        )}
+
+                        {activeCockpitRole === 'cryptographer' && (
+                          <CryptographerDeck
+                            puzzle={currentStagePuzzles.cryptographer || heistStages[0].puzzles.cryptographer}
+                            isSolved={!!currentStageSolved.cryptographer}
+                            onSolved={handleRolePuzzleSolved}
+                            onFail={handleRolePuzzleFailed}
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <div className="lg:col-span-4 space-y-4">

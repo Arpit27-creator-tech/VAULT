@@ -1258,6 +1258,16 @@ export default function App() {
   // In-Game Heist Handlers
   // ─────────────────────────────────────────────────────────────
 
+  const handleLaunchToLobby = (stageIdx = 0, customTitle = null) => {
+    const title = customTitle || allStages[stageIdx]?.title || 'Operation';
+    if (!isInSquadRoom) {
+      handleCreateNewRoom(title);
+    } else {
+      toast.info(`Squad ready. Launch when everyone is positioned in the lobby.`);
+    }
+    setActiveTab('lobby');
+  };
+
   const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null) => {
     setCurrentStageIdx(stageIdx);
     const stage = allStages[stageIdx] || heistStages[0];
@@ -1833,7 +1843,7 @@ export default function App() {
 
                   {activeTab !== 'liveheist' && (
                     <button
-                      onClick={() => handleStartHeistStage(0)}
+                      onClick={() => handleLaunchToLobby(0)}
                       className="bg-[#FF4D6D] text-white font-black px-3 sm:px-5 py-1.5 sm:py-2 border-[2.5px] sm:border-[3px] border-[#03140C] shadow-[2px_2px_0px_#020C07] sm:shadow-[3px_3px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm rounded-lg"
                     >
                       <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
@@ -2094,7 +2104,7 @@ export default function App() {
 
                   <button
                     onClick={() => {
-                      handleStartHeistStage(0);
+                      handleLaunchToLobby(0);
                       if (window.innerWidth < 768) setSidebarOpen(false);
                     }}
                     className="w-full bg-[#FF4D6D] text-white font-black text-xs py-2 px-2.5 border-[2px] border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#FF3366] active:translate-x-0.5 flex items-center justify-center space-x-1.5 uppercase rounded"
@@ -2143,7 +2153,7 @@ export default function App() {
                 
                 <div className="flex flex-wrap gap-4 pt-2">
                   <button
-                    onClick={() => handleStartHeistStage(0)}
+                    onClick={() => handleLaunchToLobby(0)}
                     className="bg-[#10B981] text-[#02140D] font-black px-8 py-3.5 border-[3px] border-[#03140C] shadow-[4px_4px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2 text-base sm:text-lg"
                   >
                     <Play className="w-5 h-5 fill-current" />
@@ -2201,7 +2211,7 @@ export default function App() {
             >
               <HeroPage
                 onNavigate={navigateToTab}
-                onStartStage={handleStartHeistStage}
+                onStartStage={handleLaunchToLobby}
                 onOpenCustomHeist={() => {
                   if (!currentUser) {
                     setIsAuthModalOpen(true);
@@ -2641,7 +2651,7 @@ export default function App() {
                           if (mission.customStageData) {
                             handleLaunchCustomHeist(mission.customStageData);
                           } else {
-                            handleStartHeistStage(mIdx % allStages.length);
+                            handleLaunchToLobby(mIdx % allStages.length);
                           }
                         }}
                         className="w-full bg-[#10B981] text-[#02140D] font-bold py-2.5 rounded-lg hover:bg-[#34D399] active:scale-[0.98] transition-all text-xs flex items-center justify-center space-x-2 uppercase font-game shadow-md shadow-emerald-950"
@@ -3578,7 +3588,7 @@ export default function App() {
               className="space-y-6 max-w-7xl mx-auto text-left"
             >
               <GraphicalRoadmap 
-                onStartHeist={handleStartHeistStage}
+                onStartHeist={(idx) => handleLaunchToLobby(idx)}
                 onOpenModal={() => setIsRoadmapModalOpen(true)}
               />
             </motion.div>
@@ -4170,7 +4180,7 @@ export default function App() {
               <StatsDashboard
                 currentUser={currentUser}
                 onLogout={handleLogout}
-                onStartHeist={handleStartHeistStage}
+                onStartHeist={(idx) => handleLaunchToLobby(idx)}
                 onUpdateUser={(updated) => {
                   setCurrentUser(prev => prev ? { ...prev, ...updated } : prev);
                 }}

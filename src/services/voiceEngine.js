@@ -3,34 +3,38 @@
 // Ultra-Low Latency Opus HD Audio Mesh with Real Audio Processing
 // ============================================================
 
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.relay.metered.ca:80' },
-    {
-      urls: 'turn:global.relay.metered.ca:80',
-      username: '264b43561e488e0c7dc98518',
-      credential: 'pevp4xL3kUx/DSYn'
-    },
-    {
-      urls: 'turn:global.relay.metered.ca:80?transport=tcp',
-      username: '264b43561e488e0c7dc98518',
-      credential: 'pevp4xL3kUx/DSYn'
-    },
-    {
-      urls: 'turn:global.relay.metered.ca:443',
-      username: '264b43561e488e0c7dc98518',
-      credential: 'pevp4xL3kUx/DSYn'
-    },
-    {
-      urls: 'turns:global.relay.metered.ca:443?transport=tcp',
-      username: '264b43561e488e0c7dc98518',
-      credential: 'pevp4xL3kUx/DSYn'
-    }
-  ],
-  iceCandidatePoolSize: 10
-};
+// ICE server config is fetched from the backend at runtime so TURN
+// credentials are never shipped in the client-side JavaScript bundle.
+let _iceConfigCache = null;
+
+async function getIceConfig() {
+  if (_iceConfigCache) return _iceConfigCache;
+
+  try {
+    // Resolve API base: same origin in production, explicit port in local dev
+    const base = (window.location.port === '5173' || window.location.port === '3000')
+      ? `${window.location.protocol}//${window.location.hostname}:5001`
+      : window.location.origin;
+
+    const res = await fetch(`${base}/api/ice-servers`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _iceConfigCache = await res.json();
+    console.log('[VOICE] ICE config loaded from server');
+  } catch (err) {
+    console.warn('[VOICE] Could not fetch ICE config — falling back to Google STUN only:', err.message);
+    // Fallback: STUN-only (P2P will work on open networks; TURN relay unavailable)
+    _iceConfigCache = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ],
+      iceCandidatePoolSize: 10
+    };
+  }
+
+  return _iceConfigCache;
+}
+
 
 class WebRTCVoiceEngine {
   constructor() {
@@ -73,7 +77,10 @@ class WebRTCVoiceEngine {
     }
 
     try {
-      // 1. Capture microphone stream
+      // 1. Fetch ICE config from backend (TURN credentials stay server-side)
+      this.iceConfig = await getIceConfig();
+
+      // 2. Capture microphone stream
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -88,13 +95,13 @@ class WebRTCVoiceEngine {
         t.enabled = !this.isMuted;
       });
 
-      // 2. Setup AudioContext analyser for speaking visualizer
+      // 3. Setup AudioContext analyser for speaking visualizer
       this.setupAudioAnalyser();
 
-      // 3. Setup Socket Signaling
+      // 4. Setup Socket Signaling
       this.setupSignaling();
 
-      // 4. Announce voice join to server
+      // 5. Announce voice join to server
       if (this.socket) {
         this.socket.emit('voice:join', { roomCode: this.roomCode }, (res) => {
           if (res?.success && Array.isArray(res?.peers)) {
@@ -219,7 +226,8 @@ class WebRTCVoiceEngine {
     }
 
     console.log(`[VOICE] Creating RTCPeerConnection for ${peerSocketId} (initiator: ${isInitiator})`);
-    const pc = new RTCPeerConnection(ICE_SERVERS);
+    // Use the ICE config fetched from the server (no hardcoded credentials here)
+    const pc = new RTCPeerConnection(this.iceConfig);
     pc._iceCandidatesQueue = [];
     this.peers.set(peerSocketId, pc);
 

@@ -115,6 +115,39 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// ─── ICE Servers (WebRTC TURN credentials) ──────────────────
+// Returns Metered TURN credentials from server-side env vars so
+// they are never exposed in the client-side JavaScript bundle.
+app.get('/api/ice-servers', (req, res) => {
+  const username = process.env.METERED_USERNAME;
+  const credential = process.env.METERED_CREDENTIAL;
+
+  if (!username || !credential) {
+    // Fallback: return only free STUN servers if env vars are missing
+    return res.json({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ],
+      iceCandidatePoolSize: 10
+    });
+  }
+
+  res.json({
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.relay.metered.ca:80' },
+      { urls: 'turn:global.relay.metered.ca:80',               username, credential },
+      { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username, credential },
+      { urls: 'turn:global.relay.metered.ca:443',              username, credential },
+      { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username, credential }
+    ],
+    iceCandidatePoolSize: 10
+  });
+});
+
+
 // ─── 404 Handler ────────────────────────────────────────────
 app.use('/api/*', (req, res) => {
   res.status(404).json({

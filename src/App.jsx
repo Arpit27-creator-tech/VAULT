@@ -21,6 +21,7 @@ import {
   FALLBACK_AVATAR_IMG
 } from './data/initialData';
 import { heistStages } from './data/heistPuzzles';
+import { getPuzzleSetForHeist } from './data/puzzlePool';
 import { heistAudio } from './components/HeistAudioEngine';
 import HackerTerminal from './components/HackerTerminal';
 import EngineerLaserGrid from './components/EngineerLaserGrid';
@@ -151,6 +152,8 @@ export default function App() {
   const [isEquippingTheme, setIsEquippingTheme] = useState(null);
   const [isUnlockingPerk, setIsUnlockingPerk] = useState(null);
   const [engineerAlarmForgiven, setEngineerAlarmForgiven] = useState(false);
+  const [activePuzzleOverrides, setActivePuzzleOverrides] = useState(null);
+  const [heistAttemptSeed, setHeistAttemptSeed] = useState('');
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [bgVideoActive, setBgVideoActive] = useState(true);
   const [bgDimMode, setBgDimMode] = useState('vivid'); 
@@ -730,8 +733,9 @@ export default function App() {
       const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
       const mySlot = currentLobby?.players?.find(p => (p.userId && p.userId === myId) || (myName && p.username === myName));
       const assignedRole = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
-      
-      handleStartHeistStage(0, false, assignedRole);
+      const attemptSeed = data?.attemptSeed ? String(data.attemptSeed) : String(Date.now());
+
+      handleStartHeistStage(0, false, assignedRole, attemptSeed);
     };
 
     const handleRemotePuzzleSolved = (data) => {
@@ -1280,7 +1284,7 @@ export default function App() {
     setActiveTab('lobby');
   };
 
-  const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null) => {
+  const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null, incomingAttemptSeed = null) => {
     setCurrentStageIdx(stageIdx);
     const stage = allStages[stageIdx] || heistStages[0];
     const activeRoles = stage.selectedRoles 
@@ -1288,6 +1292,18 @@ export default function App() {
       : ['hacker', 'engineer', 'scientist', 'cryptographer'];
     const chosenRole = overrideRole || activeCockpitRole || activeRoles[0] || 'hacker';
     const myPerks = currentUser?.unlockedPerks || [];
+
+    // A fresh attempt seed means a genuinely new heist launch — reuse the
+    // existing one for stage-to-stage progression within the same session,
+    // so a full run doesn't reshuffle puzzles mid-heist.
+    const attemptSeed = incomingAttemptSeed || heistAttemptSeed || String(Date.now());
+    if (attemptSeed !== heistAttemptSeed) setHeistAttemptSeed(attemptSeed);
+
+    // Pick a puzzle set from the pool, deterministically, so every client
+    // in the same room computes the identical selection without needing
+    // any puzzle data to be transmitted over the socket.
+    const puzzleSet = getPuzzleSetForHeist(lobby?.code, stageIdx, attemptSeed);
+    setActivePuzzleOverrides(puzzleSet);
 
     // ── Reset all per-heist state so the previous run's data is never visible ──
     setStageSolvedRoles({ 1: {}, 2: {}, 3: {}, 99: {} });
@@ -1318,7 +1334,7 @@ export default function App() {
     try {
       heistSocket.joinRoom(lobby.code);
       if (isInitiator) {
-        heistSocket.start(lobby.code, stageIdx, stage.timeLimit || 180, stage.puzzles, stage.selectedRoles);
+        heistSocket.start(lobby.code, stageIdx, stage.timeLimit || 180, puzzleSet, stage.selectedRoles);
       }
     } catch (e) {
       console.warn('[SOCKET] Heist start fallback');
@@ -1667,7 +1683,7 @@ export default function App() {
   const stageId = currentStageData.stageId || 1;
   const currentStageSolved = (stageSolvedRoles && stageSolvedRoles[stageId]) || {};
   const currentStageClues = (stageRoleClues && stageRoleClues[stageId]) || {};
-  const currentStagePuzzles = currentStageData.puzzles || heistStages[0].puzzles || {};
+  const currentStagePuzzles = activePuzzleOverrides || currentStageData.puzzles || heistStages[0].puzzles || {};
 
   return (
     <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
@@ -4307,6 +4323,8 @@ export default function App() {
           setAnalyticsModalOpen(false);
           setAlarmLevel('LOW_SECURITY');
           setAlarmFails(0);
+          setHeistAttemptSeed('');
+          setActivePuzzleOverrides(null);
           setActiveTab('lobby');
         }}
       />

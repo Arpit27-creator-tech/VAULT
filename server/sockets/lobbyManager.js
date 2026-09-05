@@ -385,7 +385,11 @@ export function setupLobbyManager(io, socket) {
       io.to(lobbyRoom).emit('heist:started', {
         heistId: lobby.heistId,
         players: activePlayers,
-        roomCode
+        roomCode,
+        // Changes on every fresh launch so puzzle content varies between
+        // separate heist attempts in the same lobby, while staying
+        // identical across all clients (computed once, server-side).
+        attemptSeed: Date.now()
       });
     }, 3000);
 

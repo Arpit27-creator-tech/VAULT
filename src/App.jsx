@@ -111,7 +111,19 @@ export default function App() {
   });
   const [characters] = useState(initialCharacters || []);
   const [topics] = useState(initialTopics || []);
-  const [lobby, setLobby] = useState(initialLobby);
+  const [lobby, setLobby] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kh_lobby_subject_v4');
+      const parsed = saved ? JSON.parse(saved) : null;
+      // Only restore a lobby that was in the waiting/recruiting state.
+      // An 'active' heist cannot be resumed after a page refresh because
+      // the server-side heist session (activeHeists Map) is gone.
+      if (parsed?.code && Array.isArray(parsed?.players) && parsed?.status === 'waiting') {
+        return parsed;
+      }
+    } catch {}
+    return initialLobby;
+  });
 
   const [isLobbyVoiceConnected, setIsLobbyVoiceConnected] = useState(false);
   const [isLobbyMicMuted, setIsLobbyMicMuted] = useState(false);
@@ -1277,6 +1289,14 @@ export default function App() {
     const chosenRole = overrideRole || activeCockpitRole || activeRoles[0] || 'hacker';
     const myPerks = currentUser?.unlockedPerks || [];
 
+    // ── Reset all per-heist state so the previous run's data is never visible ──
+    setStageSolvedRoles({ 1: {}, 2: {}, 3: {}, 99: {} });
+    setStageRoleClues({ 1: {}, 2: {}, 3: {}, 99: {} });
+    setRadioMessages([
+      { sender: "Sylvan HQ", role: "hq", text: "Expedition crew deployed. Interlock sequence initialized. Coordinate all 4 roles!", time: "00:01" },
+      { sender: "Scientist Cleo", role: "scientist", text: "Analyzing compound stoichiometry now. Will transmit optical density to Engineer.", time: "00:04" }
+    ]);
+
     // Apply role perk effects for the role the player is actually about
     // to play this stage as.
     const timerBonus = (chosenRole === 'hacker' && myPerks.includes('hacker_quick_fingers')) ? 10 : 0;
@@ -1304,6 +1324,7 @@ export default function App() {
       console.warn('[SOCKET] Heist start fallback');
     }
   };
+
 
   const handleLaunchCustomHeist = (customStage) => {
     const stageIdx = allStages.length;

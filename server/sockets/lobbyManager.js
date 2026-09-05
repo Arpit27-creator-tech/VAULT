@@ -11,6 +11,22 @@ export function getLobbyState(roomCode) {
 }
 
 /**
+ * Reset a lobby back to 'waiting' after a heist ends so the same squad
+ * can start a brand-new heist without stale 'active' status persisting.
+ * Called by heistEngine whenever a heist concludes, aborts, or times out.
+ * @param {import('socket.io').Server} io
+ * @param {string} roomCode
+ */
+export function resetLobbyAfterHeist(io, roomCode) {
+  const lobby = activeLobbies.get(roomCode);
+  if (!lobby) return;
+  lobby.status = 'waiting';
+  // Broadcast refreshed lobby state so all clients re-sync their lobby UI
+  io.to(`lobby:${roomCode}`).emit('lobby:state', lobby);
+  console.log(`[LOBBY] Lobby ${roomCode} reset to 'waiting' after heist ended`);
+}
+
+/**
  * Helper to normalize room codes
  */
 function normCode(code) {

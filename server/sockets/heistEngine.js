@@ -3,7 +3,7 @@
 // Manages active heist timers, puzzle validation, alarm states
 // ============================================================
 // ============================================================
-import { getLobbyState } from './lobbyManager.js';
+import { getLobbyState, resetLobbyAfterHeist } from './lobbyManager.js';
 
 // In-memory active heist state
 const activeHeists = new Map();
@@ -308,6 +308,8 @@ export function setupHeistEngine(io, socket) {
     });
 
     activeHeists.delete(roomCode);
+    // Reset lobby so the same squad can launch a new heist immediately
+    resetLobbyAfterHeist(io, roomCode);
     console.log(`[HEIST] Heist aborted: ${roomCode}`);
   });
 
@@ -332,6 +334,8 @@ export function setupHeistEngine(io, socket) {
     });
 
     activeHeists.delete(roomCode);
+    // Reset lobby so the same squad can launch a new heist immediately
+    resetLobbyAfterHeist(io, roomCode);
   });
 
   // ─────────────────────────────────────────────────────────
@@ -360,6 +364,8 @@ export function setupHeistEngine(io, socket) {
         io.to(`heist:${roomCode}`).emit(eventName, { state, message: `Heist ${state.status} by ${proposedBy}.` });
         io.to(`lobby:${roomCode}`).emit(eventName, { state, message: `Heist ${state.status} by ${proposedBy}.` });
         activeHeists.delete(roomCode);
+        // Reset lobby so the same squad can launch a new heist immediately
+        resetLobbyAfterHeist(io, roomCode);
         return callback?.({ success: true });
       }
 
@@ -458,6 +464,8 @@ function resolveVote(io, roomCode, state) {
   io.to(`lobby:${roomCode}`).emit('heist:end-voted', payload);
 
   activeHeists.delete(roomCode);
+  // Reset lobby so the same squad can launch a new heist immediately
+  resetLobbyAfterHeist(io, roomCode);
   console.log(`[HEIST] Vote resolved (${directive}): ${roomCode}`);
 }
 
@@ -624,6 +632,8 @@ function handleStageVictory(io, roomCode) {
   io.to(`lobby:${roomCode}`).emit('heist:stage-complete', payload);
 
   activeHeists.delete(roomCode);
+  // Reset lobby so the same squad can start a new heist from the lobby screen
+  resetLobbyAfterHeist(io, roomCode);
   console.log(`[HEIST] Stage victory: ${roomCode} (${timeStr})`);
 }
 
@@ -645,6 +655,8 @@ function handleHeistTimeout(io, roomCode) {
   io.to(`lobby:${roomCode}`).emit('heist:timeout', payload);
 
   activeHeists.delete(roomCode);
+  // Reset lobby so the same squad can start a new heist from the lobby screen
+  resetLobbyAfterHeist(io, roomCode);
   console.log(`[HEIST] Timeout: ${roomCode}`);
 }
 

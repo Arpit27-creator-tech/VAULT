@@ -84,7 +84,7 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
     const loadHistory = async () => {
       if (currentUser.id) {
         try {
-          const histData = await userAPI.getHistory(currentUser.id);
+          const histData = await userAPI.getHistory(currentUser.id, 1, 10);
           if (histData?.history) {
             setRealHistory(histData.history);
           }

@@ -1,4 +1,5 @@
 import { heistStages } from './heistPuzzles';
+import { EXTRA_HACKER_PUZZLES } from './extraHackerPuzzles';
 
 // Pool every existing, already-tested puzzle variant by role, drawn from
 // all stages. This gives real variety without inventing new puzzle logic
@@ -10,6 +11,12 @@ export const PUZZLE_POOL = heistStages.reduce((pool, stage) => {
   });
   return pool;
 }, { scientist: [], engineer: [], hacker: [], cryptographer: [] });
+
+// Merge in supplementary role-specific puzzle files. This lets the pool
+// grow without needing to fabricate full 4-role "stage" objects — just
+// add more entries to a file like extraHackerPuzzles.js and they show up
+// here automatically.
+PUZZLE_POOL.hacker = [...PUZZLE_POOL.hacker, ...EXTRA_HACKER_PUZZLES];
 
 /**
  * Deterministic string hash → index, so every client in the same room

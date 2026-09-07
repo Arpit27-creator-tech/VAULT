@@ -30,21 +30,27 @@ export default function ScientistLab({ puzzle, onSolved, onFail, isSolved }) {
     setIsReacting(true);
 
     setTimeout(() => {
-      const allMatched = reagents.every(r => r.currentCoeff === r.requiredCoeff);
-      const phOk = Math.abs(ph - (puzzle.targetPh || 7.0)) <= 0.8;
+      try {
+        const allMatched = reagents.every(r => r.currentCoeff === r.requiredCoeff);
+        const phOk = Math.abs(ph - (puzzle.targetPh || 7.0)) <= 0.8;
 
-      if (allMatched && phOk) {
-        heistAudio.playSuccessChime();
-        onSolved('scientist', puzzle.clueRevealed);
-      } else {
-        heistAudio.playAlarmSiren();
-        if (!allMatched) {
-          onFail('scientist', 'Reaction stoichiometry unbalanced! Unstable residue detected.');
+        if (allMatched && phOk) {
+          heistAudio.playSuccessChime();
+          onSolved('scientist', puzzle.clueRevealed);
         } else {
-          onFail('scientist', 'pH buffer out of tolerance range for dissolution.');
+          heistAudio.playAlarmSiren();
+          if (!allMatched) {
+            onFail('scientist', 'Reaction stoichiometry unbalanced! Unstable residue detected.');
+          } else {
+            onFail('scientist', 'pH buffer out of tolerance range for dissolution.');
+          }
         }
+      } finally {
+        // Guarantees the button re-enables even if onSolved/onFail throws,
+        // so a wrong answer can never leave the terminal stuck on
+        // "Synthesizing..." with no way to try again.
+        setIsReacting(false);
       }
-      setIsReacting(false);
     }, 600);
   };
 

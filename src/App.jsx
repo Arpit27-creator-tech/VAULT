@@ -31,6 +31,8 @@ import InterdependenceMatrix from './components/InterdependenceMatrix';
 import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
 import ParticleBurst from './components/ParticleBurst';
+import LoadingScreen from './components/LoadingScreen';
+import XPRing from './components/XPRing';
 import { voiceEngine } from './services/voiceEngine';
 import CreateCustomHeistModal from './components/CreateCustomHeistModal';
 import RemediationRoadmapModal from './components/RemediationRoadmapModal';
@@ -143,6 +145,7 @@ export default function App() {
   }, []);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
@@ -617,10 +620,15 @@ export default function App() {
       }).catch(() => {
         // Token expired or invalid — clean up
         authAPI.logout();
+      }).finally(() => {
+        setIsAppLoading(false);
       });
-    } else if (currentUser) {
-      // Connect socket for existing session
-      try { connectSocket(); } catch (e) { /* socket optional */ }
+    } else {
+      if (currentUser) {
+        // Connect socket for existing session
+        try { connectSocket(); } catch (e) { /* socket optional */ }
+      }
+      setIsAppLoading(false);
     }
 
     // Listen for auth expiration events from API service
@@ -1685,6 +1693,10 @@ export default function App() {
   const currentStageClues = (stageRoleClues && stageRoleClues[stageId]) || {};
   const currentStagePuzzles = activePuzzleOverrides || currentStageData.puzzles || heistStages[0].puzzles || {};
 
+  if (isAppLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
       <Toaster 
@@ -1857,11 +1869,11 @@ export default function App() {
                     <img 
                       src={currentUser.avatar} 
                       alt={currentUser.callsign} 
-                      className="w-5 h-5 object-cover border border-[#03140C] rounded" 
+                      className="w-5 h-5 object-cover border border-[#03140C] rounded flex-shrink-0" 
                     />
+                    <XPRing level={currentUser.level} xp={currentUser.xp} size={26} />
                     <div className="text-left hidden md:block leading-tight">
                       <span className="text-[11px] font-black uppercase block truncate max-w-[90px]">{currentUser.callsign}</span>
-                      <span className="text-[9px] text-[#FBBF24] font-bold block">LVL {currentUser.level}</span>
                     </div>
                   </button>
 

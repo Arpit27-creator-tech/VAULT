@@ -22,6 +22,7 @@ import {
 } from './data/initialData';
 import { heistStages } from './data/heistPuzzles';
 import { getPuzzleSetForHeist } from './data/puzzlePool';
+import { calculateLevel } from './utils/leveling';
 import { heistAudio } from './components/HeistAudioEngine';
 import HackerTerminal from './components/HackerTerminal';
 import EngineerLaserGrid from './components/EngineerLaserGrid';
@@ -452,7 +453,7 @@ export default function App() {
         const optimisticUser = {
           ...currentUser,
           xp: currentUser.xp + gainedXp,
-          level: Math.floor((currentUser.xp + gainedXp) / 1000) + 1,
+          level: calculateLevel(currentUser.xp + gainedXp),
           stats: {
             ...currentUser.stats,
             missionsCompleted: (currentUser.stats?.missionsCompleted || 0) + 1,

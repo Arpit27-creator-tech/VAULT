@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { query, transaction } from '../db/index.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
+import { calculateLevel } from '../utils/leveling.js';
 
 const router = Router();
 
@@ -217,8 +218,11 @@ router.post('/complete', authenticate, async (req, res) => {
     const xpGained = Number.isFinite(xp_earned) ? xp_earned : 0;
 
     const updatedUser = await transaction(async (client) => {
-      const beforeResult = await client.query('SELECT level FROM users WHERE id = $1', [req.user.id]);
+      const beforeResult = await client.query('SELECT xp, level FROM users WHERE id = $1', [req.user.id]);
+      const xpBefore = beforeResult.rows[0]?.xp || 0;
       const levelBefore = beforeResult.rows[0]?.level || 1;
+      const xpAfter = xpBefore + xpGained;
+      const levelAfter = calculateLevel(xpAfter);
 
       await client.query(
         `INSERT INTO heist_history (user_id, heist_id, mission_title, role, result, xp_earned, time_elapsed, accuracy, alarms_tripped)
@@ -227,13 +231,12 @@ router.post('/complete', authenticate, async (req, res) => {
       );
 
       const userResult = await client.query(
-        `UPDATE users SET xp = xp + $1, level = GREATEST(1, CAST(FLOOR((xp + $1) / 1000.0) AS INTEGER) + 1)
-         WHERE id = $2
+        `UPDATE users SET xp = $1, level = $2
+         WHERE id = $3
          RETURNING id, username, callsign, avatar_url, role, level, xp, rank, badges, skill_points, unlocked_perks`,
-        [xpGained, req.user.id]
+        [xpAfter, levelAfter, req.user.id]
       );
 
-      const levelAfter = userResult.rows[0].level;
       const pointsAwarded = Math.max(0, levelAfter - levelBefore);
       if (pointsAwarded > 0) {
         const pointsResult = await client.query(
@@ -319,9 +322,13 @@ router.put('/:id/results', authenticate, async (req, res) => {
 
       // Update user XP and level
       const xpGained = xp_earned || 0;
+      const xpRow = await client.query('SELECT xp FROM users WHERE id = $1', [req.user.id]);
+      const xpBefore = xpRow.rows[0]?.xp || 0;
+      const xpAfter = xpBefore + xpGained;
+      const levelAfter = calculateLevel(xpAfter);
       await client.query(
-        `UPDATE users SET xp = xp + $1, level = GREATEST(1, CAST(FLOOR((xp + $1) / 1000.0) AS INTEGER) + 1) WHERE id = $2`,
-        [xpGained, req.user.id]
+        `UPDATE users SET xp = $1, level = $2 WHERE id = $3`,
+        [xpAfter, levelAfter, req.user.id]
       );
 
       // Update user stats

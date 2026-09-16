@@ -1,13 +1,16 @@
 import React from 'react';
+import { getLevelProgress } from '../utils/leveling';
 
 /**
  * Compact SVG ring showing current level with a progress arc toward the
- * next level, matching the server's leveling formula: level = floor(xp/1000)+1.
+ * next level. Level and progress are both derived from xp using the same
+ * formula the server uses (each level requires 20% more XP than the last),
+ * so the ring and the level number can never disagree with each other.
  * Sized for use inline in a header/nav bar.
  */
-export default function XPRing({ level = 1, xp = 0, size = 34 }) {
-  const xpIntoLevel = ((xp % 1000) + 1000) % 1000; // guard against negative/odd values
-  const progress = Math.min(1, xpIntoLevel / 1000);
+export default function XPRing({ level, xp = 0, size = 34 }) {
+  const { level: derivedLevel, progress } = getLevelProgress(xp);
+  const displayLevel = derivedLevel || level || 1;
 
   const strokeWidth = 3;
   const radius = (size - strokeWidth) / 2;
@@ -43,7 +46,7 @@ export default function XPRing({ level = 1, xp = 0, size = 34 }) {
         className="absolute inset-0 flex items-center justify-center font-black text-[#FBBF24]"
         style={{ fontSize: size * 0.34 }}
       >
-        {level}
+        {displayLevel}
       </div>
     </div>
   );

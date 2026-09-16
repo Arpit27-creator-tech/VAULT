@@ -8,6 +8,7 @@ import {
   Camera, Upload, Image as ImageIcon
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
+import { getLevelProgress } from '../utils/leveling';
 import { toast } from 'sonner';
 import { friendAPI, teamAPI, userAPI } from '../services/api';
 
@@ -152,8 +153,8 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
   }
 
   const { stats = { missionsCompleted: 0, vaultsCracked: 0, alarmsTripped: 0, winRate: 100, csMastery: 85, physicsMastery: 80, chemMastery: 75, mathMastery: 90 }, badges = [] } = currentUser;
-  const currentXpInLevel = (currentUser.xp || 0) % 1000;
-  const progressPercent = Math.min(100, Math.round((currentXpInLevel / 1000) * 100));
+  const { progress: levelProgress } = getLevelProgress(currentUser.xp || 0);
+  const progressPercent = Math.min(100, Math.round(levelProgress * 100));
 
   const myAgentId = currentUser.agentId || (
     currentUser.id ? `VAULT-${currentUser.id.replace(/-/g, '').substring(0, 8).toUpperCase()}` : null

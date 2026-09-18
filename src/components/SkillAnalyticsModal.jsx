@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, 
   ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key,
@@ -23,6 +23,7 @@ export default function SkillAnalyticsModal({
   onOpenRoadmap
 }) {
   const [revealStep, setRevealStep] = useState(0);
+  const cleanupRef = useRef(null);
 
   const xpBreakdown = [
     { subject: "Computer Science (Logic & Code)", xp: stats.hackerXp || 350, icon: Terminal, color: "#10B981" },
@@ -52,86 +53,93 @@ export default function SkillAnalyticsModal({
   const [isLevelUp, setIsLevelUp] = useState(false);
   const [flyoutActive, setFlyoutActive] = useState(false);
 
+  // Because the parent passes a new `key` each heist, this component fully remounts
+  // each time the modal opens — useState values start fresh from the current props.
+  // We run the animation on mount (with a small delay so the DOM is ready).
   useEffect(() => {
-    if (!isOpen) {
-      setRevealStep(0);
-      setAnimatedGainedXp(0);
-      setAnimatedTotalXp(prevTotalXp);
-      setAnimatedProgress(prevLevelInfo.progress);
-      setIsLevelUp(false);
-      setFlyoutActive(false);
-      return;
-    }
+    if (!isOpen) return;
 
-    // Always reset on open so the animation starts fresh from previous XP
-    setRevealStep(0);
-    setAnimatedGainedXp(0);
-    setAnimatedTotalXp(prevTotalXp);
-    setAnimatedProgress(prevLevelInfo.progress);
-    setIsLevelUp(false);
-    setFlyoutActive(false);
-
-    // Promptly reveal cards: 150ms per role card
+    // Snapshot the XP values at mount time to avoid stale-closure drift
+    const snapPrev = prevTotalXp;
+    const snapNew = currentTotalXp;
+    const snapTotalGain = totalXp;
+    const snapPrevProgress = prevLevelInfo.progress;
+    const snapNewProgress = newLevelInfo.progress;
+    const snapPrevLevel = prevLevelInfo.level;
+    const snapNewLevel = newLevelInfo.level;
     const roleSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0);
+
+    // Small delay so the modal render is flushed before animation starts
     let step = 0;
-    const interval = setInterval(() => {
-      step += 1;
-      setRevealStep(step);
+    const startAnimation = () => {
+      const interval = setInterval(() => {
+        step += 1;
+        setRevealStep(step);
 
-      // Start gained XP count-up as soon as the total box is shown (step 1)
-      if (step === 1) {
-        const startGained = performance.now();
-        const durationGained = 900;
-        let lastTickGained = 0;
-        const tickGained = (now) => {
-          const prog = Math.min(1, (now - startGained) / durationGained);
-          const ease = 1 - Math.pow(1 - prog, 3);
-          setAnimatedGainedXp(Math.round(ease * totalXp));
-          if (now - lastTickGained > 80 && prog < 1) {
-            heistAudio.playKeyClick();
-            lastTickGained = now;
-          }
-          if (prog < 1) {
-            requestAnimationFrame(tickGained);
-          }
-        };
-        requestAnimationFrame(tickGained);
-      }
-
-      // Start Career XP and level progression animation at step 2
-      if (step === 2) {
-        setFlyoutActive(true);
-        const startCareer = performance.now();
-        const durationCareer = 1400;
-        let lastTickCareer = 0;
-        const tickCareer = (now) => {
-          const prog = Math.min(1, (now - startCareer) / durationCareer);
-          const ease = 1 - Math.pow(1 - prog, 3);
-          const currentTotal = Math.round(prevTotalXp + ease * (currentTotalXp - prevTotalXp));
-          const currentProg = prevLevelInfo.progress + ease * (newLevelInfo.progress - prevLevelInfo.progress);
-          setAnimatedTotalXp(currentTotal);
-          setAnimatedProgress(currentProg);
-          if (now - lastTickCareer > 75 && prog < 1) {
-            heistAudio.playKeyClick();
-            lastTickCareer = now;
-          }
-          if (prog < 1) {
-            requestAnimationFrame(tickCareer);
-          } else {
-            if (newLevelInfo.level > prevLevelInfo.level) {
-              setIsLevelUp(true);
-              heistAudio.playSuccessChime();
+        // Gained XP count-up at step 1
+        if (step === 1) {
+          const startGained = performance.now();
+          const durationGained = 900;
+          let lastTickGained = 0;
+          const tickGained = (now) => {
+            const prog = Math.min(1, (now - startGained) / durationGained);
+            const ease = 1 - Math.pow(1 - prog, 3);
+            setAnimatedGainedXp(Math.round(ease * snapTotalGain));
+            if (now - lastTickGained > 80 && prog < 1) {
+              heistAudio.playKeyClick();
+              lastTickGained = now;
             }
-          }
-        };
-        requestAnimationFrame(tickCareer);
-      }
+            if (prog < 1) requestAnimationFrame(tickGained);
+          };
+          requestAnimationFrame(tickGained);
+        }
 
-      if (step >= roleSteps + 2) clearInterval(interval);
-    }, 180);
+        // Career XP + level bar animation at step 2
+        if (step === 2) {
+          setFlyoutActive(true);
+          const startCareer = performance.now();
+          const durationCareer = 1400;
+          let lastTickCareer = 0;
+          const tickCareer = (now) => {
+            const prog = Math.min(1, (now - startCareer) / durationCareer);
+            const ease = 1 - Math.pow(1 - prog, 3);
+            const currentTotal = Math.round(snapPrev + ease * (snapNew - snapPrev));
+            const currentProg = snapPrevProgress + ease * (snapNewProgress - snapPrevProgress);
+            setAnimatedTotalXp(currentTotal);
+            setAnimatedProgress(currentProg);
+            if (now - lastTickCareer > 75 && prog < 1) {
+              heistAudio.playKeyClick();
+              lastTickCareer = now;
+            }
+            if (prog < 1) {
+              requestAnimationFrame(tickCareer);
+            } else {
+              if (snapNewLevel > snapPrevLevel) {
+                setIsLevelUp(true);
+                heistAudio.playSuccessChime();
+              }
+            }
+          };
+          requestAnimationFrame(tickCareer);
+        }
 
-    return () => clearInterval(interval);
-  }, [isOpen, totalXp, currentTotalXp, prevTotalXp]);
+        if (step >= roleSteps + 2) clearInterval(interval);
+      }, 180);
+      return interval;
+    };
+
+    const timer = setTimeout(() => {
+      const interval = startAnimation();
+      // store interval ref for cleanup via closure
+      cleanupRef.current = () => clearInterval(interval);
+    }, 80);
+
+    return () => {
+      clearTimeout(timer);
+      if (cleanupRef.current) cleanupRef.current();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

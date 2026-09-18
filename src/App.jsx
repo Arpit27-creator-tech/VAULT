@@ -227,6 +227,7 @@ export default function App() {
   }, [activeTab]);
 
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+  const [analyticsKey, setAnalyticsKey] = useState(0);
   const [isMatchVictory, setIsMatchVictory] = useState(true);
   const [analyticsStats, setAnalyticsStats] = useState({
     hackerXp: 450,
@@ -1453,6 +1454,10 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    window.__VAULT_START_HEIST__ = (idx = 0) => handleStartHeistStage(idx);
+  }, [allStages]);
+
 
   const handleLaunchCustomHeist = (customStage) => {
     const stageIdx = allStages.length;
@@ -1638,39 +1643,10 @@ export default function App() {
     };
     setRadioMessages(prev => [...prev, newMsg]);
 
-    // Role-specific XP reward and immediate animation
-    const isAlreadySolved = !!(stageSolvedRoles[stageId] && stageSolvedRoles[stageId][role]);
-    const baseRoleXp = 350 + (currentStageIdx + 1) * 50;
-    const scientistPerk = (role === 'scientist' && timeLeft > 120) ? 100 : 0;
-    const earnedRoleXp = baseRoleXp + scientistPerk;
+    // Play success chime for audio feedback — XP is awarded only on full heist completion
+    heistAudio.playSuccessChime();
 
-    if (!isAlreadySolved) {
-      setLastEarnedXp(earnedRoleXp);
-      setXpFlyout({ amount: earnedRoleXp, id: Date.now() });
-      setTimeout(() => setXpFlyout(null), 2800);
-      heistAudio.playSuccessChime();
 
-      setXp(prev => {
-        const next = (typeof prev === 'number' ? prev : 1200) + earnedRoleXp;
-        try { localStorage.setItem('kh_xp_sylvan', next.toString()); } catch {}
-        return next;
-      });
-
-      if (currentUser) {
-        const updatedXp = (currentUser.xp || 0) + earnedRoleXp;
-        const updatedLevel = calculateLevel(updatedXp);
-        const optimisticUser = {
-          ...currentUser,
-          xp: updatedXp,
-          level: updatedLevel
-        };
-        setCurrentUser(optimisticUser);
-        try { localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser)); } catch {}
-        window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
-      }
-    }
-
-    toast.success(`🔓 ${role.toUpperCase()} LOCK BYPASSED! +${earnedRoleXp} XP EARNED!`);
 
     try {
       heistSocket.puzzleSolved(lobby.code, role, clue, solverName);
@@ -1870,6 +1846,8 @@ export default function App() {
       });
     }
 
+    // IMPORTANT: capture prevTotal from current closure BEFORE any state update
+    // so the XP animation in SkillAnalyticsModal animates from old → new.
     const prevTotal = (currentUser?.xp ?? xp ?? 1200);
     const newTotal = prevTotal + totalXpGain;
 
@@ -1888,6 +1866,9 @@ export default function App() {
       prevTotalXp: prevTotal,
       newTotalXp: newTotal
     });
+    // Increment key to force full remount of SkillAnalyticsModal every time,
+    // which resets all internal useState values and ensures animation plays fresh.
+    setAnalyticsKey(k => k + 1);
     setAnalyticsModalOpen(true);
   };
 
@@ -2217,7 +2198,7 @@ export default function App() {
                       className="w-5 h-5 object-cover border border-[#03140C] rounded flex-shrink-0" 
                     />
                     <div className="relative">
-                      <XPRing level={currentUser.level} xp={currentUser.xp} size={26} />
+                      <XPRing level={currentUser.level} xp={currentUser.xp} size={26} color={activeTab === 'stats' ? '#FBBF24' : '#10B981'} />
                       <AnimatePresence>
                         {xpFlyout && (
                           <motion.div
@@ -2266,7 +2247,7 @@ export default function App() {
               ) : (
                 <div className="flex items-center space-x-2">
                   <div className="relative flex items-center space-x-1.5 px-2.5 py-1.5 border-2 border-[#03140C] bg-[#0A261B] text-[#F0FDF4] font-mono text-xs rounded-lg shadow-[2px_2px_0px_#020C07]">
-                    <XPRing level={calculateLevel(xp)} xp={xp} size={24} />
+                    <XPRing level={calculateLevel(xp)} xp={xp} size={24} color={activeTab === 'stats' ? '#FBBF24' : '#10B981'} />
                     <span className="hidden sm:inline font-bold text-[#10B981]">{xp} XP</span>
                     <AnimatePresence>
                       {xpFlyout && (
@@ -4309,10 +4290,10 @@ export default function App() {
                                     }
                                     setXpFlyout({ amount: 250, id: Date.now() });
                                     setTimeout(() => setXpFlyout(null), 2800);
-                                    toast.success(`🎉 Chamber 0${roomNum} Cleared! +250 XP Awarded!`);
+
                                   } else {
                                     heistAudio.playAlarmSiren();
-                                    toast.error("⚠️ Security Gate Triggered! Review concept and try again.");
+
                                   }
                                 }}
                                 className={`w-full text-left p-2.5 rounded-lg text-xs font-mono border transition-all ${
@@ -4865,6 +4846,7 @@ export default function App() {
       />
 
       <SkillAnalyticsModal
+        key={analyticsKey}
         isOpen={analyticsModalOpen}
         isVictory={isMatchVictory}
         stageTitle={currentStageData.title}

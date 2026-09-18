@@ -11,6 +11,7 @@ import { heistAudio } from './HeistAudioEngine';
 import { getLevelProgress } from '../utils/leveling';
 import { toast } from 'sonner';
 import { friendAPI, teamAPI, userAPI } from '../services/api';
+import XPRing from './XPRing';
 
 export default function StatsDashboard({ currentUser, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
   const fileInputRef = useRef(null);
@@ -431,38 +432,60 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           
           <div className="flex items-center space-x-5">
             
-            {/* Interactive Avatar with Device Upload Trigger */}
-            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              <img 
-                src={userAvatar || currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'} 
-                alt={currentUser.callsign} 
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#10B981] shadow-lg shadow-emerald-950/60 group-hover:border-[#34D399] transition-all group-hover:scale-105"
-              />
-              
-              {/* Hover / Active Camera Upload Overlay */}
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white space-y-1">
-                <Camera className={`w-5 h-5 text-[#10B981] ${isUploadingAvatar ? 'animate-spin' : ''}`} />
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-200">
-                  {isUploadingAvatar ? 'Saving...' : 'Change'}
-                </span>
+            {/* Avatar + yellow XP ring */}
+            <div className="relative flex-shrink-0" style={{ width: 108, height: 108 }}>
+              {/* Direct SVG ring — yellow progress arc */}
+              {(() => {
+                const size = 108, sw = 6;
+                const r = (size - sw) / 2;
+                const circ = 2 * Math.PI * r;
+                const { progress } = getLevelProgress(currentUser.xp || 0);
+                const offset = circ * (1 - progress);
+                const c = size / 2;
+                return (
+                  <svg width={size} height={size} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx={c} cy={c} r={r} fill="none" stroke="#1a1a1a" strokeWidth={sw} />
+                    <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
+                      strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+                      style={{ transition: 'stroke-dashoffset 1s ease' }}
+                    />
+                  </svg>
+                );
+              })()}
+
+              {/* Avatar centered inside */}
+              <div
+                className="absolute flex items-center justify-center group cursor-pointer"
+                style={{ inset: 10 }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <img
+                  src={userAvatar || currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
+                  alt={currentUser.callsign}
+                  className="w-full h-full rounded-2xl object-cover border-2 border-[#FBBF24] shadow-lg"
+                />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center space-y-1">
+                  <Camera className={`w-4 h-4 text-[#FBBF24] ${isUploadingAvatar ? 'animate-spin' : ''}`} />
+                  <span className="text-[9px] font-mono font-bold uppercase text-amber-200">
+                    {isUploadingAvatar ? 'Saving...' : 'Change'}
+                  </span>
+                </div>
               </div>
 
-              {/* Floating Camera Badge Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="absolute -top-1.5 -right-1.5 p-1.5 bg-[#020B06] hover:bg-[#10B981] text-[#34D399] hover:text-[#02140D] border border-emerald-500/60 rounded-full transition-all shadow-md"
-                title="Upload Photo from Device"
-              >
-                <Camera className="w-3 h-3" />
-              </button>
-
-              <span className="absolute -bottom-2 -right-2 bg-[#FBBF24] text-[#02140D] text-xs font-black px-2 py-0.5 rounded-full font-game shadow">
+              {/* LVL badge */}
+              <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[11px] font-black px-2 py-0.5 rounded-full font-game shadow whitespace-nowrap z-10">
                 LVL {currentUser.level || 1}
               </span>
+
+              {/* Camera button */}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                className="absolute top-0 right-0 p-1 bg-[#020B06] hover:bg-[#FBBF24] text-[#FBBF24] hover:text-[#02140D] border border-amber-500/60 rounded-full transition-all z-10"
+                title="Upload Photo"
+              >
+                <Camera className="w-2.5 h-2.5" />
+              </button>
             </div>
 
             <div className="space-y-1">
@@ -531,11 +554,11 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
         <div className="mt-6 pt-6 border-t border-emerald-900/60 space-y-2">
           <div className="flex justify-between items-center text-xs font-mono">
             <span className="text-slate-300 font-bold">XP Progression to Level {(currentUser.level || 1) + 1}</span>
-            <span className="text-emerald-300 font-bold">{currentUser.xp || 0} Total XP ({progressPercent}%)</span>
+            <span className="text-[#FBBF24] font-bold">{currentUser.xp || 0} Total XP ({progressPercent}%)</span>
           </div>
-          <div className="w-full bg-[#020B06] h-2.5 rounded-full overflow-hidden border border-emerald-900">
+          <div className="w-full bg-[#020B06] h-2.5 rounded-full overflow-hidden border border-amber-900/60">
             <div 
-              className="bg-gradient-to-r from-[#10B981] to-[#34D399] h-full rounded-full transition-all duration-500 shadow-sm"
+              className="bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] h-full rounded-full transition-all duration-500 shadow-sm shadow-amber-500/30"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

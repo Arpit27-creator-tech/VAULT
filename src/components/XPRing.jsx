@@ -8,11 +8,11 @@ import { getLevelProgress } from '../utils/leveling';
  * so the ring and the level number can never disagree with each other.
  * Sized for use inline in a header/nav bar.
  */
-export default function XPRing({ level, xp = 0, size = 34 }) {
+export default function XPRing({ level, xp = 0, size = 34, color = '#10B981', showLevel = true }) {
   const { level: derivedLevel, progress } = getLevelProgress(xp);
   const displayLevel = derivedLevel || level || 1;
 
-  const strokeWidth = 3;
+  const strokeWidth = size > 60 ? 5 : 3;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
@@ -34,7 +34,7 @@ export default function XPRing({ level, xp = 0, size = 34 }) {
           cy={center}
           r={radius}
           fill="none"
-          stroke="#10B981"
+          stroke={color}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -42,12 +42,14 @@ export default function XPRing({ level, xp = 0, size = 34 }) {
           style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
-      <div
-        className="absolute inset-0 flex items-center justify-center font-black text-[#FBBF24]"
-        style={{ fontSize: size * 0.34 }}
-      >
-        {displayLevel}
-      </div>
+      {showLevel && (
+        <div
+          className="absolute inset-0 flex items-center justify-center font-black text-[#FBBF24]"
+          style={{ fontSize: size * 0.34 }}
+        >
+          {displayLevel}
+        </div>
+      )}
     </div>
   );
 }

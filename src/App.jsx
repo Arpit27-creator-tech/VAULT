@@ -233,6 +233,22 @@ export default function App() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Heist Session Interruption Recovery
+  const [recoverySession, setRecoverySession] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vault_active_session');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (parsed?.roomCode && parsed?.timestamp && (Date.now() - parsed.timestamp < 15 * 60 * 1000)) {
+        return parsed;
+      }
+      localStorage.removeItem('vault_active_session');
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
   const [emailInput, setEmailInput] = useState('');
   const [crewNameInput, setCrewNameInput] = useState('');
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
@@ -1011,6 +1027,20 @@ export default function App() {
     };
   }, [isHeistLocked]);
 
+  // Fix 2a: Warn operative before accidental page unload or navigation during active heist
+  useEffect(() => {
+    if (!isHeistLocked) return;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = 'Leaving will disconnect you from your squad!';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isHeistLocked]);
+
   // ─────────────────────────────────────────────────────────────
   // Multiplayer Room Handlers
   // ─────────────────────────────────────────────────────────────
@@ -1249,6 +1279,8 @@ export default function App() {
   };
 
   const handleConfirmLeaveSquad = () => {
+    localStorage.removeItem('vault_active_session');
+    setRecoverySession(null);
     const code = lobby?.code || lobby?.roomCode;
     if (code) {
       lobbySocket.leave(code);
@@ -1359,6 +1391,17 @@ export default function App() {
     heistAudio.playRadioSquelch();
     toast.success(`🚀 ${stage.title} ENGAGED! Specialist cockpit assigned: ${chosenRole.toUpperCase()}`);
 
+    // Save active heist session for recovery if page is refreshed
+    const sessionRoomCode = lobby?.code || lobby?.roomCode;
+    if (sessionRoomCode) {
+      localStorage.setItem('vault_active_session', JSON.stringify({
+        roomCode: sessionRoomCode,
+        role: chosenRole,
+        stageIdx,
+        timestamp: Date.now()
+      }));
+    }
+
     try {
       heistSocket.joinRoom(lobby.code);
       if (isInitiator) {
@@ -1385,6 +1428,17 @@ export default function App() {
     heistAudio.startTensionBeat('LOW_SECURITY');
     heistAudio.playRadioSquelch();
     toast.success(`🚀 CUSTOM HEIST ENGAGED: ${customStage.title}!`);
+
+    // Save active heist session for custom heist recovery
+    const customSessionCode = lobby?.code || lobby?.roomCode;
+    if (customSessionCode) {
+      localStorage.setItem('vault_active_session', JSON.stringify({
+        roomCode: customSessionCode,
+        role: activeRoles[0] || 'hacker',
+        stageIdx,
+        timestamp: Date.now()
+      }));
+    }
 
     try {
       heistSocket.joinRoom(lobby.code);
@@ -1414,6 +1468,8 @@ export default function App() {
   };
 
   const handleHeistTimeout = () => {
+    localStorage.removeItem('vault_active_session');
+    setRecoverySession(null);
     setIsTimerRunning(false);
     setAlarmLevel('BUSTED');
     heistAudio.stopTension();
@@ -1582,6 +1638,8 @@ export default function App() {
   };
 
   const handleStageVictory = () => {
+    localStorage.removeItem('vault_active_session');
+    setRecoverySession(null);
     setIsTimerRunning(false);
     heistAudio.stopTension();
     heistAudio.playSuccessChime();
@@ -1967,6 +2025,52 @@ export default function App() {
 
           </div>
         </header>
+
+        {/* ── Session Interruption Recovery Banner ── */}
+        {recoverySession && !isHeistLocked && (
+          <div className="bg-gradient-to-r from-amber-950/95 via-amber-900/90 to-emerald-950/95 border-b-2 border-amber-500/70 px-4 py-3 text-amber-200 z-40 shadow-lg animate-fade-in">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="flex items-center space-x-2.5 text-center sm:text-left">
+                <span className="text-base sm:text-lg animate-bounce">⚡</span>
+                <div>
+                  <span className="font-game font-bold text-amber-300 uppercase tracking-wider">
+                    Previous Heist Interrupted!
+                  </span>
+                  <span className="ml-2 text-slate-300 text-xs font-mono">
+                    Squad: <strong className="text-white bg-black/50 px-2 py-0.5 rounded border border-amber-500/30">{recoverySession.roomCode}</strong>
+                    {recoverySession.role && (
+                      <> | Role: <strong className="text-emerald-400 capitalize">{recoverySession.role}</strong></>
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0 font-game">
+                <button
+                  onClick={() => {
+                    handleJoinSquadOperation(recoverySession.roomCode, recoverySession.role || 'hacker');
+                    setActiveTab('lobby');
+                    setRecoverySession(null);
+                    localStorage.removeItem('vault_active_session');
+                    heistAudio.playKeyClick();
+                  }}
+                  className="bg-amber-400 hover:bg-amber-300 text-black px-3.5 py-1.5 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center space-x-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <span>🔄 Rejoin Squad</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setRecoverySession(null);
+                    localStorage.removeItem('vault_active_session');
+                    heistAudio.playKeyClick();
+                  }}
+                  className="bg-black/40 hover:bg-black/60 text-slate-300 hover:text-white border border-amber-500/40 px-3 py-1.5 rounded-xl text-xs uppercase active:scale-95 transition-all"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-1 relative min-h-[calc(100vh-65px)]">
 
@@ -2844,6 +2948,7 @@ export default function App() {
                   onOpenJoinModal={() => setIsJoinRoomModalOpen(true)}
                   onOpenAgentDirectory={() => setIsAgentDirectoryOpen(true)}
                   onJoinSquad={handleJoinSquadOperation}
+                  onOpenSoloTraining={() => setIsSoloTrainingOpen(true)}
                 />
               ) : (
                 <div className="space-y-4">

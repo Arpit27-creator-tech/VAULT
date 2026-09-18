@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Plus, LogIn, Sparkles, Radio, Shield, Terminal, Compass, 
   FlaskConical, Key, ArrowRight, RefreshCw, Crown, Search, Check, Zap,
-  Flame, Lock, ArrowUpRight
+  Flame, Lock, ArrowUpRight, ChevronDown, ChevronUp, Play
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 import { toast } from 'sonner';
@@ -53,18 +53,153 @@ const ROLE_CONFIG = {
 
 const DEFAULT_RECRUITING_SQUADS = [];
 
+function HackerPreview() {
+  return (
+    <div className="bg-[#020B06] rounded-xl p-2.5 font-mono text-[11px] text-emerald-400 border border-emerald-500/30 h-28 flex flex-col justify-between shadow-inner">
+      <div className="flex items-center space-x-1.5 pb-1 border-b border-emerald-900/50 text-[10px] text-slate-400">
+        <span className="w-2 h-2 rounded-full bg-red-500/80 inline-block" />
+        <span className="w-2 h-2 rounded-full bg-amber-500/80 inline-block" />
+        <span className="w-2 h-2 rounded-full bg-emerald-500/80 inline-block" />
+        <span className="ml-1 text-emerald-500 font-bold">hacker@terminal:~$</span>
+      </div>
+      <div className="space-y-0.5 leading-relaxed">
+        <p className="text-slate-400">// Task: slice buffer[2..7]</p>
+        <p className="text-emerald-300 font-bold">&gt; return buffer.slice(2, 7);</p>
+        <p className="text-emerald-400 flex items-center">
+          <span>✓ PAYLOAD EXTRACTED</span>
+          <span className="inline-block w-1.5 h-3 bg-emerald-400 ml-1.5 animate-pulse" />
+        </p>
+      </div>
+      <div className="text-[9px] text-emerald-500/80 flex justify-between">
+        <span>STATUS: BYPASS OK</span>
+        <span className="text-slate-400">MEM: 0x7E3A</span>
+      </div>
+    </div>
+  );
+}
+
+function EngineerPreview() {
+  return (
+    <div className="bg-[#020B06] rounded-xl p-2.5 font-mono text-[11px] text-amber-400 border border-amber-500/30 h-28 flex flex-col justify-between shadow-inner">
+      <div className="flex items-center justify-between pb-1 border-b border-amber-900/50 text-[10px] text-slate-400">
+        <span className="text-amber-400 font-bold">OPTICAL DEFLECTOR ARRAY</span>
+        <span className="text-[9px] text-emerald-400 font-bold animate-pulse">LOCKED 45°/135°</span>
+      </div>
+      <div className="relative h-14 flex items-center justify-center">
+        <svg className="w-full h-full" viewBox="0 0 160 50">
+          <circle cx="15" cy="25" r="3.5" fill="#FBBF24" />
+          <line x1="50" y1="12" x2="62" y2="38" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="105" y1="10" x2="117" y2="36" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" />
+          <polyline 
+            points="15,25 56,25 111,35 145,12" 
+            fill="none" 
+            stroke="#FBBF24" 
+            strokeWidth="2" 
+            strokeDasharray="4 2" 
+          />
+          <circle cx="145" cy="12" r="4.5" fill="#10B981" stroke="#34D399" strokeWidth="1.5" />
+          <text x="5" y="44" fill="#FBBF24" fontSize="7" fontFamily="monospace">EMIT</text>
+          <text x="126" y="44" fill="#34D399" fontSize="7" fontFamily="monospace">SENSOR</text>
+        </svg>
+      </div>
+      <div className="text-[9px] text-amber-500/80 flex justify-between">
+        <span>BEAM ALIGNED</span>
+        <span className="text-emerald-400 font-bold">TARGET 100%</span>
+      </div>
+    </div>
+  );
+}
+
+function ScientistPreview() {
+  return (
+    <div className="bg-[#020B06] rounded-xl p-2.5 font-mono text-[11px] text-cyan-400 border border-cyan-500/30 h-28 flex flex-col justify-between shadow-inner">
+      <div className="flex items-center justify-between pb-1 border-b border-cyan-900/50 text-[10px] text-slate-400">
+        <span className="text-cyan-400 font-bold">REAGENT BALANCER</span>
+        <span className="text-cyan-300 font-mono bg-cyan-950 px-1 py-0.5 rounded text-[9px] border border-cyan-500/40">pH 6.8 [STABLE]</span>
+      </div>
+      <div className="space-y-1 text-center py-0.5">
+        <div className="font-bold text-[10px] text-white tracking-wider flex items-center justify-center space-x-1">
+          <span className="bg-cyan-900/50 text-cyan-300 px-1 rounded border border-cyan-500/40">2</span>
+          <span>HCl +</span>
+          <span className="bg-cyan-900/50 text-cyan-300 px-1 rounded border border-cyan-500/40">1</span>
+          <span>CaCO₃ →</span>
+          <span className="text-emerald-300">CaCl₂</span>
+        </div>
+        <p className="text-[9px] text-slate-400">Acid lock dissolving safely</p>
+      </div>
+      <div className="text-[9px] text-cyan-500/80 flex justify-between">
+        <span>REACTION: BALANCED</span>
+        <span className="text-cyan-300 font-bold">n = 1.42</span>
+      </div>
+    </div>
+  );
+}
+
+function CryptographerPreview() {
+  return (
+    <div className="bg-[#020B06] rounded-xl p-2.5 font-mono text-[11px] text-purple-400 border border-purple-500/30 h-28 flex flex-col justify-between shadow-inner">
+      <div className="flex items-center justify-between pb-1 border-b border-purple-900/50 text-[10px] text-slate-400">
+        <span className="text-purple-400 font-bold">FREQUENCY DECODER</span>
+        <span className="text-purple-300 font-mono bg-purple-950 px-1 py-0.5 rounded text-[9px] border border-purple-500/40">142.5 MHz</span>
+      </div>
+      <div className="space-y-0.5 text-center py-0.5">
+        <p className="text-[10px] text-slate-500 tracking-widest line-through">VHFXUH WKH JURYH</p>
+        <p className="text-[8px] text-purple-400">↓ CAESAR SHIFT (+3) ↓</p>
+        <p className="text-[10px] text-emerald-300 font-bold tracking-widest animate-pulse">SECURE THE GROVE</p>
+      </div>
+      <div className="text-[9px] text-purple-500/80 flex justify-between">
+        <span>CIPHER MATCH: 100%</span>
+        <span className="text-emerald-400 font-bold">KEY REVEALED</span>
+      </div>
+    </div>
+  );
+}
+
+const ROLE_PREVIEWS = {
+  hacker: {
+    discipline: 'CS & Algorithms',
+    whatYouDo: 'Write array-slicing logic and syntax expressions in the terminal to breach firewalls.',
+    feedsTo: 'The Cryptographer',
+    outputDesc: 'Decrypted Hex Cipher',
+    previewComponent: HackerPreview
+  },
+  engineer: {
+    discipline: 'Physics & Optics',
+    whatYouDo: 'Rotate deflector mirrors to align optical laser beams using Snell\'s Law geometry.',
+    feedsTo: 'The Hacker',
+    outputDesc: 'Security Port Address (0x7E3A)',
+    previewComponent: EngineerPreview
+  },
+  scientist: {
+    discipline: 'Chemistry & Reagents',
+    whatYouDo: 'Balance chemical stoichiometry reagents to neutralize cryogenic acid security locks.',
+    feedsTo: 'The Engineer',
+    outputDesc: 'Optical Density Refraction Index (n = 1.42)',
+    previewComponent: ScientistPreview
+  },
+  cryptographer: {
+    discipline: 'Math & Ciphers',
+    whatYouDo: 'Tune RF receiver frequencies and decipher Caesar shifts to reveal master vault keys.',
+    feedsTo: 'Vault Chamber Door',
+    outputDesc: 'Master Vault Passphrase',
+    previewComponent: CryptographerPreview
+  }
+};
+
 export default function SquadRecruitmentBoard({
   socket,
   currentUser,
   onCreateSquad,
   onJoinSquad,
   onOpenJoinModal,
-  onOpenAgentDirectory
+  onOpenAgentDirectory,
+  onOpenSoloTraining
 }) {
   const [squads, setSquads] = useState([]);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRolesExpanded, setIsRolesExpanded] = useState(false);
 
   // Fetch live recruiting squads from socket if connected
   const refreshSquads = () => {
@@ -221,6 +356,171 @@ export default function SquadRecruitmentBoard({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── Expandable Role Preview & Interdependence Guide ── */}
+      <div className="bg-[#051C12]/80 backdrop-blur-md border border-emerald-800/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-900/60">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-950 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-md">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-sm sm:text-base font-bold text-white font-game uppercase tracking-wider">
+                  Meet the 4 Specialists & Puzzle Types
+                </h3>
+                <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-800">
+                  Interdependent Mechanics
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Each specialist operates a distinct puzzle cockpit. Learn what they do and how their clues feed each other.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 shrink-0">
+            {onOpenSoloTraining && (
+              <button
+                onClick={() => {
+                  onOpenSoloTraining();
+                  heistAudio.playKeyClick();
+                }}
+                className="bg-emerald-950/80 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center space-x-1.5 transition-all shadow-sm"
+              >
+                <Play className="w-3.5 h-3.5 fill-emerald-300" />
+                <span>Solo Training</span>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setIsRolesExpanded(!isRolesExpanded);
+                heistAudio.playKeyClick();
+              }}
+              className="bg-[#020B06] hover:bg-[#072418] text-slate-300 hover:text-white border border-emerald-900/80 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center space-x-1.5 transition-all shadow-sm"
+            >
+              <span>{isRolesExpanded ? 'Hide Previews' : 'Show Previews'}</span>
+              {isRolesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsed view: compact summary badges */}
+        {!isRolesExpanded && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            {['hacker', 'engineer', 'scientist', 'cryptographer'].map((roleKey) => {
+              const cfg = ROLE_CONFIG[roleKey];
+              const preview = ROLE_PREVIEWS[roleKey];
+              const Icon = cfg.icon;
+              return (
+                <button
+                  key={roleKey}
+                  onClick={() => {
+                    setIsRolesExpanded(true);
+                    heistAudio.playKeyClick();
+                  }}
+                  className="flex items-center space-x-2 p-2.5 rounded-2xl bg-[#020B06]/70 border border-emerald-900/60 hover:border-emerald-500/50 text-left transition-all group"
+                >
+                  <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${cfg.color}20`, border: `1px solid ${cfg.color}50` }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white truncate font-game">{cfg.name}</p>
+                    <p className="text-[10px] font-mono text-slate-400 truncate">{preview.discipline}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Expanded view: interactive role preview cards */}
+        {isRolesExpanded && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
+            {['hacker', 'engineer', 'scientist', 'cryptographer'].map((roleKey) => {
+              const cfg = ROLE_CONFIG[roleKey];
+              const preview = ROLE_PREVIEWS[roleKey];
+              const Icon = cfg.icon;
+              const PreviewComp = preview.previewComponent;
+
+              return (
+                <div
+                  key={roleKey}
+                  className="bg-[#020B06]/90 border border-emerald-900/80 hover:border-emerald-700/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 transition-all shadow-lg hover:shadow-emerald-950/40 relative overflow-hidden group"
+                >
+                  {/* Top accent border */}
+                  <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: cfg.color }} />
+
+                  {/* Role Header */}
+                  <div className="flex items-start justify-between gap-2 pt-1">
+                    <div className="flex items-center space-x-2.5">
+                      <div 
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+                        style={{ backgroundColor: `${cfg.color}25`, border: `1.5px solid ${cfg.color}70` }}
+                      >
+                        <Icon className="w-5 h-5" style={{ color: cfg.color }} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-white font-game uppercase tracking-wide">
+                          {cfg.name}
+                        </h4>
+                        <span 
+                          className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border inline-block mt-0.5"
+                          style={{ backgroundColor: `${cfg.color}15`, color: cfg.color, borderColor: `${cfg.color}40` }}
+                        >
+                          {preview.discipline}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* What you do */}
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    {preview.whatYouDo}
+                  </p>
+
+                  {/* Animated Puzzle Interface Preview */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-0.5">
+                      <span>COCKPIT PREVIEW</span>
+                      <span className="text-emerald-400 font-bold">LIVE INTERFACE</span>
+                    </div>
+                    <PreviewComp />
+                  </div>
+
+                  {/* Interdependence Arrow Banner */}
+                  <div className="bg-[#051C12] border border-emerald-900/90 rounded-xl p-2 font-mono text-[10px] space-y-1">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>FEEDS CLUE TO:</span>
+                      <span className="font-bold text-white flex items-center space-x-1">
+                        <span>{preview.feedsTo}</span>
+                        <ArrowRight className="w-3 h-3 text-emerald-400 inline" />
+                      </span>
+                    </div>
+                    <p className="text-emerald-300 text-[9px] font-mono truncate">
+                      Output: {preview.outputDesc}
+                    </p>
+                  </div>
+
+                  {/* Solo Training Action Link */}
+                  {onOpenSoloTraining && (
+                    <button
+                      onClick={() => {
+                        onOpenSoloTraining();
+                        heistAudio.playKeyClick();
+                      }}
+                      className="w-full bg-[#051811] hover:bg-[#072618] text-slate-300 hover:text-emerald-300 border border-emerald-900/90 hover:border-emerald-600/60 rounded-xl py-2 px-3 text-[11px] font-mono font-bold flex items-center justify-center space-x-1.5 transition-all group-hover:border-emerald-500/40"
+                    >
+                      <span>Try in Solo Training</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Leaderboard-style Squad List Rows */}

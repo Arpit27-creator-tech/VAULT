@@ -187,7 +187,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         id: `user-${Date.now()}`,
         callsign: displayName,
         email: regEmail.trim(),
-        role: 'Canopy Hacker', level: 1, xp: 1500, rank: 'Junior Ranger',
+        role: 'Canopy Hacker', level: 1, xp: 0, rank: 'Junior Ranger',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
         stats: { missionsCompleted: 0, winRate: 100, vaultsCracked: 0, alarmsTripped: 0, fastestTime: '--', csMastery: 75, physicsMastery: 70, chemMastery: 70, mathMastery: 75 },
         history: [], badges: ['Junior Ranger', 'New Explorer']

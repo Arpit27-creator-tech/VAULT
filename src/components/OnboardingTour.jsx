@@ -6,6 +6,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+import { heistAudio } from './HeistAudioEngine';
+
 // ─── Tour Step Definitions ────────────────────────────────────────────────────
 // Each step optionally has a `targetSelector` (CSS selector for a real DOM
 // element to spotlight). Steps without a selector show a centered overlay.
@@ -125,6 +127,17 @@ export default function OnboardingTour({ onComplete }) {
       return;
     }
     const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      setSpotlightRect(null);
+      return;
+    }
+    // Scroll element gently into view if offscreen
+    const inView = rect.top >= 40 && rect.bottom <= window.innerHeight - 40;
+    if (!inView) {
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch {}
+    }
     const PADDING = 10;
     setSpotlightRect({
       x: Math.max(0, rect.left - PADDING),
@@ -139,17 +152,23 @@ export default function OnboardingTour({ onComplete }) {
     // Re-measure after layout settles (sidebar animation)
     const t1 = setTimeout(updateSpotlight, 120);
     const t2 = setTimeout(updateSpotlight, 350);
+    const t3 = setTimeout(updateSpotlight, 600);
     window.addEventListener('resize', updateSpotlight);
+    window.addEventListener('scroll', updateSpotlight, true);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', updateSpotlight);
+      window.removeEventListener('scroll', updateSpotlight, true);
     };
   }, [updateSpotlight, step]);
 
   // ── Navigation ───────────────────────────────────────────────────────────
   const handleNext = () => {
+    try { heistAudio.playKeyClick(); } catch {}
     if (isLast) {
+      try { heistAudio.playSuccess(); } catch {}
       handleDismiss();
     } else {
       setStep(s => s + 1);
@@ -157,10 +176,12 @@ export default function OnboardingTour({ onComplete }) {
   };
 
   const handleBack = () => {
+    try { heistAudio.playKeyClick(); } catch {}
     if (!isFirst) setStep(s => s - 1);
   };
 
   const handleDismiss = () => {
+    try { heistAudio.playKeyClick(); } catch {}
     setIsVisible(false);
     localStorage.setItem(STORAGE_KEY, 'true');
     setTimeout(() => onComplete?.(), 350);
@@ -264,16 +285,23 @@ export default function OnboardingTour({ onComplete }) {
             }`}
             style={
               !currentStep.centered && spotlightRect
-                ? tooltipAbove
-                  ? {
-                      left: Math.min(Math.max(16, spotlightRect.x + spotlightRect.w / 2 - 200), vw - 416),
-                      top: Math.max(16, spotlightRect.y - 16),
-                      transform: 'translateY(-100%)',
-                    }
-                  : {
-                      left: Math.min(Math.max(16, spotlightRect.x + spotlightRect.w / 2 - 200), vw - 416),
-                      top: spotlightRect.y + spotlightRect.h + 16,
-                    }
+                ? (() => {
+                    const cardWidth = Math.min(416, vw - 32);
+                    const idealLeft = spotlightRect.x + spotlightRect.w / 2 - cardWidth / 2;
+                    const clampedLeft = Math.max(16, Math.min(idealLeft, Math.max(16, vw - cardWidth - 16)));
+                    return tooltipAbove
+                      ? {
+                          left: clampedLeft,
+                          top: Math.max(16, spotlightRect.y - 16),
+                          transform: 'translateY(-100%)',
+                          maxWidth: cardWidth,
+                        }
+                      : {
+                          left: clampedLeft,
+                          top: Math.min(vh - 80, spotlightRect.y + spotlightRect.h + 16),
+                          maxWidth: cardWidth,
+                        };
+                  })()
                 : undefined
             }
           >

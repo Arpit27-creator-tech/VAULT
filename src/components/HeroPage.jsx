@@ -226,7 +226,7 @@ export default function HeroPage({
                   {currentUser ? 'ONLINE' : 'LOCKED 🔒'}
                 </span>
               </div>
-              <div className="grid grid-cols-4 gap-1.5 font-mono text-[10px] text-center">
+              <div className="grid grid-cols-4 gap-1.5 font-mono text-[10px] text-center" data-tour="roles">
                 {[
                   { label: "1. HACK", icon: Terminal, active: liveRelayStep >= 1 },
                   { label: "2. LASER", icon: Zap, active: liveRelayStep >= 2 },

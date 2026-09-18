@@ -581,8 +581,13 @@ export default function App() {
     setCurrentUser(userData);
     localStorage.setItem('vault_current_user', JSON.stringify(userData));
     setSidebarCollapsed(false);
+    setActiveTab('home');
     // Connect to Socket.io after successful login
     try { connectSocket(); } catch (e) { /* socket optional */ }
+    // Automatically launch the onboarding tutorial when user logs in or signs in
+    setTimeout(() => {
+      setShowTour(true);
+    }, 600);
   };
 
   const handleLogout = () => {
@@ -595,6 +600,7 @@ export default function App() {
     setActiveTab('home');
     setTabHistory([]);
     setIsAuthModalOpen(false);
+    setShowTour(false);
     toast.info("👋 Signed out. Welcome to the Syndicate Public Gateway.");
   };
 
@@ -2544,6 +2550,20 @@ export default function App() {
 
                   <button
                     onClick={() => {
+                      setActiveTab('home');
+                      setShowTour(true);
+                      if (window.innerWidth < 768) setSidebarOpen(false);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="w-full bg-[#0A261B] text-[#6EE7B7] hover:bg-[#10B981]/20 hover:text-white font-mono font-bold text-[11px] py-1.5 px-2 border border-emerald-500/40 hover:border-emerald-400 transition-all flex items-center justify-center space-x-1.5 uppercase rounded"
+                    title="Replay the Syndicate Mission Briefing Tutorial"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#FBBF24]" />
+                    <span>MISSION TUTORIAL</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
                       handleLaunchToLobby(0);
                       if (window.innerWidth < 768) setSidebarOpen(false);
                     }}
@@ -4463,6 +4483,28 @@ export default function App() {
                         soundEnabled ? 'translate-x-6' : 'translate-x-0'
                       }`} 
                     />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mission Briefing Tutorial */}
+              <div className="forest-card p-5 space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Mission Briefing Tutorial</span>
+                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="text-sm text-emerald-200">Replay the interactive spotlight tour explaining the 4 specialist roles, interdependence puzzle relays, and game mechanics.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('home');
+                      setShowTour(true);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="bg-[#10B981] text-[#02140D] font-mono font-black text-xs px-4 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] uppercase transition-all whitespace-nowrap self-start sm:self-auto"
+                  >
+                    Start Tutorial
                   </button>
                 </div>
               </div>

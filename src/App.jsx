@@ -43,6 +43,8 @@ import StatsDashboard from './components/StatsDashboard';
 import GraphicalRoadmap from './components/GraphicalRoadmap';
 import OperativeDirectoryModal from './components/OperativeDirectoryModal';
 import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
+import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
+import SoloTrainingModal from './components/SoloTrainingModal';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
 import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
 
@@ -95,6 +97,8 @@ export default function App() {
   const [isEndHeistModalOpen, setIsEndHeistModalOpen] = useState(false);
   const [endHeistVoteState, setEndHeistVoteState] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [isSoloTrainingOpen, setIsSoloTrainingOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -608,6 +612,17 @@ export default function App() {
       setIsUnlockingPerk(null);
     }
   };
+
+  // Auto-show onboarding tour for first-time visitors
+  useEffect(() => {
+    // Delay slightly so the app finishes rendering before the overlay appears
+    const tourTimer = setTimeout(() => {
+      if (shouldShowTour()) {
+        setShowTour(true);
+      }
+    }, 800);
+    return () => clearTimeout(tourTimer);
+  }, []);
 
   // Auto-login from JWT token on mount if returning user
   useEffect(() => {
@@ -2271,6 +2286,10 @@ export default function App() {
                   }
                 }}
                 onRequireAuth={() => setIsAuthModalOpen(true)}
+                onOpenSoloTraining={() => {
+                  setIsSoloTrainingOpen(true);
+                  heistAudio.playKeyClick();
+                }}
                 currentUser={currentUser}
                 characters={characters}
                 missions={missions}
@@ -4849,6 +4868,18 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── Onboarding Spotlight Tour ── */}
+      {showTour && (
+        <OnboardingTour onComplete={() => setShowTour(false)} />
+      )}
+
+      {/* ── Solo Training Modal ── */}
+      <SoloTrainingModal
+        isOpen={isSoloTrainingOpen}
+        onClose={() => setIsSoloTrainingOpen(false)}
+        onNavigate={navigateToTab}
+      />
 
     </div>
   );

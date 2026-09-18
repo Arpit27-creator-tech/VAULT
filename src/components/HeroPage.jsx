@@ -19,6 +19,7 @@ export default function HeroPage({
   onStartStage,
   onOpenCustomHeist,
   onRequireAuth,
+  onOpenSoloTraining,
   currentUser,
   characters = [],
   missions = [],
@@ -126,6 +127,7 @@ export default function HeroPage({
             </p>
             <div className="flex flex-wrap gap-4 pt-3">
               <button
+                data-tour="coop-btn"
                 onClick={() => {
                   handleGuardedAction(() => onStartStage(0), "Sign in with email & password to launch live co-op operations.");
                   heistAudio.playKeyClick();
@@ -144,6 +146,26 @@ export default function HeroPage({
               >
                 <Users className="w-5 h-5 text-[#FBBF24]" />
                 <span>SQUAD LOBBY</span>
+              </button>
+              {/* ── Solo Training CTA ─────────────────────────────────── */}
+              <button
+                data-tour="solo-btn"
+                onClick={() => {
+                  heistAudio.playKeyClick();
+                  onOpenSoloTraining?.();
+                }}
+                className="bg-[#06B6D4] text-[#02140D] font-black px-5 sm:px-7 py-4 border-[3px] border-[#03140C] shadow-[5px_5px_0px_#020C07] hover:bg-[#22D3EE] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center space-x-2.5 text-base sm:text-lg uppercase group relative"
+                title="Learn all 4 roles solo, with hints — no squad or account needed!"
+              >
+                {/* Pulse badge for discoverability */}
+                <span className="absolute -top-2 -right-2 flex h-4 w-auto px-1.5 items-center">
+                  <span className="relative inline-flex items-center bg-[#FBBF24] text-[#02140D] font-mono font-black text-[8px] px-1.5 py-0.5 border border-[#03140C] shadow-[1px_1px_0px_#020C07] uppercase tracking-wider">
+                    NEW
+                  </span>
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#FBBF24] opacity-30 animate-ping" />
+                </span>
+                <BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>SOLO TRAINING</span>
               </button>
               <button
                 onClick={() => {

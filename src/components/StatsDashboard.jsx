@@ -12,6 +12,7 @@ import { getLevelProgress } from '../utils/leveling';
 import { toast } from 'sonner';
 import { friendAPI, teamAPI, userAPI } from '../services/api';
 import XPRing from './XPRing';
+import { ACHIEVEMENTS, ACHIEVEMENT_TIERS } from '../data/achievements';
 
 export default function StatsDashboard({ currentUser, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
   const fileInputRef = useRef(null);
@@ -39,6 +40,10 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
 
   // Real Mission History State
   const [realHistory, setRealHistory] = useState(currentUser?.history || []);
+
+  // Achievement Showcase State
+  const [achievementFilter, setAchievementFilter] = useState('ALL');
+  const [inspectingAchievement, setInspectingAchievement] = useState(null);
 
   // Fetch real data on mount or when user changes
   useEffect(() => {
@@ -198,6 +203,9 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
         setNewTeamMotto('');
         heistAudio.playSuccessChime();
         toast.success(`🌲 Team "${newTeamName}" created! Invite code: ${res.team.inviteCode}`);
+        try {
+          window.dispatchEvent(new CustomEvent('vault:achievement-event', { detail: { type: 'TEAM_JOINED' } }));
+        } catch {}
       }
     } catch (err) {
       toast.error(err.message || 'Failed to create team');
@@ -214,6 +222,9 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
         setJoinTeamCode('');
         heistAudio.playSuccessChime();
         toast.success(`🤝 Successfully joined team ${res.team.name}!`);
+        try {
+          window.dispatchEvent(new CustomEvent('vault:achievement-event', { detail: { type: 'TEAM_JOINED' } }));
+        } catch {}
       }
     } catch (err) {
       toast.error(err.message || 'Invalid or expired team invite code');
@@ -915,41 +926,267 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
           )}
         </div>
 
-        {/* Real Badges Cabinet */}
-        <div className="lg:col-span-4 bg-[#051C12]/90 backdrop-blur-md border border-emerald-800/40 rounded-2xl p-6 shadow-xl space-y-4">
+        {/* ── Syndicate Trophy Case & Achievements Cabinet ── */}
+        <div className="lg:col-span-4 bg-[#051C12]/90 backdrop-blur-md border-2 border-emerald-800/50 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 text-left">
+          {/* Header */}
           <div className="border-b border-emerald-900/60 pb-3">
-            <div className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-amber-300 uppercase">
-              <Award className="w-3.5 h-3.5" />
-              <span>Cabinet</span>
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center space-x-1.5 text-xs font-mono font-black text-[#FBBF24] uppercase">
+                <Trophy className="w-4 h-4 text-[#FBBF24]" />
+                <span>TROPHY CASE</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-[#020B06] px-2 py-0.5 rounded border border-emerald-900/60">
+                16 MEDALS TOTAL
+              </span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold uppercase text-white font-game">
-              Earned Medals
+            <h3 className="text-lg sm:text-xl font-black uppercase text-white font-game mt-1">
+              Syndicate Achievements
             </h3>
-          </div>
+            
+            {/* Overall Progress */}
+            {(() => {
+              const unlockedSet = new Set([
+                ...(currentUser?.achievements || []),
+                ...(currentUser?.badges || [])
+              ]);
+              const unlockedCount = ACHIEVEMENTS.filter(
+                a => unlockedSet.has(a.id) || unlockedSet.has(a.title)
+              ).length;
+              const percent = Math.round((unlockedCount / ACHIEVEMENTS.length) * 100);
 
-          <div className="space-y-2.5">
-            {badges.length > 0 ? (
-              badges.map((badge, idx) => (
-                <div 
-                  key={idx}
-                  className="p-3 bg-[#020B06] border border-emerald-900/50 rounded-xl flex items-center space-x-3"
-                >
-                  <div className="p-2 bg-[#FBBF24] text-[#02140D] rounded-lg flex-shrink-0">
-                    <Award className="w-4 h-4" />
+              return (
+                <div className="mt-2 space-y-1">
+                  <div className="flex justify-between text-[10px] font-mono">
+                    <span className="text-slate-400 font-bold">{unlockedCount} of {ACHIEVEMENTS.length} Unlocked</span>
+                    <span className="text-[#10B981] font-black">{percent}% Completion</span>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold uppercase text-white font-game">{badge}</h4>
-                    <p className="text-[10px] font-mono text-emerald-300">Syndicate Recognition</p>
+                  <div className="w-full bg-[#020B06] h-1.5 rounded-full overflow-hidden border border-emerald-950">
+                    <div 
+                      className="bg-gradient-to-r from-[#10B981] to-[#FBBF24] h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                      style={{ width: `${percent}%` }}
+                    />
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="bg-[#020B06] p-6 rounded-xl border border-dashed border-emerald-900 text-center text-slate-400 text-xs font-mono">
-                No medals earned yet. Crack security chambers with high accuracy to earn syndicate medals.
-              </div>
-            )}
+              );
+            })()}
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              { id: 'ALL', label: 'All (16)' },
+              { id: 'UNLOCKED', label: 'Unlocked' },
+              { id: 'SPEED', label: 'Speed' },
+              { id: 'MASTERY', label: 'Mastery' },
+              { id: 'SQUAD', label: 'Squad' },
+              { id: 'PROGRESSION', label: 'Rank' },
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => {
+                  setAchievementFilter(f.id);
+                  try { heistAudio.playKeyClick(); } catch {}
+                }}
+                className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded transition-all uppercase ${
+                  achievementFilter === f.id
+                    ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#020C07] font-black'
+                    : 'bg-[#020B06] text-slate-400 hover:text-white border border-emerald-950 hover:border-emerald-800/60'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Medals List */}
+          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+            {(() => {
+              const unlockedSet = new Set([
+                ...(currentUser?.achievements || []),
+                ...(currentUser?.badges || [])
+              ]);
+
+              const filtered = ACHIEVEMENTS.filter(a => {
+                const isUnlocked = unlockedSet.has(a.id) || unlockedSet.has(a.title);
+                if (achievementFilter === 'UNLOCKED') return isUnlocked;
+                if (achievementFilter === 'SPEED') return a.category === 'speed';
+                if (achievementFilter === 'MASTERY') return a.category === 'mastery';
+                if (achievementFilter === 'SQUAD') return a.category === 'squad';
+                if (achievementFilter === 'PROGRESSION') return a.category === 'progression';
+                return true;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="bg-[#020B06] p-6 rounded-xl border border-dashed border-emerald-900/60 text-center text-slate-400 text-xs font-mono">
+                    No achievements match this filter yet.
+                  </div>
+                );
+              }
+
+              return filtered.map(item => {
+                const Icon = item.icon || Award;
+                const isUnlocked = unlockedSet.has(item.id) || unlockedSet.has(item.title);
+                const tier = ACHIEVEMENT_TIERS[item.tier] || ACHIEVEMENT_TIERS.BRONZE;
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setInspectingAchievement(item);
+                      try { heistAudio.playKeyClick(); } catch {}
+                    }}
+                    className={`p-3 rounded-xl border-2 transition-all cursor-pointer relative overflow-hidden flex items-start space-x-3 ${
+                      isUnlocked
+                        ? 'bg-[#0A261B] border-[#10B981]/50 shadow-[0_0_12px_rgba(16,185,129,0.15)] hover:border-[#10B981]'
+                        : 'bg-[#020B06]/90 border-emerald-950/60 opacity-60 hover:opacity-90 hover:border-emerald-900/80'
+                    }`}
+                  >
+                    {/* Badge Icon */}
+                    <div 
+                      className={`w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 shadow-sm ${
+                        isUnlocked ? tier.bg : 'bg-[#04160E]'
+                      }`}
+                      style={{ borderColor: isUnlocked ? tier.color : '#0B3824' }}
+                    >
+                      <Icon 
+                        className="w-4 h-4" 
+                        style={{ color: isUnlocked ? tier.color : '#475569' }} 
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center space-x-1.5 truncate">
+                          <h4 className={`text-xs font-black uppercase truncate font-game ${
+                            isUnlocked ? 'text-white' : 'text-slate-400'
+                          }`}>
+                            {item.title}
+                          </h4>
+                          <span 
+                            className="text-[8px] font-mono font-bold uppercase px-1 py-0.2 rounded border flex-shrink-0"
+                            style={{ 
+                              color: isUnlocked ? tier.color : '#64748B', 
+                              borderColor: isUnlocked ? `${tier.color}50` : '#1E293B' 
+                            }}
+                          >
+                            {tier.label}
+                          </span>
+                        </div>
+
+                        {/* Unlocked / Locked Icon */}
+                        {isUnlocked ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981] flex-shrink-0" />
+                        ) : (
+                          <Lock className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-emerald-100/75 leading-tight mt-0.5 line-clamp-2">
+                        {isUnlocked ? item.description : item.hint}
+                      </p>
+
+                      <div className="mt-1.5 flex items-center justify-between text-[9px] font-mono">
+                        <span className="text-[#FBBF24] font-bold">
+                          +{item.xpReward} XP
+                        </span>
+                        <span className={isUnlocked ? 'text-[#34D399] font-black' : 'text-slate-500'}>
+                          {isUnlocked ? '✓ UNLOCKED' : '🔒 LOCKED'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
+
+        {/* Achievement Inspection Modal */}
+        {inspectingAchievement && (() => {
+          const item = inspectingAchievement;
+          const tier = ACHIEVEMENT_TIERS[item.tier] || ACHIEVEMENT_TIERS.BRONZE;
+          const Icon = item.icon || Award;
+          const unlockedSet = new Set([
+            ...(currentUser?.achievements || []),
+            ...(currentUser?.badges || [])
+          ]);
+          const isUnlocked = unlockedSet.has(item.id) || unlockedSet.has(item.title);
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in text-left">
+              <div 
+                className="forest-card max-w-sm w-full p-5 space-y-4 border-[3px] border-[#03140C] bg-[#051811] shadow-[8px_8px_0px_#020C07] rounded-xl relative overflow-hidden"
+                style={{
+                  boxShadow: `8px 8px 0px #020C07, 0 0 25px ${tier.glow}`
+                }}
+              >
+                <div 
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: tier.color }}
+                />
+
+                <div className="flex items-start space-x-3 pt-1">
+                  <div 
+                    className="w-12 h-12 rounded-xl border-2 flex items-center justify-center flex-shrink-0"
+                    style={{ 
+                      backgroundColor: isUnlocked ? tier.bg : '#020B06',
+                      borderColor: tier.color
+                    }}
+                  >
+                    <Icon className="w-6 h-6" style={{ color: tier.color }} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <span 
+                        className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded border"
+                        style={{ color: tier.color, borderColor: `${tier.color}60` }}
+                      >
+                        {tier.label} Tier
+                      </span>
+                      <span className="text-[9px] font-mono text-slate-400 uppercase">
+                        {item.category}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-black text-white uppercase font-game mt-1 leading-snug">
+                      {item.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#020B06] border border-emerald-950 rounded-lg space-y-2 text-xs font-mono">
+                  <div>
+                    <span className="text-[9px] text-slate-400 uppercase block font-bold">Requirement:</span>
+                    <p className="text-emerald-100 text-xs mt-0.5">{item.description}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 uppercase block font-bold">Tactical Hint:</span>
+                    <p className="text-emerald-300/80 text-[11px] mt-0.5">{item.hint}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 text-xs font-mono">
+                  <span className="bg-[#FBBF24]/20 text-[#FBBF24] border border-[#FBBF24]/50 px-2.5 py-1 rounded font-black">
+                    +{item.xpReward} XP BOUNTY
+                  </span>
+                  <span className={`font-black uppercase ${isUnlocked ? 'text-[#10B981]' : 'text-slate-500'}`}>
+                    {isUnlocked ? '✓ Status: Unlocked' : '🔒 Status: Incomplete'}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setInspectingAchievement(null)}
+                  className="w-full bg-[#10B981] text-[#02140D] font-mono font-black text-xs py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] uppercase transition-all rounded"
+                >
+                  Close Briefing
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
 

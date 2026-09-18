@@ -400,7 +400,7 @@ function RoleCard({ puzzle, onSolved, isTrainingMode }) {
 }
 
 // ─── Main SoloTrainingModal ───────────────────────────────────────────────────
-export default function SoloTrainingModal({ isOpen, onClose, onNavigate }) {
+export default function SoloTrainingModal({ isOpen, onClose, onNavigate, onComplete, onRoleSolved }) {
   const [currentRoleIdx, setCurrentRoleIdx] = useState(0);
   const [completedRoles, setCompletedRoles] = useState([]);
   const [phase, setPhase] = useState('intro'); // 'intro' | 'playing' | 'complete'
@@ -412,6 +412,9 @@ export default function SoloTrainingModal({ isOpen, onClose, onNavigate }) {
   const handleSolved = useCallback((role, clue) => {
     setLastClue(clue);
     setCompletedRoles(prev => [...new Set([...prev, role])]);
+    try {
+      onRoleSolved?.(role);
+    } catch {}
 
     if (currentRoleIdx < totalRoles - 1) {
       setTimeout(() => {
@@ -421,9 +424,12 @@ export default function SoloTrainingModal({ isOpen, onClose, onNavigate }) {
       setTimeout(() => {
         setPhase('complete');
         heistAudio.playSuccessChime();
+        try {
+          onComplete?.();
+        } catch {}
       }, 1000);
     }
-  }, [currentRoleIdx, totalRoles]);
+  }, [currentRoleIdx, totalRoles, onComplete, onRoleSolved]);
 
   const handleReset = () => {
     setCurrentRoleIdx(0);

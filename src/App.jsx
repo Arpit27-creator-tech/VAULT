@@ -45,6 +45,8 @@ import OperativeDirectoryModal from './components/OperativeDirectoryModal';
 import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
 import OnboardingTour, { shouldShowTour, resetTour } from './components/OnboardingTour';
 import SoloTrainingModal from './components/SoloTrainingModal';
+import AchievementUnlockBanner from './components/AchievementUnlockBanner';
+import { evaluateAchievements } from './utils/achievementTracker';
 import { generateRemediationPlan } from './data/remediationData';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
 import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
@@ -205,6 +207,70 @@ export default function App() {
   const [unreadRadioCount, setUnreadRadioCount] = useState(0);
   const [xpFlyout, setXpFlyout] = useState(null);
   const [lastEarnedXp, setLastEarnedXp] = useState(0);
+
+  // ── Syndicate Achievements Queue & Tracker ──
+  const [achievementQueue, setAchievementQueue] = useState([]);
+
+  const triggerAchievementCheck = useCallback((eventType, eventData = {}) => {
+    setCurrentUser(user => {
+      if (!user) return user;
+      const newlyUnlocked = evaluateAchievements(user, eventType, eventData);
+      if (!newlyUnlocked || newlyUnlocked.length === 0) return user;
+
+      const totalBonusXp = newlyUnlocked.reduce((acc, a) => acc + (a.xpReward || 0), 0);
+      const newAchievementIds = newlyUnlocked.map(a => a.id);
+      const newBadgeTitles = newlyUnlocked.map(a => a.title);
+
+      const updatedXp = (user.xp || 0) + totalBonusXp;
+      const updatedLevel = calculateLevel(updatedXp);
+      const updatedUser = {
+        ...user,
+        xp: updatedXp,
+        level: updatedLevel,
+        achievements: Array.from(new Set([...(user.achievements || []), ...newAchievementIds])),
+        badges: Array.from(new Set([...(user.badges || []), ...newBadgeTitles]))
+      };
+
+      try {
+        localStorage.setItem('vault_current_user', JSON.stringify(updatedUser));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: updatedUser }));
+
+      if (user.id && !user.isGuest) {
+        userAPI.updateProfile(user.id, {
+          xp: updatedXp,
+          level: updatedLevel,
+          achievements: updatedUser.achievements,
+          badges: updatedUser.badges
+        }).catch(() => {});
+      }
+
+      setAchievementQueue(prev => [...prev, ...newlyUnlocked]);
+
+      if (totalBonusXp > 0) {
+        setXpFlyout({ amount: totalBonusXp, id: Date.now() });
+        setTimeout(() => setXpFlyout(null), 3000);
+      }
+
+      return updatedUser;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleCustomAchEvent = (e) => {
+      if (e.detail?.type) {
+        triggerAchievementCheck(e.detail.type, e.detail.data || {});
+      }
+    };
+    window.addEventListener('vault:achievement-event', handleCustomAchEvent);
+    return () => window.removeEventListener('vault:achievement-event', handleCustomAchEvent);
+  }, [triggerAchievementCheck]);
+
+  useEffect(() => {
+    if (currentUser?.level) {
+      triggerAchievementCheck('LOGIN', { level: currentUser.level });
+    }
+  }, [currentUser?.id, currentUser?.level, triggerAchievementCheck]);
 
   useEffect(() => {
     if (activeTab === 'lobby') {
@@ -529,6 +595,14 @@ export default function App() {
           localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
         } catch {}
         window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
+
+        if (solvedCount > 0) {
+          triggerAchievementCheck('HEIST_COMPLETE', {
+            timeTaken: totalTimeSpent,
+            alarmsTripped: alarmFails,
+            isCoop: Boolean(lobby?.code && lobby?.players?.length > 1)
+          });
+        }
 
         // Persist to the database so XP/level/history are consistent across
         // every device the account logs into, not just this browser tab.
@@ -1394,6 +1468,9 @@ export default function App() {
 
   const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null, incomingAttemptSeed = null) => {
     setCurrentStageIdx(stageIdx);
+    if (lobby?.code && (lobby?.players?.length > 1 || lobby?.status === 'active')) {
+      triggerAchievementCheck('HEIST_LAUNCH', { isCoop: true });
+    }
     const stage = allStages[stageIdx] || heistStages[0];
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
@@ -1514,6 +1591,7 @@ export default function App() {
 
     setMissions(prev => [newMission, ...prev]);
     setAllStages(prev => [...prev, customStage]);
+    triggerAchievementCheck('BLUEPRINT_SAVED');
     heistAudio.playSuccessChime();
     toast.success(`💾 Custom Heist '${customStage.title}' saved to Expeditions!`);
   };
@@ -1630,6 +1708,11 @@ export default function App() {
       const current = { ...(prev[stageId] || {}) };
       current[role] = clue;
       return { ...prev, [stageId]: current };
+    });
+
+    triggerAchievementCheck('ROLE_SOLVED', {
+      role,
+      solvedRoles: Object.keys(stageSolvedRoles[stageId] || {}).concat(role)
     });
 
     const roleNames = {
@@ -1826,6 +1909,12 @@ export default function App() {
       } catch {}
       window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
 
+      triggerAchievementCheck('HEIST_COMPLETE', {
+        timeTaken: totalTimeSpent,
+        alarmsTripped: alarmFails,
+        isCoop: Boolean(lobby?.code && lobby?.players?.length > 1)
+      });
+
       // Persist to server database
       heistAPI.completeHeist({
         mission_title: stage.title || 'Infiltration Op',
@@ -1915,6 +2004,7 @@ export default function App() {
       const newMsg = { sender: senderName, role, text, time: timeStr };
       setRadioMessages(prev => [...prev, newMsg]);
     }
+    triggerAchievementCheck('COMMS_SENT');
   };
 
   const handleClaimSlot = (slotId) => {
@@ -5440,7 +5530,18 @@ export default function App() {
         isOpen={isSoloTrainingOpen}
         onClose={() => setIsSoloTrainingOpen(false)}
         onNavigate={navigateToTab}
+        onComplete={() => triggerAchievementCheck('SOLO_COMPLETE')}
+        onRoleSolved={(role) => triggerAchievementCheck('ROLE_SOLVED', { role })}
       />
+
+      {/* ── Syndicate Achievement Unlock Banner ── */}
+      {achievementQueue.length > 0 && (
+        <AchievementUnlockBanner
+          key={achievementQueue[0].id}
+          achievement={achievementQueue[0]}
+          onClose={() => setAchievementQueue(prev => prev.slice(1))}
+        />
+      )}
 
     </div>
   );

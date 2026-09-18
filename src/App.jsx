@@ -2246,26 +2246,6 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <div className="relative flex items-center space-x-1.5 px-2.5 py-1.5 border-2 border-[#03140C] bg-[#0A261B] text-[#F0FDF4] font-mono text-xs rounded-lg shadow-[2px_2px_0px_#020C07]">
-                    <XPRing level={calculateLevel(xp)} xp={xp} size={24} color={activeTab === 'stats' ? '#FBBF24' : '#10B981'} />
-                    <span className="hidden sm:inline font-bold text-[#10B981]">{xp} XP</span>
-                    <AnimatePresence>
-                      {xpFlyout && (
-                        <motion.div
-                          key={xpFlyout.id}
-                          initial={{ opacity: 0, y: 10, scale: 0.6 }}
-                          animate={{ opacity: 1, y: -26, scale: 1.15 }}
-                          exit={{ opacity: 0, y: -45, scale: 0.8 }}
-                          transition={{ duration: 1.8, ease: "easeOut" }}
-                          className="absolute -top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none bg-[#FBBF24] text-[#02140D] font-black font-game text-[11px] px-2 py-0.5 rounded-full border-2 border-[#03140C] shadow-[0_4px_14px_rgba(251,191,36,0.6)] whitespace-nowrap flex items-center space-x-1"
-                        >
-                          <Sparkles className="w-3 h-3 text-[#02140D]" />
-                          <span>+{xpFlyout.amount} XP</span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
                   <button
                     onClick={() => {
                       setIsAuthModalOpen(true);

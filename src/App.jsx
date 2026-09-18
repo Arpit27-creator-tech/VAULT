@@ -464,11 +464,18 @@ export default function App() {
       setIsMatchVictory(solvedCount > 0);
       const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
       const scientistPerkBonus = (activeCockpitRole === 'scientist' && solvedCount > 0 && (currentUser?.unlockedPerks || []).includes('scientist_steady_hands')) ? 50 : 0;
+      
+      const hackerXp = solved.hacker ? 350 : 100;
+      const engineerXp = solved.engineer ? 350 : 100;
+      const scientistXp = (solved.scientist ? 350 : 100) + scientistPerkBonus;
+      const cryptoXp = solved.cryptographer ? 350 : 100;
+      const gainedXp = hackerXp + engineerXp + scientistXp + cryptoXp + comboBonus;
+
       setAnalyticsStats({
-        hackerXp: solved.hacker ? 350 : 100,
-        engineerXp: solved.engineer ? 350 : 100,
-        scientistXp: (solved.scientist ? 350 : 100) + scientistPerkBonus,
-        cryptoXp: solved.cryptographer ? 350 : 100,
+        hackerXp,
+        engineerXp,
+        scientistXp,
+        cryptoXp,
         timeElapsed: timeStr,
         accuracy: alarmFails === 0 ? "100%" : `${Math.max(50, 100 - alarmFails * 10)}%`,
         alarmsTripped: alarmFails,
@@ -476,8 +483,19 @@ export default function App() {
         maxCombo
       });
 
+      // Update standalone xp state
+      setXp(prev => {
+        const next = (typeof prev === 'number' ? prev : 1200) + gainedXp;
+        try { localStorage.setItem('kh_xp_sylvan', next.toString()); } catch {}
+        return next;
+      });
+
+      if (gainedXp > 0) {
+        setXpFlyout({ amount: gainedXp, id: Date.now() });
+        setTimeout(() => setXpFlyout(null), 2800);
+      }
+
       if (currentUser) {
-        const gainedXp = (solvedCount > 0 ? 450 : 150) + comboBonus + scientistPerkBonus;
         const resultLabel = solvedCount > 0 ? 'VICTORY' : 'CONCLUDED';
         const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
         const newRecord = {
@@ -504,7 +522,10 @@ export default function App() {
           history: [newRecord, ...(currentUser.history || [])]
         };
         setCurrentUser(optimisticUser);
-        localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
+        try {
+          localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
+        } catch {}
+        window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
 
         // Persist to the database so XP/level/history are consistent across
         // every device the account logs into, not just this browser tab.
@@ -522,10 +543,13 @@ export default function App() {
             // Reconcile with the server's authoritative xp/level in case
             // of any drift, while keeping locally-tracked fields like history.
             setCurrentUser(prev => {
-              const reconciled = { ...prev, ...res.user, history: prev?.history };
-              localStorage.setItem('vault_current_user', JSON.stringify(reconciled));
+              const reconciled = { ...prev, ...res.user, history: prev?.history || optimisticUser.history };
+              try {
+                localStorage.setItem('vault_current_user', JSON.stringify(reconciled));
+              } catch {}
               return reconciled;
             });
+            window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: res.user }));
           }
         }).catch((err) => {
           console.error('[HEIST] Failed to persist results to server:', err);
@@ -1490,6 +1514,70 @@ export default function App() {
     heistAudio.playAlarmSiren();
     exitHeistFullscreen();
     setIsMatchVictory(false);
+    
+    const consolationXp = 200; // 50 XP per discipline
+    const nextStandaloneXp = (typeof xp === 'number' ? xp : 1200) + consolationXp;
+    setXp(nextStandaloneXp);
+    try {
+      localStorage.setItem('kh_xp_sylvan', nextStandaloneXp.toString());
+    } catch {}
+
+    if (currentUser) {
+      const stage = allStages[currentStageIdx] || heistStages[0];
+      const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
+      const newRecord = {
+        id: `h-${Date.now()}`,
+        mission: stage.title || 'Infiltration Op',
+        role: roleLabel,
+        result: 'LOCKDOWN',
+        xp: `+${consolationXp} XP`,
+        time: '3m 00s',
+        date: 'Just now'
+      };
+      const updatedXp = (currentUser.xp || 0) + consolationXp;
+      const updatedLevel = calculateLevel(updatedXp);
+      const optimisticUser = {
+        ...currentUser,
+        xp: updatedXp,
+        level: updatedLevel,
+        stats: {
+          ...currentUser.stats,
+          missionsCompleted: (currentUser.stats?.missionsCompleted || 0) + 1,
+          alarmsTripped: (currentUser.stats?.alarmsTripped || 0) + alarmFails + 1
+        },
+        history: [newRecord, ...(currentUser.history || [])]
+      };
+      setCurrentUser(optimisticUser);
+      try {
+        localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
+
+      heistAPI.completeHeist({
+        mission_title: stage.title || 'Infiltration Op',
+        role: activeCockpitRole || 'hacker',
+        result: 'LOCKDOWN',
+        xp_earned: consolationXp,
+        time_elapsed: '3m 00s',
+        accuracy: '42%',
+        alarms_tripped: alarmFails + 1,
+        vaults_cracked: 0
+      }).then((res) => {
+        if (res?.user) {
+          setCurrentUser(prev => {
+            const reconciled = { ...prev, ...res.user, history: prev?.history || optimisticUser.history };
+            try {
+              localStorage.setItem('vault_current_user', JSON.stringify(reconciled));
+            } catch {}
+            return reconciled;
+          });
+          window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: res.user }));
+        }
+      }).catch((err) => {
+        console.warn('[HEIST] Note: Server completeHeist offline or unauthenticated:', err.message);
+      });
+    }
+
     setAnalyticsStats({
       hackerXp: 50,
       engineerXp: 50,
@@ -1660,12 +1748,24 @@ export default function App() {
     const totalTimeSpent = (stage.timeLimit || 180) - timeLeft;
     const timeStr = `${Math.floor(totalTimeSpent / 60)}m ${(totalTimeSpent % 60)}s`;
 
-    const xpReward = 500 + (currentStageIdx + 1) * 250;
     const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
     const scientistPerkBonus = (activeCockpitRole === 'scientist' && (currentUser?.unlockedPerks || []).includes('scientist_steady_hands')) ? 50 : 0;
-    const totalXpGain = xpReward + comboBonus + scientistPerkBonus;
-    setXp(prev => prev + totalXpGain);
-    setStreak(prev => prev + 1);
+    
+    const hackerXp = 350 + (currentStageIdx + 1) * 50;
+    const engineerXp = 350 + (currentStageIdx + 1) * 50;
+    const scientistXp = 350 + (currentStageIdx + 1) * 50 + scientistPerkBonus;
+    const cryptoXp = 350 + (currentStageIdx + 1) * 50;
+    const totalXpGain = hackerXp + engineerXp + scientistXp + cryptoXp + comboBonus;
+
+    // Update standalone xp state and persist to local storage for guests
+    const nextStandaloneXp = (typeof xp === 'number' ? xp : 1200) + totalXpGain;
+    setXp(nextStandaloneXp);
+    try {
+      localStorage.setItem('kh_xp_sylvan', nextStandaloneXp.toString());
+      const nextStreak = (typeof streak === 'number' ? streak : 0) + 1;
+      setStreak(nextStreak);
+      localStorage.setItem('kh_streak_sylvan', nextStreak.toString());
+    } catch {}
 
     // XP flyout animation into the top-bar ring
     setXpFlyout({ amount: totalXpGain, id: Date.now() });
@@ -1673,12 +1773,73 @@ export default function App() {
       setXpFlyout(null);
     }, 2800);
 
+    // Update currentUser (the logged-in user's total XP, level, stats, and history)
+    if (currentUser) {
+      const roleLabel = activeCockpitRole === 'hacker' ? 'Canopy Hacker' : activeCockpitRole === 'engineer' ? 'Woodland Engineer' : activeCockpitRole === 'scientist' ? 'Flora Scientist' : 'Mist Cryptographer';
+      const newRecord = {
+        id: `h-${Date.now()}`,
+        mission: stage.title || 'Infiltration Op',
+        role: roleLabel,
+        result: 'VICTORY',
+        xp: `+${totalXpGain} XP`,
+        time: timeStr,
+        date: 'Just now'
+      };
+      const activeRolesCount = stage.selectedRoles 
+        ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k]).length 
+        : 4;
+      const updatedXp = (currentUser.xp || 0) + totalXpGain;
+      const updatedLevel = calculateLevel(updatedXp);
+      const optimisticUser = {
+        ...currentUser,
+        xp: updatedXp,
+        level: updatedLevel,
+        stats: {
+          ...currentUser.stats,
+          missionsCompleted: (currentUser.stats?.missionsCompleted || 0) + 1,
+          vaultsCracked: (currentUser.stats?.vaultsCracked || 0) + activeRolesCount,
+          alarmsTripped: (currentUser.stats?.alarmsTripped || 0) + alarmFails
+        },
+        history: [newRecord, ...(currentUser.history || [])]
+      };
+      setCurrentUser(optimisticUser);
+      try {
+        localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
+
+      // Persist to server database
+      heistAPI.completeHeist({
+        mission_title: stage.title || 'Infiltration Op',
+        role: activeCockpitRole || 'hacker',
+        result: 'VICTORY',
+        xp_earned: totalXpGain,
+        time_elapsed: timeStr,
+        accuracy: alarmFails === 0 ? "100%" : `${Math.max(65, 100 - alarmFails * 8)}%`,
+        alarms_tripped: alarmFails,
+        vaults_cracked: activeRolesCount
+      }).then((res) => {
+        if (res?.user) {
+          setCurrentUser(prev => {
+            const reconciled = { ...prev, ...res.user, history: prev?.history || optimisticUser.history };
+            try {
+              localStorage.setItem('vault_current_user', JSON.stringify(reconciled));
+            } catch {}
+            return reconciled;
+          });
+          window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: res.user }));
+        }
+      }).catch((err) => {
+        console.warn('[HEIST] Note: Server completeHeist offline or unauthenticated:', err.message);
+      });
+    }
+
     setIsMatchVictory(true);
     setAnalyticsStats({
-      hackerXp: 350 + (currentStageIdx + 1) * 50,
-      engineerXp: 350 + (currentStageIdx + 1) * 50,
-      scientistXp: 350 + (currentStageIdx + 1) * 50 + scientistPerkBonus,
-      cryptoXp: 350 + (currentStageIdx + 1) * 50,
+      hackerXp,
+      engineerXp,
+      scientistXp,
+      cryptoXp,
       timeElapsed: timeStr,
       accuracy: alarmFails === 0 ? "100%" : `${Math.max(65, 100 - alarmFails * 8)}%`,
       alarmsTripped: alarmFails,
@@ -3983,7 +4144,7 @@ export default function App() {
                 <div className="flex items-center space-x-2.5 font-mono text-xs">
                   <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-emerald-800/60 flex items-center space-x-1.5">
                     <span className="text-slate-400">Vault XP:</span>
-                    <span className="text-[#10B981] font-bold">{xp} XP</span>
+                    <span className="text-[#10B981] font-bold">{currentUser?.xp ?? xp} XP</span>
                   </div>
                   <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-amber-900/60 flex items-center space-x-1.5">
                     <span className="text-slate-400">Streak:</span>
@@ -4066,7 +4227,24 @@ export default function App() {
                                     heistAudio.playSuccessChime();
                                     setRoomSolved(prev => ({ ...prev, [roomNum]: true }));
                                     setUnlockedRooms(prev => [...new Set([...prev, roomNum + 1])]);
-                                    setXp(prev => prev + 250);
+                                    setXp(prev => {
+                                      const next = (typeof prev === 'number' ? prev : 1200) + 250;
+                                      try { localStorage.setItem('kh_xp_sylvan', next.toString()); } catch {}
+                                      return next;
+                                    });
+                                    if (currentUser) {
+                                      const updatedXp = (currentUser.xp || 0) + 250;
+                                      const updatedUser = {
+                                        ...currentUser,
+                                        xp: updatedXp,
+                                        level: calculateLevel(updatedXp)
+                                      };
+                                      setCurrentUser(updatedUser);
+                                      try { localStorage.setItem('vault_current_user', JSON.stringify(updatedUser)); } catch {}
+                                      window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: updatedUser }));
+                                    }
+                                    setXpFlyout({ amount: 250, id: Date.now() });
+                                    setTimeout(() => setXpFlyout(null), 2800);
                                     toast.success(`🎉 Chamber 0${roomNum} Cleared! +250 XP Awarded!`);
                                   } else {
                                     heistAudio.playAlarmSiren();

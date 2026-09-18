@@ -56,6 +56,11 @@ export default function HeroPage({
 
   React.useEffect(() => {
     fetchLeaderboard();
+    const handleUserUpdated = () => {
+      fetchLeaderboard();
+    };
+    window.addEventListener('vault:user-updated', handleUserUpdated);
+    return () => window.removeEventListener('vault:user-updated', handleUserUpdated);
   }, []); 
 
   const [liveTransmissions] = useState([

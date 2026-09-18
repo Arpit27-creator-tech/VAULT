@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Play, CheckCircle2, AlertTriangle, RefreshCw, Code, ShieldCheck, XCircle } from 'lucide-react';
+import { Terminal, Play, CheckCircle2, AlertTriangle, RefreshCw, Code, ShieldCheck, XCircle, Sparkles } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 
 export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {

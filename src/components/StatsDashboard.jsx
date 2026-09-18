@@ -462,9 +462,9 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
                 <img
                   src={userAvatar || currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
                   alt={currentUser.callsign}
-                  className="w-full h-full rounded-2xl object-cover border-2 border-[#FBBF24] shadow-lg"
+                  className="w-full h-full rounded-full object-cover border-2 border-[#FBBF24] shadow-lg"
                 />
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center space-y-1">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center space-y-1">
                   <Camera className={`w-4 h-4 text-[#FBBF24] ${isUploadingAvatar ? 'animate-spin' : ''}`} />
                   <span className="text-[9px] font-mono font-bold uppercase text-amber-200">
                     {isUploadingAvatar ? 'Saving...' : 'Change'}

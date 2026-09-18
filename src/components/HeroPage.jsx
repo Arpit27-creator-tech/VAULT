@@ -9,6 +9,7 @@ import {
 import { heistAudio } from './HeistAudioEngine';
 import { toast } from 'sonner';
 import { leaderboardAPI } from '../services/api';
+import { calculateLevel } from '../utils/leveling';
 
 
 
@@ -407,7 +408,9 @@ export default function HeroPage({
                         <h3 className="font-bold text-base sm:text-lg text-white font-game truncate group-hover:text-[#10B981] transition-colors">
                           {player.callsign || player.username}
                         </h3>
-                        <span className="text-xs">{player.level ? `LVL ${player.level}` : ''}</span>
+                        <span className="text-xs text-emerald-400/80 font-mono font-bold">
+                          {`LVL ${calculateLevel(player.totalXp || player.xp || 0)}`}
+                        </span>
                       </div>
                       <p className="text-[11px] font-mono text-emerald-300/80 truncate">
                         {player.rank || 'Operative'}

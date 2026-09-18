@@ -204,6 +204,7 @@ export default function App() {
   // Radio Comms UX: Unread message badge & auto-scroll tracking
   const [unreadRadioCount, setUnreadRadioCount] = useState(0);
   const [xpFlyout, setXpFlyout] = useState(null);
+  const [lastEarnedXp, setLastEarnedXp] = useState(0);
 
   useEffect(() => {
     if (activeTab === 'lobby') {
@@ -491,6 +492,7 @@ export default function App() {
       });
 
       if (gainedXp > 0) {
+        setLastEarnedXp(gainedXp);
         setXpFlyout({ amount: gainedXp, id: Date.now() });
         setTimeout(() => setXpFlyout(null), 2800);
       }
@@ -1516,6 +1518,7 @@ export default function App() {
     setIsMatchVictory(false);
     
     const consolationXp = 200; // 50 XP per discipline
+    setLastEarnedXp(consolationXp);
     const nextStandaloneXp = (typeof xp === 'number' ? xp : 1200) + consolationXp;
     setXp(nextStandaloneXp);
     try {
@@ -1756,6 +1759,7 @@ export default function App() {
     const scientistXp = 350 + (currentStageIdx + 1) * 50 + scientistPerkBonus;
     const cryptoXp = 350 + (currentStageIdx + 1) * 50;
     const totalXpGain = hackerXp + engineerXp + scientistXp + cryptoXp + comboBonus;
+    setLastEarnedXp(totalXpGain);
 
     // Update standalone xp state and persist to local storage for guests
     const nextStandaloneXp = (typeof xp === 'number' ? xp : 1200) + totalXpGain;
@@ -2222,17 +2226,39 @@ export default function App() {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={() => {
-                    setIsAuthModalOpen(true);
-                    heistAudio.playKeyClick();
-                  }}
-                  className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2 rounded-lg"
-                  title="Sign In with email or username and password"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In / Register</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <div className="relative flex items-center space-x-1.5 px-2.5 py-1.5 border-2 border-[#03140C] bg-[#0A261B] text-[#F0FDF4] font-mono text-xs rounded-lg shadow-[2px_2px_0px_#020C07]">
+                    <XPRing level={calculateLevel(xp)} xp={xp} size={24} />
+                    <span className="hidden sm:inline font-bold text-[#10B981]">{xp} XP</span>
+                    <AnimatePresence>
+                      {xpFlyout && (
+                        <motion.div
+                          key={xpFlyout.id}
+                          initial={{ opacity: 0, y: 10, scale: 0.6 }}
+                          animate={{ opacity: 1, y: -26, scale: 1.15 }}
+                          exit={{ opacity: 0, y: -45, scale: 0.8 }}
+                          transition={{ duration: 1.8, ease: "easeOut" }}
+                          className="absolute -top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none bg-[#FBBF24] text-[#02140D] font-black font-game text-[11px] px-2 py-0.5 rounded-full border-2 border-[#03140C] shadow-[0_4px_14px_rgba(251,191,36,0.6)] whitespace-nowrap flex items-center space-x-1"
+                        >
+                          <Sparkles className="w-3 h-3 text-[#02140D]" />
+                          <span>+{xpFlyout.amount} XP</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setIsAuthModalOpen(true);
+                      heistAudio.playKeyClick();
+                    }}
+                    className="bg-[#10B981] text-[#02140D] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 transition-all flex items-center space-x-2 rounded-lg"
+                    title="Sign In with email or username and password"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In / Register</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -4807,11 +4833,17 @@ export default function App() {
         stats={analyticsStats}
         stageData={currentStageData}
         solvedRoles={currentStageSolved}
+        currentUser={currentUser}
+        totalCareerXp={currentUser?.xp ?? xp ?? 1200}
         onOpenRoadmap={() => {
           setIsRoadmapModalOpen(true);
         }}
         onNextStage={() => {
           setAnalyticsModalOpen(false);
+          const amount = lastEarnedXp || 1600;
+          setXpFlyout({ amount, id: Date.now() });
+          setTimeout(() => setXpFlyout(null), 2800);
+          heistAudio.playSuccessChime();
           const nextIdx = (currentStageIdx + 1) % allStages.length;
           handleStartHeistStage(nextIdx);
         }}
@@ -4821,6 +4853,10 @@ export default function App() {
         }}
         onReturnToLobby={() => {
           setAnalyticsModalOpen(false);
+          const amount = lastEarnedXp || 1600;
+          setXpFlyout({ amount, id: Date.now() });
+          setTimeout(() => setXpFlyout(null), 2800);
+          heistAudio.playSuccessChime();
           setAlarmLevel('LOW_SECURITY');
           setAlarmFails(0);
           setHeistAttemptSeed('');

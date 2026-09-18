@@ -1076,6 +1076,10 @@ button, input, select, textarea {
   height: 0.875rem;
 }
 
+.h-32 {
+  height: 8rem;
+}
+
 .h-36 {
   height: 9rem;
 }
@@ -2484,6 +2488,11 @@ button, input, select, textarea {
   background-color: rgb(2 12 7 / var(--tw-bg-opacity, 1));
 }
 
+.bg-\[\#020D07\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(2 13 7 / var(--tw-bg-opacity, 1));
+}
+
 .bg-\[\#020E08\] {
   --tw-bg-opacity: 1;
   background-color: rgb(2 14 8 / var(--tw-bg-opacity, 1));
@@ -2666,6 +2675,11 @@ button, input, select, textarea {
 
 .bg-\[\#051C12\]\/90 {
   background-color: rgb(5 28 18 / 0.9);
+}
+
+.bg-\[\#051F14\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(5 31 20 / var(--tw-bg-opacity, 1));
 }
 
 .bg-\[\#052818\] {
@@ -3251,6 +3265,11 @@ button, input, select, textarea {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(10 56 36 / 0.85) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
+.via-\[\#34D399\] {
+  --tw-gradient-to: rgb(52 211 153 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #34D399 var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
 .via-amber-900\/90 {
   --tw-gradient-to: rgb(120 53 15 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(120 53 15 / 0.9) var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -3275,6 +3294,10 @@ button, input, select, textarea {
 
 .to-\[\#34D399\] {
   --tw-gradient-to: #34D399 var(--tw-gradient-to-position);
+}
+
+.to-\[\#FBBF24\] {
+  --tw-gradient-to: #FBBF24 var(--tw-gradient-to-position);
 }
 
 .to-emerald-950\/95 {
@@ -4258,6 +4281,12 @@ button, input, select, textarea {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0_0_12px_rgba\(251\2c 191\2c 36\2c 0\.4\)\] {
+  --tw-shadow: 0 0 12px rgba(251,191,36,0.4);
+  --tw-shadow-colored: 0 0 12px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-\[0_0_15px_rgba\(16\2c 185\2c 129\2c 0\.3\)\] {
   --tw-shadow: 0 0 15px rgba(16,185,129,0.3);
   --tw-shadow-colored: 0 0 15px var(--tw-shadow-color);
@@ -4278,6 +4307,12 @@ button, input, select, textarea {
 
 .shadow-\[0_0_20px_\#10B981\] {
   --tw-shadow: 0 0 20px #10B981;
+  --tw-shadow-colored: 0 0 20px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0_0_20px_rgba\(16\2c 185\2c 129\2c 0\.15\)\] {
+  --tw-shadow: 0 0 20px rgba(16,185,129,0.15);
   --tw-shadow-colored: 0 0 20px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
@@ -4601,6 +4636,11 @@ button, input, select, textarea {
 
 .blur {
   --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.blur-2xl {
+  --tw-blur: blur(40px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 

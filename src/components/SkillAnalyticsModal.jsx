@@ -2,35 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { 
   Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, 
   ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key,
-  MapPin, BookOpen, Lightbulb
+  MapPin, BookOpen, Lightbulb, Zap
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { heistAudio } from './HeistAudioEngine';
-
-/** Animates a number counting up from 0 to `value` over `duration` ms. */
-function useCountUp(value, duration = 900, startDelay = 0) {
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    let raf;
-    let startTime;
-    const timer = setTimeout(() => {
-      const step = (ts) => {
-        if (!startTime) startTime = ts;
-        const progress = Math.min(1, (ts - startTime) / duration);
-        setDisplay(Math.round(progress * value));
-        if (progress < 1) raf = requestAnimationFrame(step);
-      };
-      raf = requestAnimationFrame(step);
-    }, startDelay);
-
-    return () => {
-      clearTimeout(timer);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [value, duration, startDelay]);
-
-  return display;
-}
+import { calculateLevel, getLevelProgress } from '../utils/leveling';
 
 export default function SkillAnalyticsModal({ 
   isOpen, 
@@ -39,6 +15,8 @@ export default function SkillAnalyticsModal({
   stats, 
   stageData,
   solvedRoles = {},
+  currentUser,
+  totalCareerXp,
   onNextStage, 
   onRetry, 
   onReturnToLobby,
@@ -56,29 +34,92 @@ export default function SkillAnalyticsModal({
   const comboBonus = stats.comboBonus || 0;
   const totalXp = xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0) + comboBonus;
 
-  // Reveal each line item one at a time, like a loot box opening,
-  // instead of dumping every number on screen at once.
+  // Career Total XP and level progression math
+  const currentTotalXp = Number.isFinite(totalCareerXp) 
+    ? totalCareerXp 
+    : (currentUser?.xp ?? 1200);
+  const prevTotalXp = Math.max(0, currentTotalXp - totalXp);
+  const prevLevelInfo = getLevelProgress(prevTotalXp);
+  const newLevelInfo = getLevelProgress(currentTotalXp);
+
+  const [animatedGainedXp, setAnimatedGainedXp] = useState(0);
+  const [animatedTotalXp, setAnimatedTotalXp] = useState(prevTotalXp);
+  const [animatedProgress, setAnimatedProgress] = useState(prevLevelInfo.progress);
+  const [isLevelUp, setIsLevelUp] = useState(false);
+  const [flyoutActive, setFlyoutActive] = useState(false);
+
   useEffect(() => {
     if (!isOpen) {
       setRevealStep(0);
+      setAnimatedGainedXp(0);
+      setAnimatedTotalXp(prevTotalXp);
+      setAnimatedProgress(prevLevelInfo.progress);
+      setIsLevelUp(false);
+      setFlyoutActive(false);
       return;
     }
-    const totalSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1; // +1 for the total
+
+    const totalSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 2;
     let step = 0;
     const interval = setInterval(() => {
       step += 1;
       setRevealStep(step);
-      if (step >= totalSteps) clearInterval(interval);
-    }, 380);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
 
-  const totalDisplay = useCountUp(
-    isVictory || totalXp > 0 ? totalXp : 0,
-    1100,
-    (xpBreakdown.length + (comboBonus > 0 ? 1 : 0)) * 380
-  );
+      const totalXpStep = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1;
+      if (step === totalXpStep) {
+        // Animate Total XP Gained counting up
+        const startTime = performance.now();
+        const duration = 800;
+        let lastTick = 0;
+        const tickGained = (now) => {
+          const progress = Math.min(1, (now - startTime) / duration);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          setAnimatedGainedXp(Math.round(easeOut * totalXp));
+          if (now - lastTick > 90 && progress < 1) {
+            heistAudio.playKeyClick();
+            lastTick = now;
+          }
+          if (progress < 1) {
+            requestAnimationFrame(tickGained);
+          }
+        };
+        requestAnimationFrame(tickGained);
+      }
+
+      const careerStep = totalXpStep + 1;
+      if (step === careerStep) {
+        setFlyoutActive(true);
+        const startTime = performance.now();
+        const duration = 1200;
+        let lastTick = 0;
+        const tickCareer = (now) => {
+          const progress = Math.min(1, (now - startTime) / duration);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          const currentTotal = Math.round(prevTotalXp + easeOut * (currentTotalXp - prevTotalXp));
+          const currentProg = prevLevelInfo.progress + easeOut * (newLevelInfo.progress - prevLevelInfo.progress);
+          setAnimatedTotalXp(currentTotal);
+          setAnimatedProgress(currentProg);
+          if (now - lastTick > 80 && progress < 1) {
+            heistAudio.playKeyClick();
+            lastTick = now;
+          }
+          if (progress < 1) {
+            requestAnimationFrame(tickCareer);
+          } else {
+            if (newLevelInfo.level > prevLevelInfo.level) {
+              setIsLevelUp(true);
+              heistAudio.playSuccessChime();
+            }
+          }
+        };
+        requestAnimationFrame(tickCareer);
+      }
+
+      if (step >= totalSteps) clearInterval(interval);
+    }, 320);
+
+    return () => clearInterval(interval);
+  }, [isOpen, totalXp, currentTotalXp]);
 
   if (!isOpen) return null;
 
@@ -150,7 +191,7 @@ export default function SkillAnalyticsModal({
           <div className="bg-[#020B06] p-3 border border-emerald-900/60">
             <span className="text-[10px] font-mono text-emerald-400 uppercase">Total XP Gained</span>
             <p className="text-lg font-mono font-black text-[#FBBF24]">
-              {revealStep >= xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1 ? `+${totalDisplay}` : '???'}
+              {revealStep >= xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1 ? `+${animatedGainedXp}` : '???'}
             </p>
           </div>
         </div>
@@ -215,6 +256,89 @@ export default function SkillAnalyticsModal({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Career Total XP Progression & Level Progression */}
+        <div className="bg-[#020D07] border-2 border-[#10B981] p-4 sm:p-5 rounded-xl space-y-3 shadow-[0_0_20px_rgba(16,185,129,0.15)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#10B981]/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-900/60 pb-3">
+            <div className="flex items-center space-x-3">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt="Avatar" className="w-9 h-9 rounded-lg border-2 border-[#10B981] object-cover" />
+              ) : (
+                <div className="w-9 h-9 rounded-lg border-2 border-[#10B981] bg-[#051F14] flex items-center justify-center font-bold text-[#10B981] font-mono">
+                  OP
+                </div>
+              )}
+              <div>
+                <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block">
+                  Operative Career Progression
+                </span>
+                <span className="text-sm font-game font-black text-white">
+                  {currentUser?.callsign || currentUser?.username || 'Field Operative'}
+                </span>
+              </div>
+            </div>
+
+            {/* Level badge */}
+            <div className="flex items-center space-x-2">
+              <AnimatePresence>
+                {isLevelUp && (
+                  <motion.span 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[#FBBF24] text-[#02140D] text-[10px] font-black font-game px-2 py-0.5 rounded uppercase animate-bounce shadow-md"
+                  >
+                    🎉 LEVEL UP!
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              <div className="flex items-center space-x-1.5 bg-[#051F14] px-3 py-1 rounded-lg border border-emerald-800/80 font-mono text-xs">
+                <span className="text-slate-400">Level:</span>
+                <span className="text-[#FBBF24] font-black font-game text-sm">LVL {isLevelUp ? newLevelInfo.level : prevLevelInfo.level}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* XP Numbers: [Prev XP] + [Gained XP] ➔ [Total XP] */}
+          <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-slate-400">Total Career XP:</span>
+              <span className="text-[#10B981] font-black text-sm">
+                {animatedTotalXp.toLocaleString()} XP
+              </span>
+            </div>
+
+            {/* Flying XP Gain Badge */}
+            <AnimatePresence>
+              {flyoutActive && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                  className="flex items-center space-x-1 bg-[#FBBF24]/20 border border-[#FBBF24] px-2.5 py-0.5 rounded-full text-[#FBBF24] font-black font-game text-xs shadow-[0_0_12px_rgba(251,191,36,0.4)]"
+                >
+                  <Sparkles className="w-3 h-3 text-[#FBBF24]" />
+                  <span>+{totalXp} XP Added!</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Animated Progress Bar toward next level */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px] font-mono text-slate-400">
+              <span>XP to Level {(isLevelUp ? newLevelInfo.level : prevLevelInfo.level) + 1}</span>
+              <span className="text-emerald-300 font-bold">{Math.round(animatedProgress * 100)}%</span>
+            </div>
+            <div className="h-3 w-full bg-[#020B06] border border-emerald-900 rounded-full overflow-hidden p-0.5">
+              <div 
+                className="h-full bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#FBBF24] rounded-full transition-all duration-300 shadow-sm"
+                style={{ width: `${Math.min(100, Math.round(animatedProgress * 100))}%` }}
+              />
+            </div>
           </div>
         </div>
 

@@ -347,7 +347,6 @@ export default function SquadRecruitmentBoard({
               onClick={() => {
                 refreshSquads();
                 heistAudio.playKeyClick();
-                toast.success("Recruitment board updated!");
               }}
               className="p-2.5 bg-[#020B06] text-slate-400 hover:text-[#10B981] border border-emerald-900/80 rounded-xl transition-all flex items-center space-x-1.5 font-mono text-xs"
               title="Refresh active squad listings"

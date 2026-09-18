@@ -787,7 +787,6 @@ export default function App() {
     // Live Heist Events
     const handleHeistStarted = (data) => {
       setIsLaunchingCountdown(false);
-      toast.success("🚀 Squad launch confirmed! Entering live cockpit.");
       
       const currentLobby = data?.lobby || lobby;
       const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
@@ -1292,7 +1291,6 @@ export default function App() {
         toast.error(res.error);
         return;
       }
-      toast.info('🚀 Launch sequence initiated! Synchronizing squad...');
     });
   };
 
@@ -1407,7 +1405,6 @@ export default function App() {
     enterHeistFullscreen();
     heistAudio.startTensionBeat('LOW_SECURITY');
     heistAudio.playRadioSquelch();
-    toast.success(`🚀 ${stage.title} ENGAGED! Specialist cockpit assigned: ${chosenRole.toUpperCase()}`);
 
     // Save active heist session for recovery if page is refreshed
     const sessionRoomCode = lobby?.code || lobby?.roomCode;
@@ -1445,7 +1442,6 @@ export default function App() {
     enterHeistFullscreen();
     heistAudio.startTensionBeat('LOW_SECURITY');
     heistAudio.playRadioSquelch();
-    toast.success(`🚀 CUSTOM HEIST ENGAGED: ${customStage.title}!`);
 
     // Save active heist session for custom heist recovery
     const customSessionCode = lobby?.code || lobby?.roomCode;
@@ -1519,9 +1515,6 @@ export default function App() {
     setComboStreak(prev => {
       const next = prev + 1;
       setMaxCombo(m => Math.max(m, next));
-      if (next >= 2) {
-        toast.success(`🔥 ${next}x COMBO!`, { duration: 1500 });
-      }
       return next;
     });
 
@@ -2629,7 +2622,6 @@ export default function App() {
                   <button
                     onClick={() => {
                       handleStartHeistStage(currentStageIdx);
-                      toast.info(`🔄 Stage restarted! Timer reset.`);
                     }}
                     className="p-2 rounded-lg border border-emerald-900/60 bg-[#020B06] text-[#FBBF24] hover:bg-[#10B981] hover:text-[#02140D] transition-colors"
                     title="Restart Stage"

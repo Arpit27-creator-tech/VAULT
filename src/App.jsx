@@ -201,11 +201,29 @@ export default function App() {
   ]);
   const lobbyChatEndRef = useRef(null);
 
+  // Radio Comms UX: Unread message badge & auto-scroll tracking
+  const [unreadRadioCount, setUnreadRadioCount] = useState(0);
+  const [xpFlyout, setXpFlyout] = useState(null);
+
   useEffect(() => {
     if (activeTab === 'lobby') {
       lobbyChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [radioMessages, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'liveheist') {
+      setUnreadRadioCount(prev => prev + 1);
+    } else {
+      setUnreadRadioCount(0);
+    }
+  }, [radioMessages.length]);
+
+  useEffect(() => {
+    if (activeTab === 'lobby') {
+      setUnreadRadioCount(0);
+    }
+  }, [activeTab]);
 
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
   const [isMatchVictory, setIsMatchVictory] = useState(true);
@@ -1179,7 +1197,7 @@ export default function App() {
     navigator.clipboard.writeText(link).then(() => {
       setCopiedLink(true);
       toast.success('🔗 Invite link copied to clipboard!');
-      setTimeout(() => setCopiedLink(false), 2500);
+      setTimeout(() => setCopiedLink(false), 2000);
     });
   };
 
@@ -1192,7 +1210,7 @@ export default function App() {
     navigator.clipboard.writeText(code).then(() => {
       setCopiedCode(true);
       toast.success(`📋 Room code ${code} copied!`);
-      setTimeout(() => setCopiedCode(false), 2500);
+      setTimeout(() => setCopiedCode(false), 2000);
     });
   };
 
@@ -1652,8 +1670,15 @@ export default function App() {
     const xpReward = 500 + (currentStageIdx + 1) * 250;
     const comboBonus = maxCombo >= 2 ? maxCombo * 25 : 0;
     const scientistPerkBonus = (activeCockpitRole === 'scientist' && (currentUser?.unlockedPerks || []).includes('scientist_steady_hands')) ? 50 : 0;
-    setXp(prev => prev + xpReward + comboBonus + scientistPerkBonus);
+    const totalXpGain = xpReward + comboBonus + scientistPerkBonus;
+    setXp(prev => prev + totalXpGain);
     setStreak(prev => prev + 1);
+
+    // XP flyout animation into the top-bar ring
+    setXpFlyout({ amount: totalXpGain, id: Date.now() });
+    setTimeout(() => {
+      setXpFlyout(null);
+    }, 2800);
 
     setIsMatchVictory(true);
     setAnalyticsStats({
@@ -1959,6 +1984,23 @@ export default function App() {
                 </button>
               )}
 
+              {/* Prominent Top Bar Sound Toggle */}
+              <button
+                onClick={() => {
+                  setSoundEnabled(prev => !prev);
+                  heistAudio.playKeyClick();
+                }}
+                className={`p-1.5 sm:p-2 rounded-lg border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] transition-all flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 ${
+                  soundEnabled
+                    ? 'bg-[#0A2D1F] text-[#34D399] hover:bg-[#10B981] hover:text-[#02140D]'
+                    : 'bg-red-950/80 text-red-400 border-red-800 hover:bg-red-900/80'
+                }`}
+                title={soundEnabled ? "Sound FX Enabled (Click to Mute)" : "Sound FX Muted (Click to Unmute)"}
+                aria-label="Sound Toggle"
+              >
+                {soundEnabled ? <Volume2 className="w-4 h-4 stroke-[2.5]" /> : <VolumeX className="w-4 h-4 stroke-[2.5]" />}
+              </button>
+
               {currentUser ? (
                 <div className="flex items-center space-x-2">
                   <button
@@ -1966,7 +2008,7 @@ export default function App() {
                       navigateToTab('stats');
                       heistAudio.playKeyClick();
                     }}
-                    className={`flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 border-2 border-[#03140C] font-mono shadow-[2px_2px_0px_#020C07] transition-all rounded-lg ${
+                    className={`relative flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 border-2 border-[#03140C] font-mono shadow-[2px_2px_0px_#020C07] transition-all rounded-lg ${
                       activeTab === 'stats' 
                         ? 'bg-[#10B981] text-[#02140D] shadow-[2px_2px_0px_#FBBF24]' 
                         : 'bg-[#0A261B] text-[#F0FDF4] hover:bg-[#10B981]/20'
@@ -1978,7 +2020,24 @@ export default function App() {
                       alt={currentUser.callsign} 
                       className="w-5 h-5 object-cover border border-[#03140C] rounded flex-shrink-0" 
                     />
-                    <XPRing level={currentUser.level} xp={currentUser.xp} size={26} />
+                    <div className="relative">
+                      <XPRing level={currentUser.level} xp={currentUser.xp} size={26} />
+                      <AnimatePresence>
+                        {xpFlyout && (
+                          <motion.div
+                            key={xpFlyout.id}
+                            initial={{ opacity: 0, y: 10, scale: 0.6 }}
+                            animate={{ opacity: 1, y: -26, scale: 1.15 }}
+                            exit={{ opacity: 0, y: -45, scale: 0.8 }}
+                            transition={{ duration: 1.8, ease: "easeOut" }}
+                            className="absolute -top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none bg-[#FBBF24] text-[#02140D] font-black font-game text-[11px] px-2 py-0.5 rounded-full border-2 border-[#03140C] shadow-[0_4px_14px_rgba(251,191,36,0.6)] whitespace-nowrap flex items-center space-x-1"
+                          >
+                            <Sparkles className="w-3 h-3 text-[#02140D]" />
+                            <span>+{xpFlyout.amount} XP</span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     <div className="text-left hidden md:block leading-tight">
                       <span className="text-[11px] font-black uppercase block truncate max-w-[90px]">{currentUser.callsign}</span>
                     </div>
@@ -2456,6 +2515,27 @@ export default function App() {
                 </div>
               )}
 
+              {/* Floating radio notification badge during heist */}
+              <AnimatePresence>
+                {unreadRadioCount > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                    onClick={() => {
+                      document.getElementById('heist-radio-section')?.scrollIntoView({ behavior: 'smooth' });
+                      setUnreadRadioCount(0);
+                      heistAudio.playRadioSquelch();
+                    }}
+                    className="fixed bottom-6 right-6 z-50 bg-[#10B981] text-[#02140D] font-mono font-black text-xs px-4 py-2.5 rounded-full border-2 border-[#03140C] shadow-[0_4px_25px_rgba(16,185,129,0.5)] flex items-center space-x-2.5 uppercase hover:bg-[#34D399] active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Radio className="w-4 h-4 animate-pulse text-[#02140D]" />
+                    <span>{unreadRadioCount} New Transmission{unreadRadioCount > 1 ? 's' : ''}</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+
               <div className="bg-[#051C12] border border-emerald-800/40 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
@@ -2787,7 +2867,7 @@ export default function App() {
                   })()}
                 </div>
 
-                <div className="lg:col-span-4 space-y-4">
+                <div id="heist-radio-section" className="lg:col-span-4 space-y-4" onClick={() => setUnreadRadioCount(0)}>
                   <RadioComms
                     messages={radioMessages}
                     activeRole={activeCockpitRole}
@@ -2799,6 +2879,7 @@ export default function App() {
                     onToggleMic={handleToggleMic}
                     onToggleDeafen={handleToggleDeafen}
                     isSpeaking={isUserSpeaking}
+                    unreadCount={unreadRadioCount}
                   />
 
                   <div className="bg-[#051C12] p-4 rounded-xl border border-emerald-800/40 space-y-2.5 shadow-md">
@@ -2997,24 +3078,44 @@ export default function App() {
                   {/* Room Actions & Launch Button */}
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* Room Code with 1-click copy */}
-                    <div className="bg-[#020B06] px-3.5 py-2 rounded-xl border border-emerald-800/60 flex items-center space-x-2">
+                    {/* Room Code with 1-click copy and 2s subtle green flash */}
+                    <div className={`px-3.5 py-2 rounded-xl border flex items-center space-x-2 transition-all duration-300 ${
+                      copiedCode || copiedLink
+                        ? 'bg-emerald-950/90 border-emerald-400 ring-2 ring-emerald-500/50 shadow-[0_0_16px_rgba(16,185,129,0.35)]'
+                        : 'bg-[#020B06] border-emerald-800/60'
+                    }`}>
                       <div>
-                        <span className="text-[9px] font-mono text-emerald-400 block uppercase font-bold">Room Code</span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[9px] font-mono text-emerald-400 block uppercase font-bold">Room Code</span>
+                          {(copiedCode || copiedLink) && (
+                            <span className="text-[9px] font-mono font-black text-emerald-300 bg-emerald-900/60 px-1 rounded animate-pulse">
+                              COPIED!
+                            </span>
+                          )}
+                        </div>
                         <span className="text-base sm:text-lg font-mono font-bold text-[#FBBF24] tracking-widest">{lobby?.code || 'HEIST-782'}</span>
                       </div>
                       <button
                         onClick={handleCopyRoomCode}
-                        className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 hover:text-white hover:bg-emerald-800 transition-all"
+                        className={`p-1.5 rounded-lg transition-all ${
+                          copiedCode 
+                            ? 'bg-emerald-500 text-[#02140D] font-bold shadow-md' 
+                            : 'bg-emerald-950/80 text-emerald-300 hover:text-white hover:bg-emerald-800'
+                        }`}
                         title="Copy Room Code"
                       >
-                        {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                        {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={handleCopyInviteLink}
-                        className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 hover:text-white hover:bg-emerald-800 transition-all"
+                        className={`p-1.5 rounded-lg transition-all ${
+                          copiedLink 
+                            ? 'bg-emerald-500 text-[#02140D] font-bold shadow-md' 
+                            : 'bg-emerald-950/80 text-emerald-300 hover:text-white hover:bg-emerald-800'
+                        }`}
                         title="Copy Invite Link"
                       >
-                        {copiedLink ? <Check className="w-4 h-4 text-[#10B981]" /> : <Share2 className="w-4 h-4" />}
+                        {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                       </button>
                     </div>
 

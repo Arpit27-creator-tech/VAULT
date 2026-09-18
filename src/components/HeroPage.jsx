@@ -4,7 +4,7 @@ import {
   Play, ShieldAlert, CheckCircle2, Award, Clock, ArrowRight, Radio,
   Trees, Volume2, Plus, FlaskConical, Key, Star, Layers, Activity,
   Cpu, Flame, Eye, Lock, Unlock, HelpCircle, ChevronRight, LogIn,
-  Trophy, Globe, Crown, Medal
+  Trophy, Globe, Crown, Medal, RefreshCw
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 import { toast } from 'sonner';
@@ -32,23 +32,30 @@ export default function HeroPage({
   const [leaderboardFilter, setLeaderboardFilter] = useState('ALL');
   const [realLeaderboard, setRealLeaderboard] = useState([]);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+  const [isRetryingLeaderboard, setIsRetryingLeaderboard] = useState(false);
+
+  const fetchLeaderboard = async (isManualRetry = false) => {
+    if (isManualRetry) setIsRetryingLeaderboard(true);
+    else setIsLoadingLeaderboard(true);
+    try {
+      const data = await leaderboardAPI.getGlobal(100);
+      if (data?.leaderboard && Array.isArray(data.leaderboard)) {
+        setRealLeaderboard(data.leaderboard);
+        if (isManualRetry) toast.success("📡 Global Leaderboard Synced!");
+      } else {
+        if (isManualRetry) toast.error("Could not reach syndicate mainframe.");
+      }
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+      if (isManualRetry) toast.error("Network synchronization failed.");
+    } finally {
+      setIsLoadingLeaderboard(false);
+      setIsRetryingLeaderboard(false);
+    }
+  };
 
   React.useEffect(() => {
-    let mounted = true;
-    const fetchLeaderboard = async () => {
-      try {
-        const data = await leaderboardAPI.getGlobal(100);
-        if (mounted && data?.leaderboard) {
-          setRealLeaderboard(data.leaderboard);
-        }
-      } catch (err) {
-        console.error('Failed to fetch leaderboard:', err);
-      } finally {
-        if (mounted) setIsLoadingLeaderboard(false);
-      }
-    };
     fetchLeaderboard();
-    return () => { mounted = false; };
   }, []); 
 
   const [liveTransmissions] = useState([
@@ -358,9 +365,69 @@ export default function HeroPage({
         {true && (
           <div className="space-y-2.5 relative z-10">
             {isLoadingLeaderboard ? (
-              <div className="text-center text-slate-400 py-10 font-mono text-sm">Loading Leaderboard...</div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map(idx => (
+                  <div 
+                    key={idx}
+                    className="p-4 rounded-xl border border-emerald-900/40 bg-[#041C13]/40 flex items-center justify-between animate-pulse"
+                  >
+                    <div className="flex items-center space-x-3.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-800/40" />
+                      <div className="w-10 h-10 rounded-full bg-emerald-950/80 border border-emerald-800/40" />
+                      <div className="space-y-1.5">
+                        <div className="w-32 h-3.5 bg-emerald-900/40 rounded" />
+                        <div className="w-20 h-2.5 bg-emerald-950/60 rounded" />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="w-24 h-4 bg-emerald-900/40 rounded hidden md:block" />
+                      <div className="w-16 h-5 bg-emerald-900/50 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : filteredLeaderboard.length === 0 ? (
-              <div className="text-center text-slate-400 py-10 font-mono text-sm">No operatives found in this category.</div>
+              <div className="bg-[#041C13]/40 border-2 border-dashed border-emerald-900/60 rounded-2xl p-8 sm:p-10 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center mx-auto text-emerald-400 shadow-inner">
+                  <ShieldAlert className="w-7 h-7 text-emerald-400" />
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base sm:text-lg font-bold uppercase text-white font-game">
+                    {realLeaderboard.length === 0 ? "Global Syndicate Mesh Offline" : "No Operatives In This Category"}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-400 leading-relaxed">
+                    {realLeaderboard.length === 0 
+                      ? "Unable to sync operative rankings with the central syndicate mainframe. The mesh may be undergoing silent rotation or standing by."
+                      : `No operatives currently rank under ${leaderboardFilter}. Try checking All Specialists or launch a heist to claim the #1 slot!`
+                    }
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                  {realLeaderboard.length === 0 ? (
+                    <button
+                      onClick={() => {
+                        fetchLeaderboard(true);
+                        heistAudio.playKeyClick();
+                      }}
+                      disabled={isRetryingLeaderboard}
+                      className="bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 font-game uppercase shadow-md active:scale-95 disabled:opacity-60"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRetryingLeaderboard ? 'animate-spin' : ''}`} />
+                      <span>{isRetryingLeaderboard ? 'Scanning Radar...' : 'Re-Scan Radar'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setLeaderboardFilter('ALL');
+                        heistAudio.playKeyClick();
+                      }}
+                      className="bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-bold text-xs px-4 py-2 rounded-xl transition-all font-game uppercase shadow-md active:scale-95"
+                    >
+                      Show All Specialists
+                    </button>
+                  )}
+                </div>
+              </div>
             ) : filteredLeaderboard.map(player => {
               const pos = player.position;
               const isTop3 = pos <= 3;

@@ -12,7 +12,8 @@ export default function RadioComms({
   onToggleVoice,
   onToggleMic,
   onToggleDeafen,
-  isSpeaking = false
+  isSpeaking = false,
+  unreadCount = 0
 }) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
@@ -44,6 +45,11 @@ export default function RadioComms({
           <span className="font-bold text-xs uppercase tracking-wider text-slate-200">
             Squad Radio Stream
           </span>
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
+              +{unreadCount}
+            </span>
+          )}
         </div>
 
         {/* Live Voice Comms Bar */}

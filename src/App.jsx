@@ -8,7 +8,7 @@ import {
   Video, VideoOff, Eye, Sliders, Sun, Trees, Flower2, Leaf, FlaskConical, Key, Activity, Send, ArrowRight, Plus,
   Menu, X, PanelLeftClose, PanelLeftOpen, ArrowLeft, ChevronDown, LogOut, Home, BarChart3, User, UserCheck, LogIn,
   Mic, MicOff, Headphones, PhoneCall, PhoneOff, Copy, Check, Share2, Globe, Shield, RefreshCw as RefreshIcon,
-  Settings, KeyRound, Bell
+  Settings, KeyRound, Bell, RotateCcw
 } from 'lucide-react';
 import bgVideo from './assets/backgroundnew.mp4';
 import { 
@@ -43,7 +43,7 @@ import StatsDashboard from './components/StatsDashboard';
 import GraphicalRoadmap from './components/GraphicalRoadmap';
 import OperativeDirectoryModal from './components/OperativeDirectoryModal';
 import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
-import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
+import OnboardingTour, { shouldShowTour, resetTour } from './components/OnboardingTour';
 import SoloTrainingModal from './components/SoloTrainingModal';
 import { generateRemediationPlan } from './data/remediationData';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
@@ -4487,24 +4487,39 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Mission Briefing Tutorial */}
+              {/* Replay Tutorial Option */}
               <div className="forest-card p-5 space-y-3">
-                <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Mission Briefing Tutorial</span>
-                </h3>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <span className="text-sm text-emerald-200">Replay the interactive spotlight tour explaining the 4 specialist roles, interdependence puzzle relays, and game mechanics.</span>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#FBBF24] flex items-center space-x-2">
+                    <RotateCcw className="w-4 h-4 text-[#10B981]" />
+                    <span>Replay Tutorial</span>
+                  </h3>
+                  <span className="bg-[#10B981]/20 text-[#6EE7B7] text-[10px] font-mono font-bold px-2 py-0.5 border border-emerald-500/30 uppercase">
+                    Briefing Tour
+                  </span>
+                </div>
+                <p className="text-sm text-emerald-200/90 leading-relaxed">
+                  Restart the interactive 7-step onboarding tutorial. Walks through the 4 specialist roles, interdependence puzzle relays, HUD controls, and game modes.
+                </p>
+                <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="text-xs text-slate-400 font-mono">
+                    Takes ~60 seconds &bull; Can be skipped anytime
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
+                      resetTour();
                       setActiveTab('home');
-                      setShowTour(true);
+                      setTimeout(() => {
+                        setShowTour(true);
+                      }, 200);
                       heistAudio.playKeyClick();
+                      toast.info("🎯 Launching Mission Briefing Tutorial...");
                     }}
-                    className="bg-[#10B981] text-[#02140D] font-mono font-black text-xs px-4 py-2 border-2 border-[#03140C] shadow-[2px_2px_0px_#020C07] hover:bg-[#34D399] uppercase transition-all whitespace-nowrap self-start sm:self-auto"
+                    className="bg-[#10B981] text-[#02140D] font-mono font-black text-xs px-5 py-2.5 border-[2.5px] border-[#03140C] shadow-[3px_3px_0px_#020C07] hover:bg-[#34D399] active:translate-x-0.5 active:translate-y-0.5 uppercase transition-all flex items-center space-x-2 rounded whitespace-nowrap self-start sm:self-auto"
                   >
-                    Start Tutorial
+                    <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Replay Tutorial</span>
                   </button>
                 </div>
               </div>

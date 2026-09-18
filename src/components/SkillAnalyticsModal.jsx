@@ -32,13 +32,17 @@ export default function SkillAnalyticsModal({
   ];
 
   const comboBonus = stats.comboBonus || 0;
-  const totalXp = xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0) + comboBonus;
+  const totalXp = stats.totalXpGain || (xpBreakdown.reduce((acc, curr) => acc + curr.xp, 0) + comboBonus);
 
-  // Career Total XP and level progression math
-  const currentTotalXp = Number.isFinite(totalCareerXp) 
-    ? totalCareerXp 
-    : (currentUser?.xp ?? 1200);
-  const prevTotalXp = Math.max(0, currentTotalXp - totalXp);
+  // Career Total XP and level progression math — prioritize explicit stats from heist completion
+  const currentTotalXp = Number.isFinite(stats.newTotalXp)
+    ? stats.newTotalXp
+    : (Number.isFinite(totalCareerXp) ? totalCareerXp : (currentUser?.xp ?? 1200));
+
+  const prevTotalXp = Number.isFinite(stats.prevTotalXp)
+    ? stats.prevTotalXp
+    : Math.max(0, currentTotalXp - totalXp);
+
   const prevLevelInfo = getLevelProgress(prevTotalXp);
   const newLevelInfo = getLevelProgress(currentTotalXp);
 
@@ -59,51 +63,59 @@ export default function SkillAnalyticsModal({
       return;
     }
 
-    const totalSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 2;
+    // Always reset on open so the animation starts fresh from previous XP
+    setRevealStep(0);
+    setAnimatedGainedXp(0);
+    setAnimatedTotalXp(prevTotalXp);
+    setAnimatedProgress(prevLevelInfo.progress);
+    setIsLevelUp(false);
+    setFlyoutActive(false);
+
+    // Promptly reveal cards: 150ms per role card
+    const roleSteps = xpBreakdown.length + (comboBonus > 0 ? 1 : 0);
     let step = 0;
     const interval = setInterval(() => {
       step += 1;
       setRevealStep(step);
 
-      const totalXpStep = xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1;
-      if (step === totalXpStep) {
-        // Animate Total XP Gained counting up
-        const startTime = performance.now();
-        const duration = 800;
-        let lastTick = 0;
+      // Start gained XP count-up as soon as the total box is shown (step 1)
+      if (step === 1) {
+        const startGained = performance.now();
+        const durationGained = 900;
+        let lastTickGained = 0;
         const tickGained = (now) => {
-          const progress = Math.min(1, (now - startTime) / duration);
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-          setAnimatedGainedXp(Math.round(easeOut * totalXp));
-          if (now - lastTick > 90 && progress < 1) {
+          const prog = Math.min(1, (now - startGained) / durationGained);
+          const ease = 1 - Math.pow(1 - prog, 3);
+          setAnimatedGainedXp(Math.round(ease * totalXp));
+          if (now - lastTickGained > 80 && prog < 1) {
             heistAudio.playKeyClick();
-            lastTick = now;
+            lastTickGained = now;
           }
-          if (progress < 1) {
+          if (prog < 1) {
             requestAnimationFrame(tickGained);
           }
         };
         requestAnimationFrame(tickGained);
       }
 
-      const careerStep = totalXpStep + 1;
-      if (step === careerStep) {
+      // Start Career XP and level progression animation at step 2
+      if (step === 2) {
         setFlyoutActive(true);
-        const startTime = performance.now();
-        const duration = 1200;
-        let lastTick = 0;
+        const startCareer = performance.now();
+        const durationCareer = 1400;
+        let lastTickCareer = 0;
         const tickCareer = (now) => {
-          const progress = Math.min(1, (now - startTime) / duration);
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-          const currentTotal = Math.round(prevTotalXp + easeOut * (currentTotalXp - prevTotalXp));
-          const currentProg = prevLevelInfo.progress + easeOut * (newLevelInfo.progress - prevLevelInfo.progress);
+          const prog = Math.min(1, (now - startCareer) / durationCareer);
+          const ease = 1 - Math.pow(1 - prog, 3);
+          const currentTotal = Math.round(prevTotalXp + ease * (currentTotalXp - prevTotalXp));
+          const currentProg = prevLevelInfo.progress + ease * (newLevelInfo.progress - prevLevelInfo.progress);
           setAnimatedTotalXp(currentTotal);
           setAnimatedProgress(currentProg);
-          if (now - lastTick > 80 && progress < 1) {
+          if (now - lastTickCareer > 75 && prog < 1) {
             heistAudio.playKeyClick();
-            lastTick = now;
+            lastTickCareer = now;
           }
-          if (progress < 1) {
+          if (prog < 1) {
             requestAnimationFrame(tickCareer);
           } else {
             if (newLevelInfo.level > prevLevelInfo.level) {
@@ -115,11 +127,11 @@ export default function SkillAnalyticsModal({
         requestAnimationFrame(tickCareer);
       }
 
-      if (step >= totalSteps) clearInterval(interval);
-    }, 320);
+      if (step >= roleSteps + 2) clearInterval(interval);
+    }, 180);
 
     return () => clearInterval(interval);
-  }, [isOpen, totalXp, currentTotalXp]);
+  }, [isOpen, totalXp, currentTotalXp, prevTotalXp]);
 
   if (!isOpen) return null;
 

@@ -1638,7 +1638,39 @@ export default function App() {
     };
     setRadioMessages(prev => [...prev, newMsg]);
 
-    toast.success(`🔓 ${role.toUpperCase()} LOCK BYPASSED! Clue dispatched.`);
+    // Role-specific XP reward and immediate animation
+    const isAlreadySolved = !!(stageSolvedRoles[stageId] && stageSolvedRoles[stageId][role]);
+    const baseRoleXp = 350 + (currentStageIdx + 1) * 50;
+    const scientistPerk = (role === 'scientist' && timeLeft > 120) ? 100 : 0;
+    const earnedRoleXp = baseRoleXp + scientistPerk;
+
+    if (!isAlreadySolved) {
+      setLastEarnedXp(earnedRoleXp);
+      setXpFlyout({ amount: earnedRoleXp, id: Date.now() });
+      setTimeout(() => setXpFlyout(null), 2800);
+      heistAudio.playSuccessChime();
+
+      setXp(prev => {
+        const next = (typeof prev === 'number' ? prev : 1200) + earnedRoleXp;
+        try { localStorage.setItem('kh_xp_sylvan', next.toString()); } catch {}
+        return next;
+      });
+
+      if (currentUser) {
+        const updatedXp = (currentUser.xp || 0) + earnedRoleXp;
+        const updatedLevel = calculateLevel(updatedXp);
+        const optimisticUser = {
+          ...currentUser,
+          xp: updatedXp,
+          level: updatedLevel
+        };
+        setCurrentUser(optimisticUser);
+        try { localStorage.setItem('vault_current_user', JSON.stringify(optimisticUser)); } catch {}
+        window.dispatchEvent(new CustomEvent('vault:user-updated', { detail: optimisticUser }));
+      }
+    }
+
+    toast.success(`🔓 ${role.toUpperCase()} LOCK BYPASSED! +${earnedRoleXp} XP EARNED!`);
 
     try {
       heistSocket.puzzleSolved(lobby.code, role, clue, solverName);
@@ -1838,6 +1870,9 @@ export default function App() {
       });
     }
 
+    const prevTotal = (currentUser?.xp ?? xp ?? 1200);
+    const newTotal = prevTotal + totalXpGain;
+
     setIsMatchVictory(true);
     setAnalyticsStats({
       hackerXp,
@@ -1848,7 +1883,10 @@ export default function App() {
       accuracy: alarmFails === 0 ? "100%" : `${Math.max(65, 100 - alarmFails * 8)}%`,
       alarmsTripped: alarmFails,
       comboBonus,
-      maxCombo
+      maxCombo,
+      totalXpGain,
+      prevTotalXp: prevTotal,
+      newTotalXp: newTotal
     });
     setAnalyticsModalOpen(true);
   };

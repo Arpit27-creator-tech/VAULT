@@ -183,12 +183,18 @@ export default function HackerTerminal({ puzzle, onSolved, onFail, isSolved }) {
       </div>
 
       <div className="flex justify-between items-center pt-2">
-        <div className="text-xs">
+        <div className="flex items-center space-x-3 text-xs">
           {isSolved ? (
-            <span className="flex items-center space-x-1.5 text-[#10B981] font-black">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>FIREWALL BYPASSED & PAYLOAD EXTRACTED</span>
-            </span>
+            <>
+              <span className="flex items-center space-x-1.5 text-[#10B981] font-black">
+                <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                <span>FIREWALL BYPASSED</span>
+              </span>
+              <span className="inline-flex items-center space-x-1 bg-[#FBBF24]/20 border border-[#FBBF24] text-[#FBBF24] font-game font-black text-xs px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.3)] animate-pulse">
+                <Sparkles className="w-3 h-3 text-[#FBBF24]" />
+                <span>+400 XP GAINED</span>
+              </span>
+            </>
           ) : (
             <span className="text-slate-400 text-xs font-mono">Ready to inject payload</span>
           )}

@@ -162,12 +162,18 @@ export default function CryptographerDeck({ puzzle, onSolved, onFail, isSolved }
         </div>
 
         <div className="flex justify-between items-center pt-2">
-          <div>
+          <div className="flex items-center space-x-3">
             {isSolved ? (
-              <span className="flex items-center space-x-1.5 text-[#10B981] font-black text-xs font-mono">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>CIPHER DECRYPTED & PASSCODE BROADCASTED</span>
-              </span>
+              <>
+                <span className="flex items-center space-x-1.5 text-[#10B981] font-black text-xs font-mono">
+                  <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                  <span>CIPHER DECRYPTED</span>
+                </span>
+                <span className="inline-flex items-center space-x-1 bg-[#FBBF24]/20 border border-[#FBBF24] text-[#FBBF24] font-game font-black text-xs px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.3)] animate-pulse">
+                  <Sparkles className="w-3 h-3 text-[#FBBF24]" />
+                  <span>+400 XP GAINED</span>
+                </span>
+              </>
             ) : (
               <span className="text-xs font-mono text-emerald-300">
                 {isFreqLocked ? "Frequency locked. Verify translation." : "Match radio frequency first."}

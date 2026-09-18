@@ -45,6 +45,7 @@ import OperativeDirectoryModal from './components/OperativeDirectoryModal';
 import SquadRecruitmentBoard from './components/SquadRecruitmentBoard';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import SoloTrainingModal from './components/SoloTrainingModal';
+import { generateRemediationPlan } from './data/remediationData';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
 import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
 
@@ -192,6 +193,8 @@ export default function App() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  // Tracks how many times each role has failed a puzzle this stage (for micro-hint threshold)
+  const [roleFailCounts, setRoleFailCounts] = useState({});
   const [radioMessages, setRadioMessages] = useState([
     { sender: "Sylvan HQ", role: "hq", text: "Expedition crew deployed. Interlock sequence initialized. Coordinate all 4 roles!", time: "00:01" },
     { sender: "Scientist Cleo", role: "scientist", text: "Analyzing compound stoichiometry now. Will transmit optical density to Engineer.", time: "00:04" }
@@ -1332,6 +1335,7 @@ export default function App() {
     // ── Reset all per-heist state so the previous run's data is never visible ──
     setStageSolvedRoles({ 1: {}, 2: {}, 3: {}, 99: {} });
     setStageRoleClues({ 1: {}, 2: {}, 3: {}, 99: {} });
+    setRoleFailCounts({});
     setRadioMessages([
       { sender: "Sylvan HQ", role: "hq", text: "Expedition crew deployed. Interlock sequence initialized. Coordinate all 4 roles!", time: "00:01" },
       { sender: "Scientist Cleo", role: "scientist", text: "Analyzing compound stoichiometry now. Will transmit optical density to Engineer.", time: "00:04" }
@@ -1496,6 +1500,10 @@ export default function App() {
     setComboStreak(0);
     setTimeLeft(prev => Math.max(5, prev - 12));
 
+    // Track per-role fail count so we can surface micro-hints on 2nd+ failure
+    const newRoleFailCount = (roleFailCounts[role] || 0) + 1;
+    setRoleFailCounts(prev => ({ ...prev, [role]: newRoleFailCount }));
+
     // Engineer's "Reinforced Rig" perk forgives their own first alarm trip
     // this heist — the wrong answer still costs time (above), but doesn't
     // count toward the alarm total or escalate the lockdown level.
@@ -1518,6 +1526,31 @@ export default function App() {
         heistAudio.startTensionBeat('MEDIUM_ALERT');
       }
       setAlarmLevel(nextAlert);
+    }
+
+    // ── Micro-hint flash on 2nd+ failure for this role ──────────────────────
+    // Pull the first core concept for this role from remediationData and
+    // surface its keyTakeaway as a brief educational toast.
+    if (newRoleFailCount >= 2) {
+      try {
+        const plan = generateRemediationPlan([role]);
+        const roleConcepts = plan?.find?.(p => p.role === role)?.concepts
+          || plan?.[0]?.concepts
+          || [];
+        const firstConcept = roleConcepts[0];
+        if (firstConcept?.keyTakeaway) {
+          const hintLabel = {
+            hacker: '💻 Hacker Hint',
+            engineer: '⚙️ Engineer Hint',
+            scientist: '🧪 Scientist Hint',
+            cryptographer: '📜 Cryptographer Hint',
+          }[role] || '💡 Hint';
+          toast(
+            `${hintLabel}: ${firstConcept.title} — ${firstConcept.keyTakeaway}`,
+            { duration: 5000, icon: '🔍' }
+          );
+        }
+      } catch (_) { /* remediation data unavailable */ }
     }
 
     const failerName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'Specialist';
@@ -2337,15 +2370,21 @@ export default function App() {
 
                 <div className="flex flex-wrap items-center gap-2.5 font-mono text-xs self-stretch lg:self-auto justify-between lg:justify-end">
                   
-                  <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 ${
-                    timeLeft <= 30 
-                      ? 'bg-red-950/80 border-red-500 text-red-200 animate-pulse' 
+                <div className={`px-3 py-2 rounded-lg border text-center flex items-center space-x-2 transition-all duration-500 ${
+                    timeLeft <= 30
+                      ? 'bg-red-950/80 border-red-500 text-red-200 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]'
+                      : timeLeft <= 60
+                      ? 'bg-amber-950/80 border-amber-400 text-amber-200'
                       : 'bg-[#020B06] border-emerald-900/60 text-[#FBBF24]'
                   }`}>
-                    <Clock className="w-4 h-4 text-[#FBBF24]" />
+                    <Clock className={`w-4 h-4 transition-colors ${
+                      timeLeft <= 30 ? 'text-red-400' : timeLeft <= 60 ? 'text-amber-400' : 'text-[#FBBF24]'
+                    }`} />
                     <div>
                       <span className="text-[9px] text-slate-400 block leading-none">TIMER</span>
-                      <span className="font-bold text-base leading-none">
+                      <span className={`font-bold text-base leading-none transition-colors ${
+                        timeLeft <= 30 ? 'text-red-300' : timeLeft <= 60 ? 'text-amber-300' : 'text-[#FBBF24]'
+                      }`}>
                         {Math.floor(timeLeft / 60)}:{((timeLeft % 60)).toString().padStart(2, '0')}
                       </span>
                     </div>
@@ -2500,6 +2539,59 @@ export default function App() {
                             {locked ? `Awaiting ${PREREQ_LABEL[roleItem.id]}` : roleItem.discipline}
                           </p>
                         </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* ── Role Status Bar ─────────────────────────────────────────── */}
+              {/* Shows at-a-glance which specialists are done/pending/active   */}
+              {(() => {
+                const roleItems = [
+                  { id: 'hacker',        emoji: '💻', label: 'Hacker',        color: '#10B981' },
+                  { id: 'engineer',      emoji: '⚙️', label: 'Engineer',      color: '#FBBF24' },
+                  { id: 'scientist',     emoji: '🧪', label: 'Scientist',     color: '#06B6D4' },
+                  { id: 'cryptographer', emoji: '📜', label: 'Cryptographer', color: '#C084FC' },
+                ].filter(r =>
+                  !currentStageData.selectedRoles || currentStageData.selectedRoles[r.id]
+                );
+
+                return (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[9px] font-black uppercase font-mono text-slate-500 tracking-widest flex-shrink-0">SQUAD STATUS</span>
+                    {roleItems.map(r => {
+                      const isSolved  = !!currentStageSolved[r.id];
+                      const isActive  = activeCockpitRole === r.id;
+                      const failCount = roleFailCounts[r.id] || 0;
+                      return (
+                        <div
+                          key={r.id}
+                          title={isSolved ? `${r.label}: ✅ Puzzle cleared` : isActive ? `${r.label}: 🔄 Working...` : `${r.label}: ⏳ Pending`}
+                          className={`flex items-center space-x-1.5 px-2.5 py-1.5 border-2 text-xs font-mono font-bold transition-all ${
+                            isSolved
+                              ? 'border-[#10B981] bg-[#10B981]/15 text-[#10B981]'
+                              : isActive
+                              ? 'border-[#FBBF24] bg-[#FBBF24]/10 text-[#FBBF24] animate-pulse'
+                              : 'border-slate-700 bg-[#020B06] text-slate-500'
+                          }`}
+                        >
+                          <span className="text-sm leading-none">{r.emoji}</span>
+                          <span className="hidden sm:inline uppercase tracking-wider text-[10px]">{r.label}</span>
+                          {isSolved ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981] flex-shrink-0" />
+                          ) : isActive ? (
+                            <RefreshCw className="w-3 h-3 animate-spin flex-shrink-0" style={{ color: r.color }} />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full border-2 border-slate-600 flex-shrink-0" />
+                          )}
+                          {/* Fail count badge — shown if ≥1 fail so team can see who needs support */}
+                          {failCount > 0 && !isSolved && (
+                            <span className="text-[8px] bg-red-900 text-red-300 px-1 border border-red-700 rounded-sm font-black">
+                              {failCount}✗
+                            </span>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

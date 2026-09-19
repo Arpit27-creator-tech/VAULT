@@ -14,6 +14,7 @@ import { friendAPI, teamAPI, userAPI } from '../services/api';
 import XPRing from './XPRing';
 import { ACHIEVEMENTS, ACHIEVEMENT_TIERS } from '../data/achievements';
 import { getLoyaltyRank } from '../utils/loyaltyPoints';
+import { getMvpCount } from '../utils/mvpAwards';
 
 export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPointsProp, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
   const fileInputRef = useRef(null);
@@ -160,6 +161,7 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
   }
 
   const { stats = { missionsCompleted: 0, vaultsCracked: 0, alarmsTripped: 0, winRate: 100, csMastery: 85, physicsMastery: 80, chemMastery: 75, mathMastery: 90 }, badges = [] } = currentUser;
+  const mvpCount = getMvpCount(currentUser);
   const { progress: levelProgress } = getLevelProgress(currentUser.xp || 0);
   const progressPercent = Math.min(100, Math.round(levelProgress * 100));
 
@@ -508,6 +510,10 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
                 <span className="bg-[#10B981]/20 text-[#34D399] font-mono text-xs font-bold px-2.5 py-0.5 rounded border border-[#10B981]/40 uppercase">
                   {currentUser.role}
                 </span>
+                <span className="inline-flex items-center space-x-1.5 bg-[#FBBF24]/15 text-[#FDE047] font-mono font-bold text-xs px-2.5 py-0.5 rounded border border-[#FBBF24]/50 shadow-[0_0_12px_rgba(251,191,36,0.2)]">
+                  <Trophy className="w-3.5 h-3.5 text-[#FBBF24] fill-current" />
+                  <span>{mvpCount} {mvpCount === 1 ? 'MVP' : 'MVPs'}</span>
+                </span>
               </div>
               
               {/* Unique Permanent Agent ID Badge */}
@@ -560,6 +566,49 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
             </button>
           </div>
 
+        </div>
+
+        {/* Operative Quick Telemetry Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-5 mt-5 border-t border-emerald-900/60">
+          <div className="bg-[#020B06] px-3.5 py-2.5 rounded-xl border border-amber-500/40 shadow-sm flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-[#FBBF24]/20 border border-[#FBBF24]/50 flex items-center justify-center flex-shrink-0 shadow-sm">
+              <Trophy className="w-4 h-4 text-[#FBBF24]" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block leading-none">MVP Awards</span>
+              <span className="text-lg font-black font-game text-[#FBBF24]">{mvpCount}</span>
+            </div>
+          </div>
+
+          <div className="bg-[#020B06] px-3.5 py-2.5 rounded-xl border border-emerald-900/60 flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block leading-none">Heists Done</span>
+              <span className="text-lg font-black font-game text-[#10B981]">{stats.missionsCompleted || 0}</span>
+            </div>
+          </div>
+
+          <div className="bg-[#020B06] px-3.5 py-2.5 rounded-xl border border-emerald-900/60 flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center flex-shrink-0">
+              <Key className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block leading-none">Vaults Cracked</span>
+              <span className="text-lg font-black font-game text-cyan-400">{stats.vaultsCracked || 0}</span>
+            </div>
+          </div>
+
+          <div className="bg-[#020B06] px-3.5 py-2.5 rounded-xl border border-emerald-900/60 flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block leading-none">Squad Loyalty</span>
+              <span className="text-lg font-black font-game text-amber-400">{Math.min(1000, currentUser.loyaltyPoints ?? 1000)} LP</span>
+            </div>
+          </div>
         </div>
 
         {/* XP Progress Bar */}

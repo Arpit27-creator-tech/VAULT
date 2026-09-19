@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { heistAudio } from './HeistAudioEngine';
 import { calculateLevel, getLevelProgress } from '../utils/leveling';
+import { incrementMvpCount } from '../utils/mvpAwards';
 
 export default function SkillAnalyticsModal({ 
   isOpen, 
@@ -134,6 +135,8 @@ export default function SkillAnalyticsModal({
     };
   });
 
+  const hasAwardedMvpRef = useRef(false);
+
   const handleVoteForOperative = (opId, opName) => {
     if (votedForId) {
       toast.info("You already cast your MVP vote for this operation!");
@@ -146,6 +149,12 @@ export default function SkillAnalyticsModal({
     setVotedForId(opId);
     heistAudio.playSuccessChime();
     toast.success(`🎖️ Voted ${opName} as MVP of the Operation! (+25 Commendation XP)`);
+
+    const targetOp = operatives.find(o => o.id === opId);
+    if (targetOp?.isCurrentUser && !hasAwardedMvpRef.current) {
+      hasAwardedMvpRef.current = true;
+      incrementMvpCount(currentUser);
+    }
   };
 
   const topMvp = operatives.reduce((best, op) => {
@@ -153,6 +162,15 @@ export default function SkillAnalyticsModal({
     const bestScore = (mvpVotes[best.id] || 0) + (best.baseVotes || 0);
     return currentScore > bestScore ? op : best;
   }, operatives[0]);
+
+  // Award MVP count on victory if current operative is crowned MVP
+  useEffect(() => {
+    if (!isOpen || !isVictory || hasAwardedMvpRef.current) return;
+    if (topMvp?.isCurrentUser) {
+      hasAwardedMvpRef.current = true;
+      incrementMvpCount(currentUser);
+    }
+  }, [isOpen, isVictory, topMvp, currentUser]);
 
   // Because the parent passes a new `key` each heist, this component fully remounts
   // each time the modal opens — useState values start fresh from the current props.

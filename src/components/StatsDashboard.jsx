@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Shield, Award, Zap, Activity, Clock, Users, Play, 
   Terminal, FlaskConical, Key, Sparkles, CheckCircle2, 
@@ -1240,8 +1241,13 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
           ]);
           const isUnlocked = unlockedSet.has(item.id) || unlockedSet.has(item.title);
 
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in text-left">
+          const modalContent = (
+            <div 
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#020B06]/85 backdrop-blur-md animate-fade-in text-left"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setInspectingAchievement(null);
+              }}
+            >
               <div 
                 className="forest-card max-w-sm w-full p-5 space-y-4 border-[3px] border-[#03140C] bg-[#051811] shadow-[8px_8px_0px_#020C07] rounded-xl relative overflow-hidden"
                 style={{
@@ -1312,6 +1318,8 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
               </div>
             </div>
           );
+
+          return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
         })()}
 
         {/* Operative ID Card Modals */}

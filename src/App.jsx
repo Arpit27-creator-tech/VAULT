@@ -5485,6 +5485,9 @@ export default function App() {
             lobbySocket.sendRadioMessage(lobby.code, `[DISPATCH] Squad invitation routed to ${op.callsign} (${op.agentId})`, 'hq');
           }
         }}
+        onUpdateUser={(updated) => {
+          setCurrentUser(prev => prev ? { ...prev, ...updated } : prev);
+        }}
       />
 
       {/* ── Deserter Warning Modal (shown instead of leave modal mid-heist or in lobby) ── */}

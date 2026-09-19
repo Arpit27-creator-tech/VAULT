@@ -15,6 +15,8 @@ import XPRing from './XPRing';
 import { ACHIEVEMENTS, ACHIEVEMENT_TIERS } from '../data/achievements';
 import { getLoyaltyRank } from '../utils/loyaltyPoints';
 import { getMvpCount } from '../utils/mvpAwards';
+import OperativeCardModal from './OperativeCardModal';
+import CardCustomizerModal from './CardCustomizerModal';
 
 export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPointsProp, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
   const fileInputRef = useRef(null);
@@ -23,11 +25,17 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMyId, setCopiedMyId] = useState(false);
   
+  // Operative ID Card State
+  const [isMyCardModalOpen, setIsMyCardModalOpen] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [inspectedOperative, setInspectedOperative] = useState(null);
+
   // Real Teams State
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamMotto, setNewTeamMotto] = useState('');
   const [newTeamEmblem, setNewTeamEmblem] = useState('🌲');
+
   const [joinTeamCode, setJoinTeamCode] = useState('');
   const [myTeam, setMyTeam] = useState(null);
   const [isTeamLoading, setIsTeamLoading] = useState(false);
@@ -548,7 +556,33 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            {/* View ID Card */}
+            <button
+              onClick={() => {
+                heistAudio.playKeyClick();
+                setIsMyCardModalOpen(true);
+              }}
+              className="bg-[#020B06] hover:bg-[#072418] text-[#FBBF24] border border-amber-500/50 hover:border-amber-400 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 text-xs font-game shadow-md"
+              title="Inspect your Syndicate ID Card"
+            >
+              <Eye className="w-4 h-4 text-[#FBBF24]" />
+              <span>View ID Card</span>
+            </button>
+
+            {/* Customize Card */}
+            <button
+              onClick={() => {
+                heistAudio.playKeyClick();
+                setIsCustomizerOpen(true);
+              }}
+              className="bg-[#042416] hover:bg-[#073621] text-[#34D399] border border-emerald-500/50 hover:border-emerald-400 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 text-xs font-game shadow-md shadow-emerald-950/40"
+              title="Customize your Operative ID Card"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>Customize Card</span>
+            </button>
+
             <button
               onClick={() => onStartHeist(0)}
               className="flex-1 md:flex-initial bg-[#10B981] text-[#02140D] font-bold px-5 py-2.5 rounded-xl hover:bg-[#34D399] transition-all flex items-center justify-center space-x-2 text-xs uppercase font-game shadow-lg shadow-emerald-950/60"
@@ -888,6 +922,19 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+                  {/* Inspect Friend ID Card */}
+                  <button
+                    onClick={() => {
+                      heistAudio.playKeyClick();
+                      setInspectedOperative(friend);
+                    }}
+                    className="bg-[#020B06] hover:bg-[#062c1c] text-[#FBBF24] hover:text-white border border-amber-500/40 font-bold text-xs px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 font-game shadow-sm"
+                    title="Inspect Operative ID Card"
+                  >
+                    <Eye className="w-3 h-3 text-[#FBBF24]" />
+                    <span>ID Card</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       heistAudio.playRadioSquelch();
@@ -1266,6 +1313,43 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
             </div>
           );
         })()}
+
+        {/* Operative ID Card Modals */}
+        {isMyCardModalOpen && (
+          <OperativeCardModal
+            isOpen={isMyCardModalOpen}
+            onClose={() => setIsMyCardModalOpen(false)}
+            operative={currentUser}
+            currentUser={currentUser}
+            onOpenCustomizer={() => {
+              setIsMyCardModalOpen(false);
+              setIsCustomizerOpen(true);
+            }}
+          />
+        )}
+
+        {inspectedOperative && (
+          <OperativeCardModal
+            isOpen={Boolean(inspectedOperative)}
+            onClose={() => setInspectedOperative(null)}
+            operative={inspectedOperative}
+            currentUser={currentUser}
+            onOpenCustomizer={() => {
+              setInspectedOperative(null);
+              setIsCustomizerOpen(true);
+            }}
+          />
+        )}
+
+        {/* Card Customizer Studio Modal */}
+        {isCustomizerOpen && (
+          <CardCustomizerModal
+            isOpen={isCustomizerOpen}
+            onClose={() => setIsCustomizerOpen(false)}
+            currentUser={currentUser}
+            onUpdateUser={onUpdateUser}
+          />
+        )}
 
       </div>
 

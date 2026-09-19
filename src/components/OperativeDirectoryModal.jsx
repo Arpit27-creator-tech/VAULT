@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, Copy, Check, X, Zap, Radio, Shield, Sparkles, UserPlus } from 'lucide-react';
+import { Search, Users, Copy, Check, X, Zap, Radio, Shield, Sparkles, UserPlus, Eye } from 'lucide-react';
 import { userAPI, friendAPI } from '../services/api';
 import { heistAudio } from './HeistAudioEngine';
+import OperativeCardModal from './OperativeCardModal';
+import CardCustomizerModal from './CardCustomizerModal';
 import { toast } from 'sonner';
 
 export default function OperativeDirectoryModal({ 
@@ -9,13 +11,16 @@ export default function OperativeDirectoryModal({
   onClose, 
   currentUser,
   currentLobbyCode,
-  onInviteToLobby 
+  onInviteToLobby,
+  onUpdateUser
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [operatives, setOperatives] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [sentFriendIds, setSentFriendIds] = useState(new Set());
+  const [inspectingOperative, setInspectingOperative] = useState(null);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Only registered accounts get a unique Agent ID
   const myAgentId = currentUser?.agentId || (
@@ -215,6 +220,19 @@ export default function OperativeDirectoryModal({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                      {/* Inspect ID Card Button */}
+                      <button
+                        onClick={() => {
+                          heistAudio.playKeyClick();
+                          setInspectingOperative(op);
+                        }}
+                        className="bg-black/40 hover:bg-[#FBBF24]/20 text-[#FBBF24] hover:text-white border border-amber-500/30 hover:border-amber-400/60 font-mono text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center space-x-1"
+                        title="Inspect Operative ID Card"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-[#FBBF24]" />
+                        <span>ID Card</span>
+                      </button>
+
                       <button
                         onClick={() => handleCopyAgentId(opTag)}
                         className="bg-black/40 hover:bg-[#10B981]/20 text-slate-300 hover:text-white border border-emerald-500/30 hover:border-[#10B981]/60 font-mono text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center space-x-1"
@@ -294,6 +312,31 @@ export default function OperativeDirectoryModal({
         </div>
 
       </div>
+
+      {/* Operative ID Card Inspection Modal */}
+      {inspectingOperative && (
+        <OperativeCardModal
+          isOpen={Boolean(inspectingOperative)}
+          onClose={() => setInspectingOperative(null)}
+          operative={inspectingOperative}
+          currentUser={currentUser}
+          currentLobbyCode={currentLobbyCode}
+          onInviteToLobby={onInviteToLobby}
+          onOpenCustomizer={() => setIsCustomizerOpen(true)}
+        />
+      )}
+
+      {/* Operative Card Customizer Studio (if opened from self-inspection) */}
+      {isCustomizerOpen && (
+        <CardCustomizerModal
+          isOpen={isCustomizerOpen}
+          onClose={() => setIsCustomizerOpen(false)}
+          currentUser={currentUser}
+          onUpdateUser={onUpdateUser}
+        />
+      )}
+
     </div>
   );
 }
+

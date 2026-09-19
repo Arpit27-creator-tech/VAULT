@@ -5,7 +5,7 @@ import {
   TrendingUp, LogOut, Lock, ArrowUpRight, ArrowLeft, Compass,
   UserPlus, Copy, Check, Share2, Crown, Radio, Circle,
   Plus, MessageSquare, Eye, Send, Swords, UserX, RotateCw,
-  Camera, Upload, Image as ImageIcon
+  Camera, Upload, Image as ImageIcon, Trophy
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 import { getLevelProgress } from '../utils/leveling';

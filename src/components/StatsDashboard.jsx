@@ -5,7 +5,7 @@ import {
   TrendingUp, LogOut, Lock, ArrowUpRight, ArrowLeft, Compass,
   UserPlus, Copy, Check, Share2, Crown, Radio, Circle,
   Plus, MessageSquare, Eye, Send, Swords, UserX, RotateCw,
-  Camera, Upload, Image as ImageIcon, Trophy
+  Camera, Upload, Image as ImageIcon, Trophy, TrendingDown, Star
 } from 'lucide-react';
 import { heistAudio } from './HeistAudioEngine';
 import { getLevelProgress } from '../utils/leveling';
@@ -13,8 +13,9 @@ import { toast } from 'sonner';
 import { friendAPI, teamAPI, userAPI } from '../services/api';
 import XPRing from './XPRing';
 import { ACHIEVEMENTS, ACHIEVEMENT_TIERS } from '../data/achievements';
+import { LOYALTY_RANKS, getLoyaltyRank, getLoyaltyProgress, getLoyaltyLog } from '../utils/loyaltyPoints';
 
-export default function StatsDashboard({ currentUser, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
+export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPointsProp, onLogout, onStartHeist, onNavigate, onUpdateUser }) {
   const fileInputRef = useRef(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [userAvatar, setUserAvatar] = useState(currentUser?.avatar || '');
@@ -574,6 +575,122 @@ export default function StatsDashboard({ currentUser, onLogout, onStartHeist, on
             />
           </div>
         </div>
+
+        {/* ─── Loyalty Points Card ─────────────────────────────────────── */}
+        {(() => {
+          const lp = typeof loyaltyPointsProp === 'number' ? loyaltyPointsProp : (currentUser?.loyaltyPoints || 0);
+          const rank = getLoyaltyRank(lp);
+          const nextRankIdx = LOYALTY_RANKS.findIndex(r => r.name === rank.name) + 1;
+          const nextRank = LOYALTY_RANKS[nextRankIdx] || null;
+          const progress = getLoyaltyProgress(lp);
+          const log = getLoyaltyLog().slice(0, 5);
+          const lpProgressPct = Math.round(progress * 100);
+
+          return (
+            <div
+              className="mt-4 rounded-2xl border overflow-hidden"
+              style={{
+                borderColor: rank.border,
+                background: 'linear-gradient(135deg, #020f07 0%, #051a0e 100%)',
+                boxShadow: `0 0 24px ${rank.glowColor}`,
+              }}
+            >
+              {/* Header */}
+              <div
+                className="px-5 py-3 flex items-center justify-between border-b"
+                style={{ borderColor: rank.border + '60', background: rank.glowColor }}
+              >
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-4 h-4" style={{ color: rank.color }} />
+                  <span className="font-mono font-black text-xs uppercase tracking-widest" style={{ color: rank.color }}>
+                    Squad Loyalty
+                  </span>
+                </div>
+                <span
+                  className="font-mono font-black text-xs px-2.5 py-0.5 rounded-full border uppercase tracking-wide"
+                  style={{ color: rank.color, borderColor: rank.border, background: rank.glowColor }}
+                >
+                  {rank.emoji} {rank.name}
+                </span>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-4 space-y-4">
+                <div className="flex items-end justify-between">
+                  {/* LP number */}
+                  <div>
+                    <p className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-0.5">Loyalty Points</p>
+                    <p
+                      className="text-4xl font-black font-game leading-none"
+                      style={{ color: rank.color, textShadow: `0 0 16px ${rank.glowColor}` }}
+                    >
+                      {lp.toLocaleString()}
+                      <span className="text-base ml-1 font-mono font-bold text-slate-400">LP</span>
+                    </p>
+                  </div>
+
+                  {/* Rank description */}
+                  <p className="text-[11px] font-mono text-slate-400 text-right max-w-[140px] leading-relaxed">
+                    {rank.description}
+                  </p>
+                </div>
+
+                {/* Progress bar to next rank */}
+                {nextRank && (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                      <span>{rank.emoji} {rank.name}</span>
+                      <span>{nextRank.emoji} {nextRank.name} ({nextRank.min.toLocaleString()} LP)</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-[#020B06] border border-emerald-900/40 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${lpProgressPct}%`,
+                          background: `linear-gradient(90deg, ${rank.color}99, ${rank.color})`,
+                          boxShadow: `0 0 8px ${rank.glowColor}`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] font-mono text-slate-500 text-right">
+                      {(nextRank.min - lp).toLocaleString()} LP to {nextRank.name}
+                    </p>
+                  </div>
+                )}
+                {!nextRank && (
+                  <div className="text-center py-1">
+                    <span className="text-xs font-mono font-bold" style={{ color: rank.color }}>✦ MAX RANK ACHIEVED ✦</span>
+                  </div>
+                )}
+
+                {/* Recent LP history */}
+                {log.length > 0 && (
+                  <div className="space-y-1.5 pt-1 border-t border-emerald-900/30">
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Recent Activity</p>
+                    {log.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between text-[11px] font-mono">
+                        <span className="text-slate-400 truncate max-w-[200px]">
+                          {entry.icon} {entry.label}
+                        </span>
+                        <span
+                          className="font-black flex-shrink-0 ml-2"
+                          style={{ color: entry.delta > 0 ? '#10B981' : '#FF4D6D' }}
+                        >
+                          {entry.delta > 0 ? '+' : ''}{entry.delta} LP
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Info tip */}
+                <p className="text-[10px] font-mono text-slate-600 leading-relaxed">
+                  💡 Earn LP by completing squad heists. Leaving mid-heist costs <span className="text-rose-500 font-bold">−150 LP</span>.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
 

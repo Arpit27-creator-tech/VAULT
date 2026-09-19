@@ -51,6 +51,8 @@ import { evaluateAchievements } from './utils/achievementTracker';
 import { generateRemediationPlan } from './data/remediationData';
 import { authAPI, heistAPI, missionAPI, leaderboardAPI, friendAPI, userAPI } from './services/api.js';
 import { connectSocket, disconnectSocket, onSocketEvent, offSocketEvent, getSocket, lobbySocket, heistSocket } from './services/socket.js';
+import { getLoyaltyPoints, setLoyaltyPoints, applyLoyaltyEvent, getLoyaltyRank, initLoyaltyFromUser } from './utils/loyaltyPoints';
+import DeserterWarningModal from './components/DeserterWarningModal';
 
 // Specialist role configurations for multiplayer synchronization
 const ROLE_CONFIGS = [
@@ -315,6 +317,35 @@ export default function App() {
   const [createRoomTitleInput, setCreateRoomTitleInput] = useState('');
   const [isInSquadRoom, setIsInSquadRoom] = useState(false);
   const [isLeaveSquadModalOpen, setIsLeaveSquadModalOpen] = useState(false);
+  const [isDeserterWarningOpen, setIsDeserterWarningOpen] = useState(false);
+  const [deserterWarningIsHeistActive, setDeserterWarningIsHeistActive] = useState(false);
+
+  // ── Loyalty Points ─────────────────────────────────────────────────────────
+  const [loyaltyPoints, setLoyaltyPointsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vault_current_user');
+      const user = saved ? JSON.parse(saved) : null;
+      return initLoyaltyFromUser(user);
+    } catch {
+      return getLoyaltyPoints();
+    }
+  });
+
+  // Helper: apply an LP event and sync React state
+  const applyLP = (eventKey, labelOverride) => {
+    const result = applyLoyaltyEvent(eventKey, labelOverride);
+    if (result) {
+      setLoyaltyPointsState(result.newPoints);
+      // Sync to currentUser object
+      setCurrentUser(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, loyaltyPoints: result.newPoints };
+        try { localStorage.setItem('vault_current_user', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+    }
+    return result;
+  };
   const [isLaunchingCountdown, setIsLaunchingCountdown] = useState(false);
   const [launchCountdown, setLaunchCountdown] = useState(3);
   const [lobbyRadioInput, setLobbyRadioInput] = useState('');
@@ -604,6 +635,26 @@ export default function App() {
             alarmsTripped: alarmFails,
             isCoop: Boolean(lobby?.code && lobby?.players?.length > 1)
           });
+          // ── Award Loyalty Points for completing heist ──────────────────
+          const isCoop = Boolean(lobby?.code && (lobby?.players || []).filter(p => p.userId || p.username).length > 1);
+          if (isCoop) {
+            // Squad heist: bonus LP for completing + extra for winning all roles
+            const lpResult = applyLP('COMPLETE_HEIST');
+            if (lpResult) {
+              const { newPoints, rank } = lpResult;
+              toast.success(`🛡️ +50 Loyalty Points! ${rank.emoji} ${rank.name} · ${newPoints} LP`, { duration: 3000 });
+            }
+            if (solvedCount === 4) {
+              // Full squad win bonus
+              setTimeout(() => {
+                const winResult = applyLP('WIN_HEIST');
+                if (winResult) {
+                  toast.success(`🏆 Squad Win Bonus +100 LP! ${winResult.rank.emoji} ${winResult.newPoints} LP total`, { duration: 3500 });
+                  setLoyaltyPointsState(winResult.newPoints);
+                }
+              }, 1200);
+            }
+          }
         }
 
         // Persist to the database so XP/level/history are consistent across
@@ -1419,8 +1470,40 @@ export default function App() {
     }
     setIsInSquadRoom(false);
     setIsLeaveSquadModalOpen(false);
+    setIsDeserterWarningOpen(false);
     heistAudio.playKeyClick();
+
+    // ── Loyalty Points deduction on leave ───────────────────────────────
+    const heistWasActive = isTimerRunning && activeTab === 'liveheist';
+    const eventKey = heistWasActive ? 'LEAVE_MID_HEIST' : 'LEAVE_LOBBY';
+    const lpResult = applyLP(eventKey);
+    if (lpResult && lpResult.delta < 0) {
+      const { newPoints, rank, previousRank } = lpResult;
+      const rankText = rank.name !== previousRank.name
+        ? ` ⬇ Rank dropped to ${rank.emoji} ${rank.name}!`
+        : ` ${rank.emoji} ${rank.name} · ${newPoints} LP`;
+      if (heistWasActive) {
+        toast.error(`💀 DESERTION: ${lpResult.delta} LP penalty.${rankText}`, { duration: 5000 });
+      } else {
+        toast.warning(`⚠️ Squad Abandoned: ${lpResult.delta} LP.${rankText}`, { duration: 4000 });
+      }
+    }
+
     toast.info("Left squad operation.");
+  };
+
+  // ── Open the correct leave dialog depending on heist state ─────────────
+  const handleRequestLeaveSquad = () => {
+    const heistActive = isTimerRunning && activeTab === 'liveheist';
+    if (heistActive) {
+      // Show dramatic Deserter Warning instead of plain modal
+      setDeserterWarningIsHeistActive(true);
+      setIsDeserterWarningOpen(true);
+    } else {
+      // Lobby leave: show warning with smaller penalty
+      setDeserterWarningIsHeistActive(false);
+      setIsDeserterWarningOpen(true);
+    }
   };
 
   const handleSendLobbyRadio = (e) => {
@@ -3331,10 +3414,10 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   
-                  {/* Leave Squad Button */}
+                  {/* Leave Squad Button — routes through loyalty warning */}
                   <button
                     onClick={() => {
-                      setIsLeaveSquadModalOpen(true);
+                      handleRequestLeaveSquad();
                       heistAudio.playKeyClick();
                     }}
                     className="bg-[#020B06] hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border border-emerald-900/80 hover:border-rose-700/60 px-4 py-2.5 rounded-2xl text-xs font-mono font-bold flex items-center space-x-2 transition-all shadow-md group"
@@ -4897,6 +4980,7 @@ export default function App() {
             >
               <StatsDashboard
                 currentUser={currentUser}
+                loyaltyPoints={loyaltyPoints}
                 onLogout={handleLogout}
                 onStartHeist={(idx) => handleLaunchToLobby(idx)}
                 onUpdateUser={(updated) => {
@@ -5391,6 +5475,18 @@ export default function App() {
           if (lobby?.code) {
             lobbySocket.sendRadioMessage(lobby.code, `[DISPATCH] Squad invitation routed to ${op.callsign} (${op.agentId})`, 'hq');
           }
+        }}
+      />
+
+      {/* ── Deserter Warning Modal (shown instead of leave modal mid-heist or in lobby) ── */}
+      <DeserterWarningModal
+        isOpen={isDeserterWarningOpen}
+        isHeistActive={deserterWarningIsHeistActive}
+        roomCode={lobby?.code || lobby?.roomCode}
+        onConfirmLeave={handleConfirmLeaveSquad}
+        onCancel={() => {
+          setIsDeserterWarningOpen(false);
+          heistAudio.playKeyClick();
         }}
       />
 

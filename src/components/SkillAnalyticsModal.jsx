@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { 
   Trophy, Award, Sparkles, CheckCircle2, ShieldAlert, Clock, 
   ArrowRight, RotateCcw, Flame, Terminal, Compass, FlaskConical, Key,
-  MapPin, BookOpen, Lightbulb, Zap
+  MapPin, BookOpen, Lightbulb, Zap, Crown, Shield, ThumbsUp, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { heistAudio } from './HeistAudioEngine';
 import { calculateLevel, getLevelProgress } from '../utils/leveling';
 
@@ -12,10 +13,12 @@ export default function SkillAnalyticsModal({
   isOpen, 
   isVictory, 
   stageTitle, 
-  stats, 
+  stats = {}, 
   stageData,
   solvedRoles = {},
   currentUser,
+  lobby,
+  activeCockpitRole,
   totalCareerXp,
   onNextStage, 
   onRetry, 
@@ -52,6 +55,104 @@ export default function SkillAnalyticsModal({
   const [animatedProgress, setAnimatedProgress] = useState(prevLevelInfo.progress);
   const [isLevelUp, setIsLevelUp] = useState(false);
   const [flyoutActive, setFlyoutActive] = useState(false);
+
+  // ── MVP & Operative Commendation Badges ─────────────────────────────
+  const [mvpVotes, setMvpVotes] = useState({});
+  const [votedForId, setVotedForId] = useState(null);
+
+  const realPlayers = (lobby?.players || []).filter(p => p.userId || p.username || p.callsign);
+  const isMultiplayer = realPlayers.length > 1;
+
+  const defaultRoleCrew = [
+    { key: 'hacker', roleLabel: 'Canopy Hacker', defaultName: 'Agent Vance', color: '#10B981' },
+    { key: 'engineer', roleLabel: 'Woodland Engineer', defaultName: 'Agent Chen', color: '#FBBF24' },
+    { key: 'scientist', roleLabel: 'Flora Scientist', defaultName: 'Agent Rostova', color: '#06B6D4' },
+    { key: 'cryptographer', roleLabel: 'Mist Cryptographer', defaultName: 'Agent Lin', color: '#C084FC' },
+  ];
+
+  const operatives = (isMultiplayer ? realPlayers : defaultRoleCrew).map((item, idx) => {
+    const isCurrentUser = isMultiplayer
+      ? (item.userId === currentUser?.id || item.username === currentUser?.username)
+      : (item.key === activeCockpitRole || idx === 0);
+    const roleKey = item.role ? (typeof item.role === 'string' ? item.role.toLowerCase() : 'hacker') : (item.key || 'hacker');
+    const matchedCrew = defaultRoleCrew.find(c => c.key === roleKey) || defaultRoleCrew[idx % 4];
+    const name = item.callsign || item.username || (isCurrentUser ? (currentUser?.callsign || currentUser?.username) : matchedCrew.defaultName);
+
+    // Dynamic badge logic based on role & heist telemetry
+    let badge;
+    if (idx === 0 || (isCurrentUser && (stats.maxCombo >= 2 || stats.alarmsTripped === 0))) {
+      badge = {
+        title: "Clutch Master",
+        tag: "👑 CLUTCH MASTER",
+        icon: Crown,
+        color: "#EC4899",
+        bg: "rgba(236,72,153,0.15)",
+        border: "#BE185D",
+        desc: "Neutralized mission-critical locks under extreme pressure."
+      };
+    } else if (idx === 1 || stats.alarmsTripped === 0) {
+      badge = {
+        title: "Silent Specialist",
+        tag: "🤫 SILENT SPECIALIST",
+        icon: Shield,
+        color: "#10B981",
+        bg: "rgba(16,185,129,0.15)",
+        border: "#059669",
+        desc: "Zero security misfires. Maintained pristine acoustic stealth."
+      };
+    } else if (idx === 2) {
+      badge = {
+        title: "Fastest Solver",
+        tag: "⚡ FASTEST SOLVER",
+        icon: Zap,
+        color: "#FBBF24",
+        bg: "rgba(251,191,36,0.15)",
+        border: "#D97706",
+        desc: "Clocked the quickest sub-routine override in the squad."
+      };
+    } else {
+      badge = {
+        title: "Tactical Anchor",
+        tag: "🎯 TACTICAL ANCHOR",
+        icon: Award,
+        color: "#8B5CF6",
+        bg: "rgba(139,92,246,0.15)",
+        border: "#7C3AED",
+        desc: "Coordinated pipeline telemetry to keep the infiltration aligned."
+      };
+    }
+
+    return {
+      id: item.userId || item.id || `crew-${idx}`,
+      name: name || `Agent ${idx + 1}`,
+      roleLabel: matchedCrew.roleLabel,
+      roleColor: matchedCrew.color,
+      isCurrentUser,
+      badge,
+      avatar: item.avatar || null,
+      baseVotes: idx === 0 ? 1 : 0
+    };
+  });
+
+  const handleVoteForOperative = (opId, opName) => {
+    if (votedForId) {
+      toast.info("You already cast your MVP vote for this operation!");
+      return;
+    }
+    setMvpVotes(prev => ({
+      ...prev,
+      [opId]: (prev[opId] || 0) + 1
+    }));
+    setVotedForId(opId);
+    heistAudio.playSuccessChime();
+    toast.success(`🎖️ Voted ${opName} as MVP of the Operation! (+25 Commendation XP)`);
+  };
+
+  const topMvp = operatives.reduce((best, op) => {
+    const currentScore = (mvpVotes[op.id] || 0) + (op.baseVotes || 0);
+    const bestScore = (mvpVotes[best.id] || 0) + (best.baseVotes || 0);
+    return currentScore > bestScore ? op : best;
+  }, operatives[0]);
 
   // Because the parent passes a new `key` each heist, this component fully remounts
   // each time the modal opens — useState values start fresh from the current props.
@@ -213,6 +314,138 @@ export default function SkillAnalyticsModal({
             <p className="text-lg font-mono font-black text-[#FBBF24]">
               {revealStep >= xpBreakdown.length + (comboBonus > 0 ? 1 : 0) + 1 ? `+${animatedGainedXp}` : '???'}
             </p>
+          </div>
+        </div>
+
+        {/* ── MVP of the Operation & Operative Commendation Badges ── */}
+        <div className="bg-[#020F08] border-2 border-[#FBBF24]/80 p-4 sm:p-5 rounded-2xl shadow-[0_0_24px_rgba(251,191,36,0.2)] space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FBBF24]/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Header Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/30 pb-3 relative z-10">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FBBF24] border-2 border-black flex items-center justify-center text-xl shadow-[3px_3px_0px_#000] flex-shrink-0">
+                🏆
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-mono uppercase text-amber-400 font-bold tracking-wider">
+                    Tactical Debrief Accolades
+                  </span>
+                  <span className="bg-[#FBBF24]/20 text-[#FDE047] text-[10px] font-mono font-black px-2 py-0.5 rounded border border-[#FBBF24]/40">
+                    SQUAD VOTES ACTIVE
+                  </span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black font-game text-white uppercase tracking-tight">
+                  MVP of the Operation
+                </h3>
+              </div>
+            </div>
+
+            {/* Current Top MVP Crown Tag */}
+            {topMvp && (
+              <div className="flex items-center space-x-2 bg-[#051F14] border border-[#FBBF24]/70 px-3 py-1.5 rounded-xl shadow-sm">
+                <Crown className="w-4 h-4 text-[#FBBF24] animate-pulse" />
+                <span className="text-xs font-mono text-slate-300">Frontrunner:</span>
+                <span className="text-xs font-black font-game text-[#FBBF24]">
+                  {topMvp.name}
+                </span>
+                <span className="text-[10px] font-mono bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                  {(mvpVotes[topMvp.id] || 0) + (topMvp.baseVotes || 0)} 🎖️
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Operatives Badges Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+            {operatives.map((op) => {
+              const BadgeIcon = op.badge.icon;
+              const isTop = topMvp?.id === op.id;
+              const totalOpVotes = (mvpVotes[op.id] || 0) + (op.baseVotes || 0);
+              const isSelectedByMe = votedForId === op.id;
+
+              return (
+                <div
+                  key={op.id}
+                  className={`p-3.5 rounded-xl border-2 transition-all relative overflow-hidden flex flex-col justify-between ${
+                    isTop
+                      ? 'border-[#FBBF24] bg-[#0A261B]/90 shadow-[0_0_16px_rgba(251,191,36,0.2)]'
+                      : 'border-emerald-900/60 bg-[#03140C] hover:border-emerald-700/60'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    {/* Role + MVP Crown if Top */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border"
+                        style={{ color: op.roleColor, borderColor: `${op.roleColor}40`, backgroundColor: `${op.roleColor}15` }}
+                      >
+                        {op.roleLabel}
+                      </span>
+                      {isTop && (
+                        <span className="inline-flex items-center space-x-1 bg-[#FBBF24] text-[#02140D] font-mono font-black text-[10px] px-2 py-0.5 rounded-md border border-black shadow-[1px_1px_0px_#000]">
+                          <Crown className="w-3 h-3 fill-current" />
+                          <span>MVP</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Operative Name */}
+                    <div className="flex items-center space-x-2">
+                      <span className="font-game font-black text-sm text-white">
+                        {op.name}
+                      </span>
+                      {op.isCurrentUser && (
+                        <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">
+                          YOU
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Assigned Badge */}
+                    <div
+                      className="p-2 rounded-lg border flex items-start space-x-2"
+                      style={{ backgroundColor: op.badge.bg, borderColor: op.badge.border }}
+                    >
+                      <BadgeIcon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: op.badge.color }} />
+                      <div className="min-w-0">
+                        <span className="font-mono font-black text-[11px] block" style={{ color: op.badge.color }}>
+                          {op.badge.tag}
+                        </span>
+                        <p className="text-[10px] font-mono text-slate-300 leading-tight mt-0.5">
+                          {op.badge.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Votes & Vote Button */}
+                  <div className="flex items-center justify-between pt-3 mt-2 border-t border-emerald-900/40">
+                    <span className="text-[11px] font-mono text-amber-300 font-bold flex items-center space-x-1">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span>{totalOpVotes} {totalOpVotes === 1 ? 'Vote' : 'Votes'}</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleVoteForOperative(op.id, op.name)}
+                      disabled={Boolean(votedForId)}
+                      className={`text-xs font-mono font-black px-3 py-1.5 rounded-lg border uppercase transition-all flex items-center space-x-1.5 ${
+                        isSelectedByMe
+                          ? 'bg-[#FBBF24] text-[#02140D] border-black shadow-[2px_2px_0px_#000]'
+                          : votedForId
+                          ? 'bg-[#020B06] text-slate-500 border-emerald-950 cursor-not-allowed'
+                          : 'bg-[#06291B] hover:bg-[#10B981] text-[#34D399] hover:text-[#02140D] border-[#10B981]/50 active:translate-x-0.5 shadow-sm'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>{isSelectedByMe ? 'Voted ✓' : 'Vote MVP'}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

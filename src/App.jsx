@@ -5078,6 +5078,8 @@ export default function App() {
         stageData={currentStageData}
         solvedRoles={currentStageSolved}
         currentUser={currentUser}
+        lobby={lobby}
+        activeCockpitRole={activeCockpitRole}
         totalCareerXp={currentUser?.xp ?? xp ?? 1200}
         onOpenRoadmap={() => {
           setIsRoadmapModalOpen(true);

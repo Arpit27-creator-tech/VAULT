@@ -7,17 +7,17 @@ export const CARD_THEMES = {
   PRISON_INMATE: {
     id: 'PRISON_INMATE',
     name: 'Cell Block 9 Inmate Pass',
-    subtitle: 'Max Security Penitentiary Pass & Hazard Stripes',
-    primaryColor: '#EA580C',
-    accentColor: '#D97706',
+    subtitle: 'V.A.U.L.T Forest Clearance & Max Security Pass',
+    primaryColor: '#10B981',
+    accentColor: '#FBBF24',
     goldColor: '#CA8A04',
-    borderColor: '#EA580C',
-    bgGradient: 'from-[#18181B] via-[#09090B] to-[#000000]',
-    chipColor: '#EA580C',
-    badgeBg: 'bg-[#EA580C] text-black border-[#C2410C]',
+    borderColor: '#10B981',
+    bgGradient: 'from-[#072418] via-[#051C12] to-[#020C07]',
+    chipColor: '#10B981',
+    badgeBg: 'bg-[#10B981] text-[#020C07] border-[#059669]',
     holoGradient: 'none',
     statGlow: 'none',
-    previewSwatch: 'bg-[#EA580C]',
+    previewSwatch: 'bg-[#10B981]',
     isPrison: true
   }
 };

@@ -26,10 +26,10 @@ const ICON_MAP = {
 };
 
 const TIER_COLORS = {
-  BRONZE: 'border-[#B45309] text-[#F59E0B] bg-[#1C1917]',
-  SILVER: 'border-[#71717A] text-[#E4E4E7] bg-[#18181B]',
-  GOLD: 'border-[#D97706] text-[#FBBF24] bg-[#27272A]',
-  PLATINUM: 'border-[#EA580C] text-[#FB923C] bg-[#1C1917]'
+  BRONZE: 'border-[#B45309] text-[#F59E0B] bg-[#072418]',
+  SILVER: 'border-[#059669] text-[#A7F3D0] bg-[#0A2E20]',
+  GOLD: 'border-[#FBBF24] text-[#FBBF24] bg-[#072418]',
+  PLATINUM: 'border-[#10B981] text-[#6EE7B7] bg-[#0A2E20]'
 };
 
 export default function OperativeIdCard({
@@ -129,14 +129,14 @@ export default function OperativeIdCard({
       >
         
         {/* ============================================================
-            FRONT OF CARD — CANOPY PENITENTIARY CELL BLOCK 9 INMATE PASS
+            FRONT OF CARD — V.A.U.L.T FOREST CLEARANCE INMATE PASS
             ============================================================ */}
         <div 
-          className="absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between shadow-[6px_6px_0px_#000000]"
+          className="absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between shadow-[6px_6px_0px_#020C07]"
           style={{ 
-            borderColor: '#EA580C',
-            boxShadow: '6px 6px 0px #000000',
-            backgroundImage: `linear-gradient(to bottom, rgba(24, 12, 6, 0.92), rgba(12, 6, 3, 0.96), rgba(0, 0, 0, 0.98)), url('/prison_card_bg.jpg')`,
+            borderColor: '#10B981',
+            boxShadow: '6px 6px 0px #020C07',
+            backgroundImage: `linear-gradient(to bottom, rgba(7, 36, 24, 0.94), rgba(5, 24, 17, 0.97), rgba(2, 12, 7, 0.99)), url('/prison_card_bg.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -163,37 +163,37 @@ export default function OperativeIdCard({
             }}
           />
 
-          {/* Prison Hazard Caution Banner */}
+          {/* V.A.U.L.T Emerald Hazard Caution Banner */}
           <div 
             className="relative -mx-5 -mt-5 mb-2.5 py-1 px-3 flex items-center justify-between text-[8px] font-mono font-black uppercase text-black tracking-wider shadow-md"
-            style={{ background: 'repeating-linear-gradient(45deg, #CA8A04, #CA8A04 10px, #000000 10px, #000000 20px)' }}
+            style={{ background: 'repeating-linear-gradient(45deg, #10B981, #10B981 10px, #020C07 10px, #020C07 20px)' }}
           >
-            <span className="bg-black text-[#FBBF24] px-2 py-0.5 rounded font-black tracking-widest flex items-center space-x-1">
-              <span>⚠️ CANOPY PENITENTIARY</span>
+            <span className="bg-[#020C07] text-[#10B981] px-2 py-0.5 rounded font-black tracking-widest flex items-center space-x-1">
+              <span>⚠️ V.A.U.L.T CLEARANCE</span>
             </span>
-            <span className="bg-[#DC2626] text-white px-1.5 py-0.5 rounded font-black">
+            <span className="bg-[#FBBF24] text-[#020C07] px-1.5 py-0.5 rounded font-black">
               CELL BLOCK 9
             </span>
           </div>
 
           {/* Distressed Inmate Stamp Overlay */}
-          <div className="absolute top-14 right-3.5 rotate-12 border-2 border-[#DC2626] text-[#DC2626] bg-[#18181B] font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow uppercase pointer-events-none select-none z-20">
+          <div className="absolute top-14 right-3.5 rotate-12 border-2 border-[#10B981] text-[#10B981] bg-[#020C07] font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow uppercase pointer-events-none select-none z-20">
             [ INMATE C-09 ]
           </div>
 
           {/* Top Lanyard Badge Slot Cutout (Authentic ID Pass Detail) */}
           <div className="relative z-10 flex justify-center -mt-1 mb-2">
-            <div className="w-14 h-2 bg-black border border-zinc-700 rounded-full shadow-inner" />
+            <div className="w-14 h-2 bg-[#020C07] border border-[#059669] rounded-full shadow-inner" />
           </div>
 
           {/* Top Security Header with Official Seal & Smart Key */}
-          <div className="relative z-10 border-b border-zinc-800 pb-3">
+          <div className="relative z-10 border-b border-[#059669]/50 pb-3">
             <div className="flex items-center justify-between">
               
               <div className="flex items-center space-x-2.5">
                 {/* Official Cell Block 9 Graphic Emblem */}
                 <div 
-                  className="w-10 h-10 rounded-full border-2 border-[#EA580C] p-0.5 bg-black flex-shrink-0 overflow-hidden shadow"
+                  className="w-10 h-10 rounded-full border-2 border-[#10B981] p-0.5 bg-[#020C07] flex-shrink-0 overflow-hidden shadow"
                   title="Official Cell Block 9 Penitentiary Insignia"
                 >
                   <img 
@@ -208,11 +208,11 @@ export default function OperativeIdCard({
                     <span className="font-game font-black text-sm text-white tracking-wider">
                       🔒 CELL BLOCK 9
                     </span>
-                    <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase bg-[#EA580C] text-black border-[#C2410C]">
+                    <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase bg-[#10B981] text-[#020C07] border-[#059669]">
                       INMATE PASS
                     </span>
                   </div>
-                  <p className="text-[10px] font-mono text-zinc-400">
+                  <p className="text-[10px] font-mono text-[#A7F3D0]">
                     MAX SECURITY INCARCERATION
                   </p>
                 </div>
@@ -220,16 +220,16 @@ export default function OperativeIdCard({
 
               {/* Status indicator & Flip toggle */}
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1.5 bg-black px-2.5 py-1 rounded-full border border-zinc-700 text-[9px] font-mono">
-                  <div className="w-2 h-2 rounded-full bg-[#DC2626]" />
-                  <span className="font-bold tracking-wide text-[#EF4444]">
+                <div className="flex items-center space-x-1.5 bg-[#020C07] px-2.5 py-1 rounded-full border border-[#059669] text-[9px] font-mono">
+                  <div className="w-2 h-2 rounded-full bg-[#10B981]" />
+                  <span className="font-bold tracking-wide text-[#10B981]">
                     DETAINED
                   </span>
                 </div>
                 {interactive && (
                   <button
                     onClick={handleFlipToggle}
-                    className="p-1.5 text-zinc-300 hover:text-white bg-[#18181B] hover:bg-[#27272A] border border-zinc-700 rounded-lg transition-colors"
+                    className="p-1.5 text-[#A7F3D0] hover:text-white bg-[#072418] hover:bg-[#0A2E20] border border-[#059669] rounded-lg transition-colors"
                     title="Flip to Inmate Dossier"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
@@ -247,26 +247,26 @@ export default function OperativeIdCard({
               {/* Avatar + Yellow Level Ring + Mugshot Height Scale Lineup */}
               <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 106, height: 104 }}>
                 {/* Background Mugshot Height Grid */}
-                <div className="absolute inset-0 rounded-2xl bg-black border border-zinc-700 overflow-hidden pointer-events-none flex flex-col justify-between py-1 px-1 opacity-90">
-                  <div className="flex justify-between items-center border-b border-zinc-800 text-[7px] font-mono text-zinc-400 font-bold">
+                <div className="absolute inset-0 rounded-2xl bg-[#020C07] border border-[#059669]/60 overflow-hidden pointer-events-none flex flex-col justify-between py-1 px-1 opacity-90">
+                  <div className="flex justify-between items-center border-b border-[#064E3B] text-[7px] font-mono text-[#6EE7B7] font-bold">
                     <span>6'0"</span>
-                    <span className="w-6 border-b border-zinc-700" />
+                    <span className="w-6 border-b border-[#059669]" />
                   </div>
-                  <div className="flex justify-between items-center border-b border-zinc-800 text-[7px] font-mono text-zinc-400 font-bold">
+                  <div className="flex justify-between items-center border-b border-[#064E3B] text-[7px] font-mono text-[#6EE7B7] font-bold">
                     <span>5'8"</span>
-                    <span className="w-6 border-b border-zinc-700" />
+                    <span className="w-6 border-b border-[#059669]" />
                   </div>
-                  <div className="flex justify-between items-center border-b border-zinc-800 text-[7px] font-mono text-zinc-400 font-bold">
+                  <div className="flex justify-between items-center border-b border-[#064E3B] text-[7px] font-mono text-[#6EE7B7] font-bold">
                     <span>5'4"</span>
-                    <span className="w-6 border-b border-zinc-700" />
+                    <span className="w-6 border-b border-[#059669]" />
                   </div>
-                  <div className="flex justify-between items-center text-[7px] font-mono text-zinc-400 font-bold">
+                  <div className="flex justify-between items-center text-[7px] font-mono text-[#6EE7B7] font-bold">
                     <span>5'0"</span>
-                    <span className="w-6 border-b border-zinc-700" />
+                    <span className="w-6 border-b border-[#059669]" />
                   </div>
                 </div>
 
-                {/* Direct SVG ring — solid orange progress arc */}
+                {/* Direct SVG ring — solid amber progress arc */}
                 {(() => {
                   const size = 96, sw = 4.5;
                   const r = (size - sw) / 2;
@@ -275,8 +275,8 @@ export default function OperativeIdCard({
                   const c = size / 2;
                   return (
                     <svg width={size} height={size} className="absolute inset-0 m-auto pointer-events-none" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx={c} cy={c} r={r} fill="none" stroke="#27272A" strokeWidth={sw} />
-                      <circle cx={c} cy={c} r={r} fill="none" stroke="#EA580C" strokeWidth={sw}
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#032115" strokeWidth={sw} />
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
                         strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
                         style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
                       />
@@ -303,7 +303,7 @@ export default function OperativeIdCard({
                 </div>
 
                 {/* LVL Badge */}
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#EA580C] text-black text-[10px] font-black px-2 py-0.5 rounded font-game shadow whitespace-nowrap z-20 border border-[#C2410C]">
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#10B981] text-[#020C07] text-[10px] font-black px-2 py-0.5 rounded font-game shadow whitespace-nowrap z-20 border border-[#059669]">
                   LVL {level}
                 </span>
               </div>
@@ -311,12 +311,12 @@ export default function OperativeIdCard({
               {/* Callsign & Tag details */}
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-[#EA580C] text-black border-[#C2410C]">
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-[#072418] text-[#10B981] border-[#059669]">
                     Convict {role}
                   </span>
                   {mvpCount > 0 && (
-                    <span className="inline-flex items-center space-x-1 bg-[#CA8A04] text-black font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#A16207]">
-                      <Trophy className="w-3 h-3 text-black fill-current" />
+                    <span className="inline-flex items-center space-x-1 bg-[#FBBF24] text-[#020C07] font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#D97706]">
+                      <Trophy className="w-3 h-3 text-[#020C07] fill-current" />
                       <span>{mvpCount} MVP</span>
                     </span>
                   )}
@@ -328,25 +328,25 @@ export default function OperativeIdCard({
 
                 {/* Unique Agent ID / Booking Code */}
                 <div className="flex items-center space-x-1.5 pt-0.5">
-                  <span className="text-[10px] font-mono font-bold text-zinc-400">
+                  <span className="text-[10px] font-mono font-bold text-[#A7F3D0]">
                     BOOKING:
                   </span>
                   <button
                     onClick={handleCopyAgentId}
-                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#18181B] border border-zinc-700 hover:border-zinc-500 text-white transition-all shadow group"
+                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#072418] border border-[#059669] hover:border-[#10B981] text-white transition-all shadow group"
                     title="Click to copy Agent ID"
                   >
                     <span>{rawAgentId}</span>
                     {copiedId ? (
-                      <Check className="w-3 h-3 text-[#EA580C]" />
+                      <Check className="w-3 h-3 text-[#10B981]" />
                     ) : (
-                      <Copy className="w-3 h-3 text-zinc-400 group-hover:text-white" />
+                      <Copy className="w-3 h-3 text-[#A7F3D0] group-hover:text-white" />
                     )}
                   </button>
                 </div>
 
                 {/* Custom Motto / Slogan */}
-                <p className="text-[11px] text-zinc-300 font-mono italic truncate pt-0.5 leading-snug">
+                <p className="text-[11px] text-[#A7F3D0] font-mono italic truncate pt-0.5 leading-snug">
                   "{config.motto || 'Apex Infiltrator // Zero Trace'}"
                 </p>
               </div>
@@ -356,48 +356,48 @@ export default function OperativeIdCard({
             {/* SVG Barbed Wire Decorative Divider Graphic */}
             <div className="relative py-0.5 overflow-hidden">
               <svg className="w-full h-3 pointer-events-none select-none" viewBox="0 0 340 10" preserveAspectRatio="none">
-                <line x1="0" y1="5" x2="340" y2="5" stroke="#3F3F46" strokeWidth="1" strokeDasharray="3 3" />
-                <path d="M 25 1 L 32 9 M 32 1 L 25 9 M 85 1 L 92 9 M 92 1 L 85 9 M 145 1 L 152 9 M 152 1 L 145 9 M 205 1 L 212 9 M 212 1 L 205 9 M 265 1 L 272 9 M 272 1 L 265 9 M 315 1 L 322 9 M 322 1 L 315 9" stroke="#CA8A04" strokeWidth="1.5" />
+                <line x1="0" y1="5" x2="340" y2="5" stroke="#059669" strokeWidth="1" strokeDasharray="3 3" />
+                <path d="M 25 1 L 32 9 M 32 1 L 25 9 M 85 1 L 92 9 M 92 1 L 85 9 M 145 1 L 152 9 M 152 1 L 145 9 M 205 1 L 212 9 M 212 1 L 205 9 M 265 1 L 272 9 M 272 1 L 265 9 M 315 1 L 322 9 M 322 1 L 315 9" stroke="#10B981" strokeWidth="1.5" />
               </svg>
             </div>
           </div>
 
           {/* Dual Progress Bars matching StatsDashboard */}
-          <div className="relative z-10 bg-[#18181B] border border-zinc-800 rounded-xl p-3 space-y-2.5">
+          <div className="relative z-10 bg-[#072418] border border-[#059669] rounded-xl p-3 space-y-2.5">
             
             {/* XP Progression Bar */}
             <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-zinc-300 font-bold flex items-center space-x-1">
-                  <Star className="w-3 h-3 text-[#EA580C]" />
+                <span className="text-[#F0FDF4] font-bold flex items-center space-x-1">
+                  <Star className="w-3 h-3 text-[#FBBF24]" />
                   <span>XP Progress to Level {level + 1}</span>
                 </span>
-                <span className="text-[#EA580C] font-bold">
+                <span className="text-[#FBBF24] font-bold">
                   {xp.toLocaleString()} XP ({xpPercent}%)
                 </span>
               </div>
-              <div className="w-full bg-[#09090B] h-2.5 rounded-full overflow-hidden border border-zinc-800">
+              <div className="w-full bg-[#020C07] h-2.5 rounded-full overflow-hidden border border-[#064E3B]">
                 <div 
-                  className="bg-[#EA580C] h-full rounded-full transition-all duration-500"
+                  className="bg-[#FBBF24] h-full rounded-full transition-all duration-500"
                   style={{ width: `${xpPercent}%` }}
                 />
               </div>
             </div>
 
             {/* Squad Loyalty Progress Bar (Strictly 1000 max) */}
-            <div className="space-y-1 border-t border-zinc-800 pt-2">
+            <div className="space-y-1 border-t border-[#059669]/50 pt-2">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-zinc-300 font-bold flex items-center space-x-1">
-                  <Shield className="w-3 h-3 text-[#D97706]" />
+                <span className="text-[#F0FDF4] font-bold flex items-center space-x-1">
+                  <Shield className="w-3 h-3 text-[#10B981]" />
                   <span>Squad Loyalty ({loyaltyRank.emoji} {loyaltyRank.name})</span>
                 </span>
-                <span className="text-[#D97706] font-bold">
+                <span className="text-[#10B981] font-bold">
                   {lp.toLocaleString()} / 1,000 LP
                 </span>
               </div>
-              <div className="w-full bg-[#09090B] h-2.5 rounded-full overflow-hidden border border-zinc-800">
+              <div className="w-full bg-[#020C07] h-2.5 rounded-full overflow-hidden border border-[#064E3B]">
                 <div 
-                  className="bg-[#D97706] h-full rounded-full transition-all duration-500"
+                  className="bg-[#10B981] h-full rounded-full transition-all duration-500"
                   style={{ width: `${lpPercent}%` }}
                 />
               </div>
@@ -408,11 +408,11 @@ export default function OperativeIdCard({
           {/* Showcased Medals & Pins */}
           <div className="relative z-10 py-2">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-mono font-black uppercase text-zinc-300 tracking-wider flex items-center space-x-1">
-                <Award className="w-3.5 h-3.5 text-[#EA580C]" />
+              <span className="text-[10px] font-mono font-black uppercase text-[#F0FDF4] tracking-wider flex items-center space-x-1">
+                <Award className="w-3.5 h-3.5 text-[#10B981]" />
                 <span>Showcased Medals</span>
               </span>
-              <span className="text-[9px] font-mono text-zinc-400">
+              <span className="text-[9px] font-mono text-[#A7F3D0]">
                 {showcasedMedalsList.length} FEATURED
               </span>
             </div>
@@ -442,12 +442,12 @@ export default function OperativeIdCard({
 
                     {/* Hover Tooltip */}
                     {isHovered && (
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-48 p-2.5 bg-[#09090B] border border-zinc-700 rounded-xl text-left shadow-xl z-30 pointer-events-none animate-in fade-in">
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-48 p-2.5 bg-[#020C07] border border-[#059669] rounded-xl text-left shadow-xl z-30 pointer-events-none animate-in fade-in">
                         <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold text-white mb-0.5">
-                          <IconComponent className="w-3.5 h-3.5 text-[#EA580C]" />
+                          <IconComponent className="w-3.5 h-3.5 text-[#10B981]" />
                           <span>{medal.title}</span>
                         </div>
-                        <p className="text-[9px] font-mono text-zinc-300 leading-snug">
+                        <p className="text-[9px] font-mono text-[#A7F3D0] leading-snug">
                           {medal.desc}
                         </p>
                       </div>
@@ -460,35 +460,35 @@ export default function OperativeIdCard({
 
           {/* Quick Telemetry Grid matching StatsDashboard stats */}
           <div className="relative z-10 grid grid-cols-3 gap-1.5 py-1 text-center">
-            <div className="bg-[#18181B] border border-zinc-800 rounded-xl py-1.5 px-1">
-              <span className="text-[8px] font-mono text-zinc-400 uppercase block font-bold">Heists Done</span>
+            <div className="bg-[#072418] border border-[#059669] rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-[#A7F3D0] uppercase block font-bold">Heists Done</span>
               <span className="text-xs font-black font-game text-white">
                 {stats.missionsCompleted || 0}
               </span>
             </div>
-            <div className="bg-[#18181B] border border-zinc-800 rounded-xl py-1.5 px-1">
-              <span className="text-[8px] font-mono text-zinc-400 uppercase block font-bold">Vaults Cracked</span>
-              <span className="text-xs font-black font-game text-[#EA580C]">
+            <div className="bg-[#072418] border border-[#059669] rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-[#A7F3D0] uppercase block font-bold">Vaults Cracked</span>
+              <span className="text-xs font-black font-game text-[#10B981]">
                 {stats.vaultsCracked || 0}
               </span>
             </div>
-            <div className="bg-[#18181B] border border-zinc-800 rounded-xl py-1.5 px-1">
-              <span className="text-[8px] font-mono text-zinc-400 uppercase block font-bold">Squad LP</span>
-              <span className="text-xs font-black font-game text-[#D97706]">
+            <div className="bg-[#072418] border border-[#059669] rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-[#A7F3D0] uppercase block font-bold">Squad LP</span>
+              <span className="text-xs font-black font-game text-[#FBBF24]">
                 {lp} LP
               </span>
             </div>
           </div>
 
           {/* Card Footer: Security Barcode & Syndicate Seal */}
-          <div className="relative z-10 pt-2 border-t border-zinc-800 flex items-center justify-between">
+          <div className="relative z-10 pt-2 border-t border-[#059669]/50 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <QrCode className="w-5 h-5 text-zinc-300" />
+              <QrCode className="w-5 h-5 text-[#10B981]" />
               <div className="space-y-0.5">
-                <div className="font-mono text-[8px] text-[#EA580C] font-bold tracking-wider">
+                <div className="font-mono text-[8px] text-[#10B981] font-bold tracking-wider">
                   CANOPY PENITENTIARY // CELL BLOCK 9
                 </div>
-                <div className="font-mono text-[7px] text-zinc-400">
+                <div className="font-mono text-[7px] text-[#A7F3D0]">
                   BOOKING RECORD // {rawAgentId}
                 </div>
               </div>
@@ -497,7 +497,7 @@ export default function OperativeIdCard({
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-zinc-300 hover:text-white flex items-center space-x-1 bg-[#18181B] hover:bg-[#27272A] px-2.5 py-1 rounded-lg border border-zinc-700 transition-all"
+                className="text-[9px] font-mono font-bold text-[#A7F3D0] hover:text-white flex items-center space-x-1 bg-[#072418] hover:bg-[#0A2E20] px-2.5 py-1 rounded-lg border border-[#059669] transition-all"
               >
                 <span>Dossier</span>
                 <RotateCw className="w-3 h-3" />
@@ -511,11 +511,11 @@ export default function OperativeIdCard({
             BACK OF CARD — CANOPY PENITENTIARY INMATE DOSSIER
             ============================================================ */}
         <div 
-          className="absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between shadow-[6px_6px_0px_#000000]"
+          className="absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between shadow-[6px_6px_0px_#020C07]"
           style={{ 
-            borderColor: '#EA580C',
-            boxShadow: '6px 6px 0px #000000',
-            backgroundImage: `linear-gradient(to bottom, rgba(24, 12, 6, 0.92), rgba(12, 6, 3, 0.96), rgba(0, 0, 0, 0.98)), url('/prison_card_bg.jpg')`,
+            borderColor: '#10B981',
+            boxShadow: '6px 6px 0px #020C07',
+            backgroundImage: `linear-gradient(to bottom, rgba(7, 36, 24, 0.94), rgba(5, 24, 17, 0.97), rgba(2, 12, 7, 0.99)), url('/prison_card_bg.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -539,23 +539,23 @@ export default function OperativeIdCard({
             <img src="/prison_seal_emblem.jpg" alt="Watermark Seal" className="w-full h-full object-cover" />
           </div>
 
-          {/* Red Distressed Dossier Stamp */}
-          <div className="absolute top-14 right-3 -rotate-6 border-2 border-[#DC2626] text-[#DC2626] bg-[#18181B] font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow uppercase pointer-events-none select-none z-20">
+          {/* Green Distressed Dossier Stamp */}
+          <div className="absolute top-14 right-3 -rotate-6 border-2 border-[#10B981] text-[#10B981] bg-[#020C07] font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow uppercase pointer-events-none select-none z-20">
             [ CLASSIFIED // FLIGHT RISK ]
           </div>
 
           {/* Header */}
-          <div className="relative z-10 border-b border-zinc-800 pb-3">
+          <div className="relative z-10 border-b border-[#059669]/50 pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-full border-2 border-[#EA580C] p-0.5 bg-black overflow-hidden flex-shrink-0">
+                <div className="w-9 h-9 rounded-full border-2 border-[#10B981] p-0.5 bg-[#020C07] overflow-hidden flex-shrink-0">
                   <img src="/prison_seal_emblem.jpg" alt="Prison Seal" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <div>
                   <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">
                     PENAL CONFINEMENT DOSSIER
                   </h3>
-                  <p className="text-[9px] font-mono text-zinc-400">
+                  <p className="text-[9px] font-mono text-[#A7F3D0]">
                     INMATE RECORD // CELL BLOCK 9
                   </p>
                 </div>
@@ -563,7 +563,7 @@ export default function OperativeIdCard({
               {interactive && (
                 <button
                   onClick={handleFlipToggle}
-                  className="p-1.5 text-zinc-300 hover:text-white bg-[#18181B] hover:bg-[#27272A] border border-zinc-700 rounded-lg transition-colors"
+                  className="p-1.5 text-[#A7F3D0] hover:text-white bg-[#072418] hover:bg-[#0A2E20] border border-[#059669] rounded-lg transition-colors"
                   title="Flip to Front"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
@@ -574,71 +574,71 @@ export default function OperativeIdCard({
 
           {/* Dossier Content */}
           <div className="relative z-10 space-y-3 py-1">
-            <div className="bg-[#18181B] border border-zinc-800 rounded-xl p-3 space-y-2 shadow-inner">
+            <div className="bg-[#072418] border border-[#059669] rounded-xl p-3 space-y-2 shadow-inner">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">Inmate Callsign:</span>
+                <span className="text-[#A7F3D0]">Inmate Callsign:</span>
                 <span className="text-white font-bold">{callsign}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">Criminal Discipline:</span>
-                <span className="text-[#EA580C] font-bold">{role}</span>
+                <span className="text-[#A7F3D0]">Criminal Discipline:</span>
+                <span className="text-[#10B981] font-bold">{role}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">Flight Risk Classification:</span>
-                <span className="text-[#D97706] font-bold">LEVEL {level} // CRITICAL</span>
+                <span className="text-[#A7F3D0]">Flight Risk Classification:</span>
+                <span className="text-[#FBBF24] font-bold">LEVEL {level} // CRITICAL</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">Inmate Loyalty Standing:</span>
-                <span className="text-zinc-200 font-bold">{loyaltyRank.name} ({lp} LP)</span>
+                <span className="text-[#A7F3D0]">Inmate Loyalty Standing:</span>
+                <span className="text-[#10B981] font-bold">{loyaltyRank.name} ({lp} LP)</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">Heist Commendations:</span>
-                <span className="text-[#CA8A04] font-bold">{mvpCount} Trophies Awarded</span>
+                <span className="text-[#A7F3D0]">Heist Commendations:</span>
+                <span className="text-[#FBBF24] font-bold">{mvpCount} Trophies Awarded</span>
               </div>
             </div>
 
             {/* Specialization telemetry */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase text-zinc-300 font-bold block">
+              <span className="text-[10px] font-mono uppercase text-[#F0FDF4] font-bold block">
                 Detention Cell Specializations
               </span>
               <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="bg-[#09090B] border border-zinc-800 p-2 rounded-lg">
-                  <span className="text-zinc-400 block text-[8px]">PRIMARY DISCIPLINE</span>
+                <div className="bg-[#051C12] border border-[#059669]/80 p-2 rounded-lg">
+                  <span className="text-[#A7F3D0] block text-[8px]">PRIMARY DISCIPLINE</span>
                   <span className="text-white font-bold">{role}</span>
                 </div>
-                <div className="bg-[#09090B] border border-zinc-800 p-2 rounded-lg">
-                  <span className="text-zinc-400 block text-[8px]">CELL BLOCK STATUS</span>
-                  <span className="text-[#DC2626] font-bold">High Flight Risk</span>
+                <div className="bg-[#051C12] border border-[#059669]/80 p-2 rounded-lg">
+                  <span className="text-[#A7F3D0] block text-[8px]">CELL BLOCK STATUS</span>
+                  <span className="text-[#10B981] font-bold">High Flight Risk</span>
                 </div>
               </div>
             </div>
 
             {/* Security Cryptographic Hash & Biometric Seal */}
-            <div className="bg-[#18181B] border border-zinc-800 p-2.5 rounded-xl space-y-1 flex items-center justify-between">
+            <div className="bg-[#072418] border border-[#059669] p-2.5 rounded-xl space-y-1 flex items-center justify-between">
               <div className="min-w-0 flex-1 pr-2">
-                <span className="text-[8px] font-mono text-[#EA580C] uppercase block font-bold">
+                <span className="text-[8px] font-mono text-[#10B981] uppercase block font-bold">
                   Penitentiary Booking Signature // Cell Block 9
                 </span>
-                <p className="font-mono text-[9px] text-zinc-400 break-all leading-tight">
+                <p className="font-mono text-[9px] text-[#A7F3D0] break-all leading-tight">
                   SHA-256: {rawAgentId.toLowerCase()}-77a94f81c9b4e0293d0a1
                 </p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-black border border-zinc-700 p-1 flex items-center justify-center flex-shrink-0">
-                <Fingerprint className="w-5 h-5 text-[#EA580C]" />
+              <div className="w-8 h-8 rounded-lg bg-[#020C07] border border-[#059669] p-1 flex items-center justify-center flex-shrink-0">
+                <Fingerprint className="w-5 h-5 text-[#10B981]" />
               </div>
             </div>
           </div>
 
           {/* Bottom Back Button */}
-          <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
-            <span className="text-[8px] font-mono text-zinc-400">
+          <div className="pt-2 border-t border-[#059669]/50 flex items-center justify-between">
+            <span className="text-[8px] font-mono text-[#A7F3D0]">
               MAXIMUM SECURITY // CANOPY PENITENTIARY
             </span>
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-zinc-300 hover:text-white flex items-center space-x-1 bg-[#18181B] hover:bg-[#27272A] px-3 py-1.5 rounded-lg border border-zinc-700 transition-all"
+                className="text-[9px] font-mono font-bold text-[#10B981] hover:text-white flex items-center space-x-1 bg-[#072418] hover:bg-[#0A2E20] px-3 py-1.5 rounded-lg border border-[#059669] transition-all"
               >
                 <span>Return to ID Front</span>
                 <RotateCw className="w-3 h-3" />

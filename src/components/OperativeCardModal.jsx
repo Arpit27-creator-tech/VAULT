@@ -59,9 +59,9 @@ export default function OperativeCardModal({
         {/* Top Floating Control Bar */}
         <div className="w-full flex items-center justify-between mb-3 px-1 text-xs font-mono">
           <div className="flex items-center space-x-2 text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-bold uppercase tracking-wider text-emerald-300">
-              INSPECTING OPERATIVE
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping" />
+            <span className="font-bold uppercase tracking-wider text-orange-400">
+              INMATE RECORD // CELL BLOCK 9
             </span>
           </div>
 
@@ -85,7 +85,7 @@ export default function OperativeCardModal({
         </div>
 
         {/* Bottom Inspection Actions */}
-        <div className="mt-4 w-[340px] sm:w-[380px] bg-[#020D08]/90 border border-emerald-500/30 backdrop-blur-md rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-2xl">
+        <div className="mt-4 w-[340px] sm:w-[380px] bg-[#0d0703]/90 border border-orange-500/30 backdrop-blur-md rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-2xl">
           
           {/* Flip Card Action */}
           <button
@@ -102,11 +102,11 @@ export default function OperativeCardModal({
           {/* Copy Agent ID */}
           <button
             onClick={handleCopyAgentId}
-            className="py-2 px-3 bg-black/40 hover:bg-emerald-500/20 text-amber-300 hover:text-white border border-amber-500/30 hover:border-emerald-500/50 rounded-xl font-mono text-xs flex items-center space-x-1.5 transition-all"
-            title="Copy Agent ID"
+            className="py-2 px-3 bg-black/40 hover:bg-orange-500/20 text-amber-300 hover:text-white border border-amber-500/30 hover:border-orange-500/50 rounded-xl font-mono text-xs flex items-center space-x-1.5 transition-all"
+            title="Copy Booking ID"
           >
-            {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedId ? 'Copied' : 'Copy ID'}</span>
+            {copiedId ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedId ? 'Copied' : 'Booking ID'}</span>
           </button>
 
           {/* If inspecting myself: open customizer button */}
@@ -116,9 +116,9 @@ export default function OperativeCardModal({
                 onClose();
                 onOpenCustomizer();
               }}
-              className="w-full py-2.5 px-4 bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-bold font-mono text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+              className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-400 text-black font-bold font-mono text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
             >
-              <span>🎨 Customize My ID Card</span>
+              <span>🔒 Customize Inmate Pass</span>
             </button>
           )}
 

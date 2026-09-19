@@ -67,7 +67,7 @@ export default function OperativeIdCard({
     return getOperativeCardConfig(operative);
   }, [operative, customConfig]);
 
-  const activeTheme = CARD_THEMES[config.theme] || CARD_THEMES.CANOPY_EMERALD;
+  const activeTheme = CARD_THEMES.PRISON_INMATE;
 
   // Operative metrics
   const callsign = operative?.callsign || operative?.username || 'GHOST OPERATIVE';
@@ -119,12 +119,6 @@ export default function OperativeIdCard({
     });
   }, [config.showcasedMedals]);
 
-  // Frame & Theme styles
-  const isPrison = activeTheme.isPrison || config.theme === 'PRISON_INMATE' || config.frameStyle === 'prisonBars';
-  const isHolo = config.frameStyle === 'holographic' && !isPrison;
-  const isCarbon = config.frameStyle === 'carbon' && !isPrison;
-  const isCircuit = config.frameStyle === 'circuit' && !isPrison;
-  const isBars = isPrison || config.frameStyle === 'prisonBars';
 
   return (
     <div className={`perspective-1000 select-none ${className}`}>
@@ -135,7 +129,7 @@ export default function OperativeIdCard({
       >
         
         {/* ============================================================
-            FRONT OF CARD — V.A.U.L.T. OPERATIVE ID CLEARANCE PASS
+            FRONT OF CARD — CANOPY PENITENTIARY CELL BLOCK 9 INMATE PASS
             ============================================================ */}
         <div 
           className={`absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
@@ -145,81 +139,53 @@ export default function OperativeIdCard({
           }}
         >
           {/* Hologram Foil / Shimmer Overlay */}
-          {isHolo && config.hologramShimmer && (
+          {config.hologramShimmer && (
             <div 
               className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay animate-holo-sheen"
               style={{ background: activeTheme.holoGradient }}
             />
           )}
 
-          {/* Carbon Weave Texture Overlay */}
-          {isCarbon && (
-            <div 
-              className="absolute inset-0 opacity-15 pointer-events-none"
-              style={{ 
-                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0)`,
-                backgroundSize: '8px 8px'
-              }}
-            />
-          )}
-
-          {/* Circuit Grid Texture Overlay */}
-          {isCircuit && (
-            <div 
-              className="absolute inset-0 opacity-10 pointer-events-none"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${activeTheme.primaryColor} 1px, transparent 1px), linear-gradient(to bottom, ${activeTheme.primaryColor} 1px, transparent 1px)`,
-                backgroundSize: '24px 24px'
-              }}
-            />
-          )}
-
           {/* Prison Cell Bars Texture */}
-          {isBars && (
-            <div 
-              className="absolute inset-0 opacity-15 pointer-events-none"
-              style={{
-                backgroundImage: 'repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 2px, transparent 2px, transparent 24px)'
-              }}
-            />
-          )}
+          <div 
+            className="absolute inset-0 opacity-15 pointer-events-none"
+            style={{
+              backgroundImage: 'repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 2px, transparent 2px, transparent 24px)'
+            }}
+          />
 
           {/* Prison Hazard Caution Banner */}
-          {isPrison && (
-            <div 
-              className="relative -mx-5 -mt-5 mb-2.5 py-1 px-3 flex items-center justify-between text-[8px] font-mono font-black uppercase text-black tracking-wider shadow-md"
-              style={{ background: 'repeating-linear-gradient(45deg, #F59E0B, #F59E0B 10px, #000 10px, #000 20px)' }}
-            >
-              <span className="bg-black text-[#FBBF24] px-2 py-0.5 rounded font-black tracking-widest flex items-center space-x-1">
-                <span>⚠️ CANOPY PENITENTIARY</span>
-              </span>
-              <span className="bg-red-600 text-white px-1.5 py-0.5 rounded font-black animate-pulse">
-                CELL BLOCK 9
-              </span>
-            </div>
-          )}
+          <div 
+            className="relative -mx-5 -mt-5 mb-2.5 py-1 px-3 flex items-center justify-between text-[8px] font-mono font-black uppercase text-black tracking-wider shadow-md"
+            style={{ background: 'repeating-linear-gradient(45deg, #F59E0B, #F59E0B 10px, #000 10px, #000 20px)' }}
+          >
+            <span className="bg-black text-[#FBBF24] px-2 py-0.5 rounded font-black tracking-widest flex items-center space-x-1">
+              <span>⚠️ CANOPY PENITENTIARY</span>
+            </span>
+            <span className="bg-red-600 text-white px-1.5 py-0.5 rounded font-black animate-pulse">
+              CELL BLOCK 9
+            </span>
+          </div>
 
           {/* Distressed Inmate Stamp Overlay */}
-          {isPrison && (
-            <div className="absolute top-14 right-3.5 rotate-12 border-2 border-red-500/80 text-red-400 bg-red-950/70 font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow-lg uppercase pointer-events-none select-none z-20">
-              [ INMATE C-09 ]
-            </div>
-          )}
+          <div className="absolute top-14 right-3.5 rotate-12 border-2 border-red-500/80 text-red-400 bg-red-950/70 font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow-lg uppercase pointer-events-none select-none z-20">
+            [ INMATE C-09 ]
+          </div>
 
           {/* Top Lanyard Badge Slot Cutout (Authentic ID Pass Detail) */}
           <div className="relative z-10 flex justify-center -mt-1 mb-2">
-            <div className="w-14 h-2 bg-[#020B06] border border-emerald-900/80 rounded-full shadow-inner" />
+            <div className="w-14 h-2 bg-[#020B06] border border-orange-950/80 rounded-full shadow-inner" />
           </div>
 
           {/* Top Security Header */}
-          <div className="relative z-10 border-b border-emerald-900/60 pb-3">
+          <div className="relative z-10 border-b border-orange-900/60 pb-3">
             <div className="flex items-center justify-between">
               
               <div className="flex items-center space-x-2.5">
                 {/* Micro Smart Chip with 6 golden pins */}
                 <div 
                   className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FBBF24] to-[#B45309] border border-amber-400 p-1 flex flex-col justify-between shadow-sm flex-shrink-0"
-                  title="Syndicate Smart Key Security Chip"
+                  title="Detention Smart Key Security Chip"
                 >
                   <div className="flex justify-between h-2 border-b border-amber-900/60">
                     <div className="w-2 border-r border-amber-900/60" />
@@ -234,43 +200,31 @@ export default function OperativeIdCard({
                 <div>
                   <div className="flex items-center space-x-1.5">
                     <span className="font-game font-black text-sm text-white tracking-wider">
-                      {isPrison ? '🔒 CELL BLOCK 9' : '🌲 V.A.U.L.T.'}
+                      🔒 CELL BLOCK 9
                     </span>
-                    <span 
-                      className={`font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase ${
-                        isPrison 
-                          ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
-                          : 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40'
-                      }`}
-                    >
-                      {isPrison ? 'INMATE PASS' : 'SEC PASS'}
+                    <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase bg-orange-500/20 text-orange-400 border-orange-500/50">
+                      INMATE PASS
                     </span>
                   </div>
-                  <p className="text-[10px] font-mono text-emerald-300/70">
-                    {isPrison ? 'MAX SECURITY INCARCERATION' : 'OPERATIVE IDENTIFICATION'}
+                  <p className="text-[10px] font-mono text-orange-300/80">
+                    MAX SECURITY INCARCERATION
                   </p>
                 </div>
               </div>
 
               {/* Status indicator & Flip toggle */}
               <div className="flex items-center space-x-2">
-                <div className={`flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border text-[9px] font-mono ${
-                  isPrison ? 'border-red-500/50' : 'border-emerald-800/60'
-                }`}>
-                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                    isPrison ? 'bg-red-500' : 'bg-[#10B981]'
-                  }`} />
-                  <span className={`font-bold tracking-wide ${
-                    isPrison ? 'text-red-400' : 'text-emerald-300'
-                  }`}>
-                    {isPrison ? 'DETAINED' : 'ACTIVE'}
+                <div className="flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border border-red-500/50 text-[9px] font-mono">
+                  <div className="w-1.5 h-1.5 rounded-full animate-pulse bg-red-500" />
+                  <span className="font-bold tracking-wide text-red-400">
+                    DETAINED
                   </span>
                 </div>
                 {interactive && (
                   <button
                     onClick={handleFlipToggle}
-                    className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-[#07281A] border border-emerald-800/60 rounded-lg transition-colors"
-                    title="Flip to Operative Dossier"
+                    className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-orange-950/40 border border-orange-800/60 rounded-lg transition-colors"
+                    title="Flip to Inmate Dossier"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
                   </button>
@@ -330,12 +284,8 @@ export default function OperativeIdCard({
               {/* Callsign & Tag details */}
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                    isPrison 
-                      ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
-                      : 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40'
-                  }`}>
-                    {isPrison ? `Convict ${role}` : role}
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase bg-orange-500/20 text-orange-400 border-orange-500/50">
+                    Convict {role}
                   </span>
                   {mvpCount > 0 && (
                     <span className="inline-flex items-center space-x-1 bg-[#FBBF24]/15 text-[#FDE047] font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#FBBF24]/50">
@@ -346,13 +296,13 @@ export default function OperativeIdCard({
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-black text-white font-game uppercase tracking-tight truncate">
-                  {isPrison ? `INMATE: ${callsign}` : callsign}
+                  INMATE: {callsign}
                 </h2>
 
                 {/* Unique Agent ID / Booking Code */}
                 <div className="flex items-center space-x-1.5 pt-0.5">
-                  <span className="text-[10px] font-mono font-bold text-slate-400">
-                    {isPrison ? 'BOOKING:' : 'TAG:'}
+                  <span className="text-[10px] font-mono font-bold text-orange-300/80">
+                    BOOKING:
                   </span>
                   <button
                     onClick={handleCopyAgentId}
@@ -500,11 +450,11 @@ export default function OperativeIdCard({
             <div className="flex items-center space-x-2">
               <QrCode className="w-5 h-5 text-emerald-400" />
               <div className="space-y-0.5">
-                <div className="font-mono text-[8px] text-emerald-300/80 font-bold tracking-wider">
-                  V.A.U.L.T // {rawAgentId.replace('VAULT-', '')}
+                <div className="font-mono text-[8px] text-orange-400 font-bold tracking-wider">
+                  CANOPY PENITENTIARY // CELL BLOCK 9
                 </div>
-                <div className="font-mono text-[7px] text-slate-400">
-                  CANOPY SYNDICATE CLEARANCE
+                <div className="font-mono text-[7px] text-orange-200/60">
+                  BOOKING RECORD // {rawAgentId}
                 </div>
               </div>
             </div>
@@ -512,7 +462,7 @@ export default function OperativeIdCard({
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-slate-300 hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-[#072418] px-2.5 py-1 rounded-lg border border-emerald-800/60 transition-all"
+                className="text-[9px] font-mono font-bold text-slate-300 hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-orange-950/40 px-2.5 py-1 rounded-lg border border-orange-800/60 transition-all"
               >
                 <span>Dossier</span>
                 <RotateCw className="w-3 h-3" />
@@ -523,7 +473,7 @@ export default function OperativeIdCard({
         </div>
 
         {/* ============================================================
-            BACK OF CARD — SYNDICATE OPERATIVE DOSSIER
+            BACK OF CARD — CANOPY PENITENTIARY INMATE DOSSIER
             ============================================================ */}
         <div 
           className={`absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
@@ -533,23 +483,23 @@ export default function OperativeIdCard({
           }}
         >
           {/* Header */}
-          <div className="border-b border-emerald-900/60 pb-3">
+          <div className="border-b border-orange-900/60 pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Fingerprint className="w-5 h-5 text-[#FBBF24]" />
                 <div>
                   <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">
-                    {isPrison ? 'PENAL CONFINEMENT DOSSIER' : 'OPERATIVE DOSSIER'}
+                    PENAL CONFINEMENT DOSSIER
                   </h3>
-                  <p className="text-[9px] font-mono text-emerald-300/70">
-                    {isPrison ? 'INMATE RECORD // CELL BLOCK 9' : `BIOMETRIC RECORD // ${rawAgentId}`}
+                  <p className="text-[9px] font-mono text-orange-300/80">
+                    INMATE RECORD // CELL BLOCK 9
                   </p>
                 </div>
               </div>
               {interactive && (
                 <button
                   onClick={handleFlipToggle}
-                  className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-[#072418] border border-emerald-800/60 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-orange-950/40 border border-orange-800/60 rounded-lg transition-colors"
                   title="Flip to Front"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
@@ -560,25 +510,25 @@ export default function OperativeIdCard({
 
           {/* Dossier Content */}
           <div className="space-y-3.5 py-2">
-            <div className="bg-[#020B06]/80 border border-emerald-900/60 rounded-xl p-3 space-y-2">
+            <div className="bg-[#020B06]/80 border border-orange-900/60 rounded-xl p-3 space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">{isPrison ? 'Inmate Callsign:' : 'Operative Callsign:'}</span>
+                <span className="text-slate-400">Inmate Callsign:</span>
                 <span className="text-white font-bold">{callsign}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">{isPrison ? 'Criminal Discipline:' : 'Assigned Specialization:'}</span>
-                <span className="text-[#34D399] font-bold">{role}</span>
+                <span className="text-slate-400">Criminal Discipline:</span>
+                <span className="text-[#F97316] font-bold">{role}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">{isPrison ? 'Flight Risk Classification:' : 'Security Clearance:'}</span>
-                <span className="text-[#FBBF24] font-bold">{isPrison ? `LEVEL ${level} // CRITICAL` : `LEVEL ${level}`}</span>
+                <span className="text-slate-400">Flight Risk Classification:</span>
+                <span className="text-[#FBBF24] font-bold">LEVEL {level} // CRITICAL</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">{isPrison ? 'Inmate Loyalty Standing:' : 'Squad Loyalty Standing:'}</span>
-                <span className="text-emerald-400 font-bold">{loyaltyRank.name} ({lp} LP)</span>
+                <span className="text-slate-400">Inmate Loyalty Standing:</span>
+                <span className="text-orange-400 font-bold">{loyaltyRank.name} ({lp} LP)</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">{isPrison ? 'Heist Commendations:' : 'MVP Commendations:'}</span>
+                <span className="text-slate-400">Heist Commendations:</span>
                 <span className="text-[#FBBF24] font-bold">{mvpCount} Trophies Awarded</span>
               </div>
             </div>
@@ -586,24 +536,24 @@ export default function OperativeIdCard({
             {/* Specialization telemetry */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-mono uppercase text-slate-300 font-bold block">
-                Chamber Specializations
+                Detention Cell Specializations
               </span>
               <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="bg-[#020B06]/70 border border-emerald-900/50 p-2 rounded-lg">
+                <div className="bg-[#020B06]/70 border border-orange-900/50 p-2 rounded-lg">
                   <span className="text-slate-400 block text-[8px]">PRIMARY DISCIPLINE</span>
                   <span className="text-white font-bold">{role}</span>
                 </div>
-                <div className="bg-[#020B06]/70 border border-emerald-900/50 p-2 rounded-lg">
-                  <span className="text-slate-400 block text-[8px]">EXTRACTION PROTOCOL</span>
-                  <span className="text-emerald-400 font-bold">Sub-Zero Extraction</span>
+                <div className="bg-[#020B06]/70 border border-orange-900/50 p-2 rounded-lg">
+                  <span className="text-slate-400 block text-[8px]">CELL BLOCK STATUS</span>
+                  <span className="text-red-400 font-bold">High Flight Risk</span>
                 </div>
               </div>
             </div>
 
             {/* Security Cryptographic Hash */}
-            <div className="bg-[#020B06]/90 border border-emerald-900/70 p-3 rounded-xl space-y-1">
-              <span className="text-[8px] font-mono text-emerald-400/80 uppercase block font-bold">
-                Cryptographic Signature // V.A.U.L.T Protocol
+            <div className="bg-[#020B06]/90 border border-orange-900/70 p-3 rounded-xl space-y-1">
+              <span className="text-[8px] font-mono text-orange-400/90 uppercase block font-bold">
+                Penitentiary Booking Signature // Cell Block 9
               </span>
               <p className="font-mono text-[9px] text-slate-300 break-all leading-tight">
                 SHA-256: {rawAgentId.toLowerCase()}-77a94f81c9b4e0293d0a1
@@ -612,14 +562,14 @@ export default function OperativeIdCard({
           </div>
 
           {/* Bottom Back Button */}
-          <div className="pt-2 border-t border-emerald-900/60 flex items-center justify-between">
+          <div className="pt-2 border-t border-orange-900/60 flex items-center justify-between">
             <span className="text-[8px] font-mono text-slate-400">
-              CONFIDENTIAL // V.A.U.L.T SYNDICATE
+              MAXIMUM SECURITY // CANOPY PENITENTIARY
             </span>
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-[#FBBF24] hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-[#072418] px-3 py-1.5 rounded-lg border border-amber-500/40 transition-all"
+                className="text-[9px] font-mono font-bold text-[#FBBF24] hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-orange-950/40 px-3 py-1.5 rounded-lg border border-amber-500/40 transition-all"
               >
                 <span>Return to ID Front</span>
                 <RotateCw className="w-3 h-3" />

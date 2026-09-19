@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VAULT player profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- Stage tokens (follow the viewer's theme) ---------- */
+:root{
+  --stage-bg:#e6efe9; --stage-text:#0c2418; --stage-text-2:#48655a;
+  --stage-ctl-bg:#ffffff; --stage-ctl-line:#b9d0c4; --stage-accent:#12744c;
+
+  /* Card tokens: the card is always dark green */
+  --ink:#04140d; --hs:#020d08;
+  --felt:#14472f; --felt-2:#0e3826; --deep:#08251a;
+  --text:#ffffff; --mint:#6ef0b0; --mint-2:#9fe3c2; --mint-3:#4df0b0;
+  --btn:#1fa36b; --btn-shadow:#07361f;
+  --red:#ec2f58; --pink:#ff5a7d; --yellow:#fbdc3f;
+  --mono:"Space Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --disp:"Rubik",ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage-bg:#06150f; --stage-text:#e9f7ef; --stage-text-2:#9cc2b0;
+    --stage-ctl-bg:#0d2a1e; --stage-ctl-line:#1f5a41; --stage-accent:#1fa36b;
+  }
+}
+:root[data-theme="dark"]{
+  --stage-bg:#06150f; --stage-text:#e9f7ef; --stage-text-2:#9cc2b0;
+  --stage-ctl-bg:#0d2a1e; --stage-ctl-line:#1f5a41; --stage-accent:#1fa36b;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--stage-bg);color:var(--stage-text);font-family:var(--disp);line-height:1.4}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.solid{fill:currentColor;stroke:none}
+button{font:inherit}
+
+/* ---------- Stage ---------- */
+.stage{max-width:1120px;margin:0 auto;padding:22px 16px 56px}
+.stage-head h1{font-size:24px;margin:0 0 4px;font-weight:800}
+.stage-head p{margin:0;color:var(--stage-text-2);font-size:14px;font-family:var(--mono);max-width:64ch}
+.controls{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;margin:18px 0 26px}
+.seg{display:inline-flex;background:var(--stage-ctl-bg);border:2px solid var(--stage-ctl-line);border-radius:14px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--stage-text-2);font-weight:700;font-size:14px;padding:7px 14px;border-radius:10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--stage-accent);color:#fff}
+.seg button:focus-visible,.chk input:focus-visible{outline:3px solid var(--stage-accent);outline-offset:2px}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--stage-text-2);cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--stage-accent)}
+@media (max-width:1039px){ .seg button[data-layout="side"]{display:none} }
+
+.cards{display:grid;gap:34px;justify-items:center}
+.cards[data-layout="side"]{grid-template-columns:repeat(2,minmax(0,500px));justify-content:center;align-items:start}
+.card-wrap{width:100%;max-width:450px;container-type:inline-size;padding:0 10px 12px 0}
+.cards[data-layout="single"] .card-wrap{max-width:900px}
+.card-wrap[hidden]{display:none}
+
+/* ---------- Card ---------- */
+.card{
+  position:relative;color:var(--text);
+  background:
+    radial-gradient(circle,rgba(110,240,176,.13) 1.6px,transparent 1.9px) 0 0/24px 24px,
+    linear-gradient(180deg,#0d3626,#07190f);
+  border-radius:38px;padding:14px;
+  box-shadow:8px 10px 0 var(--hs);
+  display:grid;gap:14px;
+  grid-template-areas:"head" "hero" "xp" "medals" "stats" "details";
+}
+.card :focus-visible,.dlg :focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+
+/* Stickers and chips */
+.sticker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:7px 13px 7px 11px;border-radius:14px;border:3px solid var(--ink);box-shadow:3px 4px 0 var(--ink);color:var(--ink)}
+.sticker .ic{width:16px;height:16px}
+.sticker.gold{background:var(--yellow);transform:rotate(-2deg)}
+.sticker.on{background:var(--mint-3);transform:rotate(2deg)}
+.sticker.off{background:#3a4a43;color:#e8f5ee;transform:rotate(2deg)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ink)}
+.chip{display:inline-block;font-family:var(--mono);font-weight:700;font-size:12px;line-height:1;padding:5px 7px;border-radius:9px;border:2px solid var(--ink);background:var(--rc,#2fd08a);color:var(--ink);text-transform:uppercase;white-space:nowrap}
+
+/* Header */
+.head{grid-area:head;display:flex;align-items:center;gap:10px;padding:4px 2px 0}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:22px;letter-spacing:.02em}
+.logo svg{width:32px;height:32px}
+.spacer{flex:1}
+.iconbtn{width:44px;height:44px;border-radius:15px;border:2px solid #1d5c42;background:var(--ink);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:3px 4px 0 var(--hs)}
+.iconbtn:active{transform:translate(2px,3px);box-shadow:1px 1px 0 var(--hs)}
+.menu{position:absolute;right:14px;top:66px;z-index:5;min-width:210px;background:var(--ink);border:3px solid var(--btn);border-radius:20px;padding:6px;box-shadow:5px 6px 0 var(--hs)}
+.menu[hidden]{display:none}
+.menu button{display:block;width:100%;text-align:left;background:transparent;border:0;color:#fff;font-weight:700;font-size:15px;padding:11px 12px;border-radius:12px;cursor:pointer}
+.menu button:hover{background:rgba(110,240,176,.14)}
+
+/* Hero */
+.hero{
+  grid-area:hero;border-radius:32px;padding:24px 16px 20px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  background:radial-gradient(circle,rgba(110,240,176,.10) 1.4px,transparent 1.7px) 0 0/20px 20px,var(--felt);
+  box-shadow:6px 8px 0 var(--hs);
+}
+.avatar-wrap{position:relative;width:144px;height:144px;margin-bottom:6px}
+.avatar{width:100%;height:100%;border-radius:34px;overflow:hidden;background:var(--yellow);border:4px solid var(--ink);box-shadow:5px 6px 0 var(--ink)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.fallback{width:100%;height:100%;display:grid;place-items:center;font-weight:800;font-size:56px;color:var(--ink);background:linear-gradient(135deg,#fbdc3f,#f4a62a)}
+.is-off .avatar{background:#3a4a43;border-color:var(--ink)}
+.is-off .avatar img,.is-off .fallback{filter:grayscale(.9) brightness(.72)}
+.astatus{position:absolute;top:-8px;right:-8px;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;border:3px solid var(--ink);box-shadow:2px 3px 0 var(--ink);transform:rotate(6deg)}
+.astatus .ic{width:17px;height:17px}
+.astatus.on{background:var(--mint-3);color:var(--ink)}
+.astatus.off{background:#3a4a43;color:#e8f5ee}
+.lv{position:absolute;right:-12px;bottom:-10px;transform:rotate(-4deg);background:var(--yellow);color:var(--ink);border:3px solid var(--ink);border-radius:13px;box-shadow:3px 4px 0 var(--ink);padding:3px 10px;font-weight:800;font-size:17px;white-space:nowrap}
+.name{font-weight:800;font-size:clamp(28px,8.5vw,38px);line-height:1.05;margin:6px 0 0;max-width:100%;text-transform:uppercase;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.presence{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 8px;margin:0;font-family:var(--mono);font-size:14px;color:var(--mint)}
+.pillhl{display:inline-block;border:2px solid #2fa672;border-radius:12px;padding:3px 10px;font-weight:700;color:var(--yellow);background:rgba(4,20,13,.35)}
+.is-off .pillhl{color:#d3ece0;border-color:#4b7d68}
+.idchip{display:inline-flex;align-items:center;gap:9px;background:var(--ink);border:2px solid #1d5c42;color:#fff;border-radius:14px;padding:8px 12px;cursor:pointer;font-family:var(--mono);font-weight:700;font-size:14px;max-width:100%;box-shadow:3px 4px 0 var(--hs)}
+.idchip small{color:var(--mint-2);font-size:12px;font-weight:400}
+.idchip .ic{width:17px;height:17px;color:var(--mint)}
+.idchip:active{transform:translate(2px,3px);box-shadow:1px 1px 0 var(--hs)}
+.cta{width:100%;max-width:340px;margin-top:6px;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;background:var(--btn);color:#032315;border:3px solid var(--ink);border-radius:18px;font-weight:800;font-size:18px;letter-spacing:.02em;text-transform:uppercase;padding:14px 18px;box-shadow:4px 5px 0 var(--ink)}
+.cta:active:not(:disabled){transform:translate(3px,4px);box-shadow:1px 1px 0 var(--ink)}
+.cta:disabled{cursor:not-allowed;background:#16382a;color:#8fbba7;border:3px dashed #2f6b4f;box-shadow:none}
+.help{margin:0;font-family:var(--mono);font-size:13px;color:var(--mint-2);max-width:32ch}
+
+/* XP panel */
+.xp{grid-area:xp;background:var(--felt);border-radius:28px;padding:16px;box-shadow:6px 8px 0 var(--hs)}
+.xp-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.xp-lv{font-weight:800;font-size:24px;text-transform:uppercase}
+.xp-num{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--mint)}
+.bar{height:30px;border-radius:999px;background:var(--ink);padding:5px;margin:12px 0 14px}
+.fill{width:var(--pct);height:100%;border-radius:999px;background:repeating-linear-gradient(-45deg,rgba(0,0,0,.13) 0 8px,transparent 8px 16px),var(--yellow)}
+.xp-msg{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-family:var(--mono);font-size:14px;color:var(--mint)}
+.xp-msg .chip{--rc:#2fd08a;box-shadow:2px 2px 0 var(--ink)}
+.loyal{display:flex;align-items:center;gap:10px;margin-top:14px;padding:9px 12px;background:rgba(4,20,13,.4);border-radius:16px;font-family:var(--mono);font-size:13px;color:var(--mint-2)}
+.mini{margin-left:auto;width:60px;height:10px;border-radius:99px;background:var(--ink);overflow:hidden;flex:none}
+.mini i{display:block;height:100%;background:var(--mint-3);border-radius:99px}
+.loyal b{color:#fff}
+
+/* Medals */
+.medals{grid-area:medals}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:2px 4px 12px}
+.sec-h h3{font-size:20px;font-weight:800;margin:0;text-transform:uppercase}
+.sec-h span{font-family:var(--mono);font-size:13px;color:var(--mint)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.r-legendary{--rc:#fbdc3f}
+.r-epic{--rc:#ff5a7d}
+.r-rare{--rc:#4df0b0}
+.tile{appearance:none;color:#fff;text-align:center;cursor:pointer;background:var(--felt);border:0;border-radius:22px;padding:14px 5px 12px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:4px 5px 0 var(--hs)}
+.tile:hover{background:#1a553a}
+.plate{width:62px;height:62px;border-radius:19px;background:var(--rc);border:3px solid var(--ink);box-shadow:3px 4px 0 var(--ink);display:grid;place-items:center;font-size:32px;line-height:1;transform:rotate(-3deg)}
+.tile:nth-child(2) .plate{transform:rotate(4deg)}
+.plate.big{width:96px;height:96px;font-size:50px;border-radius:28px}
+.tname{font-weight:700;font-size:13.5px;line-height:1.15;text-transform:uppercase;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;min-height:2.3em;max-width:100%}
+.state{font-family:var(--mono);font-size:12px;color:var(--mint-2)}
+.tile.locked{background:transparent;box-shadow:none;border:3px dashed #2f6b4f;padding:11px 3px 9px}
+.tile.locked:hover{background:rgba(110,240,176,.06)}
+.locked .plate{background:var(--deep);border:3px dashed #2f6b4f;box-shadow:none;color:#9fe3c2}
+.locked .tname{color:#b4d8c6}
+.locked .chip{background:#16382a;color:var(--mint-2);border-color:#2f6b4f}
+
+/* Stats */
+.stats{grid-area:stats;background:var(--felt);border-radius:28px;padding:16px 8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;box-shadow:6px 8px 0 var(--hs)}
+.stat{text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+.stat .emo{width:38px;height:38px;border-radius:12px;border:3px solid var(--ink);box-shadow:2px 3px 0 var(--ink);display:grid;place-items:center;font-size:19px;margin-bottom:4px}
+.stat b{font-weight:800;font-size:32px;line-height:1.05;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--mono);font-size:12.5px;color:var(--mint)}
+
+/* Details */
+.details{grid-area:details}
+.details summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-radius:22px;background:var(--deep);border:3px solid var(--btn);color:var(--mint-3);font-weight:800;font-size:16px;text-transform:uppercase}
+.details summary::-webkit-details-marker{display:none}
+.sum-l{display:flex;flex-direction:column}
+.sum-l small{font-family:var(--mono);font-weight:400;font-size:12.5px;text-transform:none;color:var(--mint-2)}
+.details[open] .chev{transform:rotate(180deg)}
+.details-body{display:flex;flex-wrap:wrap;gap:16px 20px;align-items:center;margin-top:12px;padding:16px;background:var(--felt);border-radius:26px;box-shadow:6px 8px 0 var(--hs)}
+.qr{width:112px;height:112px;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:6px;box-shadow:3px 4px 0 var(--ink);flex:none}
+.qr svg{width:100%;height:100%;display:block}
+.meta{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-family:var(--mono);font-size:13.5px;min-width:0}
+.meta dt{color:var(--mint-2)}
+.meta dd{margin:0;font-weight:700;color:#fff;overflow-wrap:anywhere}
+
+/* Wide card: two columns */
+@container (min-width:620px){
+  .card{padding:22px;gap:18px;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+    grid-template-areas:"head head" "hero xp" "hero medals" "hero stats" "details details"}
+  .hero{justify-content:center;padding:30px 20px}
+  .avatar-wrap{width:168px;height:168px}
+  .menu{right:22px;top:76px}
+  .card{padding-left:24px}
+}
+@container (max-width:360px){
+  .tname{font-size:12.5px}
+  .chip{font-size:11px;padding:5px 5px}
+  .stat b{font-size:27px}
+  .tile{padding:12px 3px 10px}
+  .plate{width:54px;height:54px;font-size:28px}
+}
+
+/* Motion: one pulse, one bar fill; both respect reduced motion */
+@media (prefers-reduced-motion:no-preference){
+  .dot.pulse{animation:pulse 2.4s ease-out infinite}
+  .fill{animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(4,20,13,.55)}70%,100%{box-shadow:0 0 0 7px rgba(4,20,13,0)}}
+@keyframes grow{from{width:0}}
+
+/* Medal dialog */
+.dlg{padding:0;border:0;border-radius:34px;color:#fff;width:calc(100% - 32px);max-width:380px;font-family:var(--disp);
+  background:radial-gradient(circle,rgba(110,240,176,.13) 1.6px,transparent 1.9px) 0 0/24px 24px,linear-gradient(180deg,#0d3626,#07190f);box-shadow:8px 10px 0 var(--hs)}
+.dlg::backdrop{background:rgba(2,10,6,.78)}
+.dlg-in{position:relative;padding:26px 20px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.dlg h3{font-size:26px;font-weight:800;margin:8px 0 0;line-height:1.1;text-transform:uppercase;overflow-wrap:anywhere}
+.dlg p{margin:0;font-family:var(--mono);color:var(--mint);font-size:14px}
+.dlg .dstate{color:#fff;font-weight:700}
+.dlg .closex{position:absolute;top:14px;right:14px}
+.dlg .keep{width:100%;margin-top:6px;background:var(--deep);border:3px solid var(--btn);color:var(--mint-3);border-radius:20px;padding:13px;font-weight:800;font-size:16px;text-transform:uppercase;cursor:pointer}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;border:3px solid var(--btn);border-radius:16px;box-shadow:4px 5px 0 var(--hs);padding:10px 18px;font-weight:700;font-size:15px;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ef0b0"/><stop offset="1" stop-color="#fbdc3f"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="2.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><polygon points="13 2 4 14 11 14 10 22 20 9 13 9 13 2" fill="currentColor"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2l2.2 7.3L22 12l-7.8 2.7L12 22l-2.2-7.3L2 12l7.8-2.7z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<main class="stage">
+  <header class="stage-head">
+    <h1>VAULT player profile</h1>
+    <p>Viewing another agent. Restyled to match the mission-exit screen: green felt, hard shadows, stickers.</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Preview state">
+      <button type="button" data-layout="online" aria-pressed="true">Online</button>
+      <button type="button" data-layout="offline" aria-pressed="false">Offline</button>
+      <button type="button" data-layout="side" aria-pressed="false">Side by side</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="stress"> Long name and medal titles</label>
+    <label class="chk"><input type="checkbox" id="noav"> Missing avatar</label>
+  </div>
+
+  <div class="cards" id="cards"></div>
+</main>
+
+<dialog class="dlg" id="dlg" aria-label="Medal details"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+  // ---------- Example data (Arpit) ----------
+  var PLAYER = {
+    name:'Arpit', title:'Field operative', id:'VLT-4827-9QX',
+    level:27, xp:1840, xpNext:2500, loyalty:82,
+    stats:{runs:312, win:68, streak:14},
+    since:'Nov 2025', clearance:'Tier 3', mode:'Heist run',
+    medals:[
+      {name:'Vault Cracker', rarity:'legendary', emoji:'\uD83D\uDDDD\uFE0F', earned:true, desc:'Open a Tier 5 vault without tripping a single alarm.', date:'Earned Aug 2026'},
+      {name:'Ghost Protocol', rarity:'epic', emoji:'\uD83D\uDC7B', earned:true, desc:'Finish 10 heists without being spotted.', date:'Earned Jun 2026'},
+      {name:'Squad Anchor', rarity:'rare', emoji:'\u2693', earned:false, desc:'Finish 25 runs with the same squad.', date:'Finish 25 runs with the same squad to unlock.'}
+    ]
+  };
+  var LONG = {
+    name:'Arpit Kumar-Sharma the Unstoppable Vaultbreaker',
+    medals:['The Absolutely Flawless Midnight Vault Cracker of the Year','Ghost Protocol: Zero Alarms, Zero Witnesses, Zero Excuses','Squad Anchor of the Everlasting Fellowship, Season Three']
+  };
+  var RAR = {legendary:'Legendary', epic:'Epic', rare:'Rare'};
+
+  var AVATAR_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>"
+    + "<defs><linearGradient id='b' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#fbdc3f'/><stop offset='1' stop-color='#f4a62a'/></linearGradient></defs>"
+    + "<rect width='160' height='160' fill='url(#b)'/><circle cx='124' cy='32' r='42' fill='#fff' opacity='.22'/>"
+    + "<path d='M22 160c0-32 24-50 58-50s58 18 58 50z' fill='#04140d'/>"
+    + "<path d='M64 112h32v10a16 16 0 0 1-32 0z' fill='#14472f'/>"
+    + "<rect x='76' y='10' width='8' height='22' rx='4' fill='#04140d'/><circle cx='80' cy='11' r='8' fill='#ec2f58' stroke='#04140d' stroke-width='4'/>"
+    + "<rect x='42' y='30' width='76' height='84' rx='36' fill='#14472f' stroke='#04140d' stroke-width='5'/>"
+    + "<rect x='52' y='56' width='56' height='32' rx='16' fill='#6ef0b0' stroke='#04140d' stroke-width='4'/>"
+    + "<circle cx='68' cy='72' r='4.5' fill='#04140d'/><circle cx='92' cy='72' r='4.5' fill='#04140d'/></svg>";
+  var AVATAR = 'data:image/svg+xml,' + encodeURIComponent(AVATAR_SVG);
+
+  var S = {layout:null, stress:false, noAvatar:false};
+  var wide = window.matchMedia('(min-width:1040px)');
+  S.layout = wide.matches ? 'side' : 'online';
+
+  var $cards = document.getElementById('cards');
+  var dlg = document.getElementById('dlg');
+  var toastEl = document.getElementById('toast');
+  var toastTimer;
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function ic(name, cls){ return '<svg class="ic'+(cls?' '+cls:'')+'" aria-hidden="true"><use href="#i-'+name+'"/></svg>'; }
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  function data(){
+    var p = JSON.parse(JSON.stringify(PLAYER));
+    if(S.stress){
+      p.name = LONG.name;
+      p.medals.forEach(function(m,i){ m.name = LONG.medals[i]; });
+    }
+    return p;
+  }
+  function initials(name){
+    var parts = name.trim().split(/\s+/);
+    return (parts[0][0] + (parts.length>1 ? parts[1][0] : '')).toUpperCase();
+  }
+
+  // ---------- QR ----------
+  function qrSVG(text){
+    var n, dark;
+    try{
+      if(window.qrcode){
+        var q = window.qrcode(0,'M'); q.addData(text); q.make();
+        n = q.getModuleCount(); dark = function(r,c){ return q.isDark(r,c); };
+      }
+    }catch(e){ dark = null; }
+    if(!dark){
+      // Placeholder pattern if the QR library is unavailable
+      n = 25; var h = 7;
+      for(var i=0;i<text.length;i++){ h = (h*31 + text.charCodeAt(i)) >>> 0; }
+      var finder = function(r,c){
+        function box(r0,c0){
+          var dr=r-r0, dc=c-c0; if(dr<0||dc<0||dr>6||dc>6) return null;
+          if(dr===0||dr===6||dc===0||dc===6) return true;
+          if(dr>=2&&dr<=4&&dc>=2&&dc<=4) return true;
+          return false;
+        }
+        var a = box(0,0); if(a!==null) return a;
+        a = box(0,n-7); if(a!==null) return a;
+        a = box(n-7,0); return a;
+      };
+      dark = function(r,c){
+        var f = finder(r,c); if(f!==null) return f;
+        var x = (r*131 + c*17 + h) >>> 0; x = (x ^ (x>>>7)) * 2246822519 >>> 0;
+        return (x % 100) < 48;
+      };
+    }
+    var d = '';
+    for(var r=0;r<n;r++){ for(var c=0;c<n;c++){ if(dark(r,c)) d += 'M'+c+' '+r+'h1v1h-1z'; } }
+    return '<svg viewBox="-1 -1 '+(n+2)+' '+(n+2)+'" shape-rendering="crispEdges" role="img" aria-label="QR code that opens this profile"><path d="'+d+'" fill="#04140d"/></svg>';
+  }
+
+  // ---------- Card template ----------
+  function tile(m, key, i){
+    var locked = !m.earned;
+    return '<button class="tile r-'+m.rarity+(locked?' locked':'')+'" type="button" data-act="medal" data-key="'+key+'" data-i="'+i+'" title="'+esc(m.name)+'" aria-label="'+esc(m.name)+', '+RAR[m.rarity]+' medal, '+(locked?'locked':'earned')+'. Show details">'
+      + '<span class="plate" aria-hidden="true">'+(locked?'\uD83D\uDD12':m.emoji)+'</span>'
+      + '<span class="tname">'+esc(m.name)+'</span>'
+      + '<span class="chip">'+RAR[m.rarity]+'</span>'
+      + (locked ? '<span class="state">Locked</span>' : '')
+      + '</button>';
+  }
+  function stat(bg, emoji, val, label){
+    return '<div class="stat"><span class="emo" style="background:'+bg+'" aria-hidden="true">'+emoji+'</span><b>'+val+'</b><span>'+label+'</span></div>';
+  }
+
+  function cardHTML(key, online){
+    var P = data();
+    var pct = (P.xp / P.xpNext * 100).toFixed(1);
+    var need = P.xpNext - P.xp;
+    var earned = P.medals.filter(function(m){ return m.earned; }).length;
+    var avatarInner = S.noAvatar
+      ? '<div class="fallback" role="img" aria-label="'+esc(P.name)+' avatar placeholder">'+esc(initials(P.name))+'</div>'
+      : '<img src="'+AVATAR+'" alt="'+esc(P.name)+' avatar" width="160" height="160">';
+    var logo = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 7v14l-12 7L4 23V9z" fill="url(#lg)" stroke="#04140d" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="14" r="4" fill="#04140d"/><rect x="14.6" y="15" width="2.8" height="8" rx="1.4" fill="#04140d"/></svg>';
+
+    return '<section class="card '+(online?'is-on':'is-off')+'" data-key="'+key+'" aria-label="'+esc(P.name)+', player profile, '+(online?'online':'offline')+'">'
+    + '<header class="head">'
+    +   '<div class="logo">'+logo+'<span>VAULT</span></div><span class="spacer"></span>'
+    +   (online
+        ? '<span class="sticker on"><span class="dot pulse" aria-hidden="true"></span>Online</span>'
+        : '<span class="sticker off">'+ic('moon')+'Offline</span>')
+    +   '<button class="iconbtn" type="button" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-label="More actions">'+ic('dots')+'</button>'
+    +   '<div class="menu" role="menu" hidden>'
+    +     '<button type="button" role="menuitem" data-act="copylink">Copy profile link</button>'
+    +     '<button type="button" role="menuitem" data-act="stub" data-msg="Mute would confirm first (concept)">Mute player</button>'
+    +     '<button type="button" role="menuitem" data-act="stub" data-msg="Block would confirm first (concept)">Block player</button>'
+    +     '<button type="button" role="menuitem" data-act="stub" data-msg="Report sheet would open (concept)">Report player</button>'
+    +   '</div>'
+    + '</header>'
+
+    + '<div class="hero">'
+    +   '<div class="avatar-wrap">'
+    +     '<div class="avatar" data-avatar>'+avatarInner+'</div>'
+    +     '<span class="astatus '+(online?'on':'off')+'" aria-hidden="true">'+ic(online?'bolt':'moon')+'</span>'
+    +     '<span class="lv" aria-label="Level '+P.level+'">Lv '+P.level+'</span>'
+    +   '</div>'
+    +   '<span class="sticker gold">'+ic('spark','solid')+esc(P.title)+'</span>'
+    +   '<h2 class="name" title="'+esc(P.name)+'">'+esc(P.name)+'</h2>'
+    +   '<p class="presence">'+(online ? 'Currently in <span class="pillhl">Lobby</span>' : 'Last seen <span class="pillhl">3 hours ago</span>')+'</p>'
+    +   '<button class="idchip" type="button" data-act="copyid" aria-label="Copy player ID '+esc(P.id)+'"><small>ID</small><span>'+esc(P.id)+'</span>'+ic('copy')+'</button>'
+    +   (online
+        ? '<button class="cta" type="button" data-act="invite"><span>Invite to squad</span>'+ic('arrow')+'</button>'
+        : '<button class="cta" type="button" disabled aria-describedby="help-'+key+'"><span>Invite to squad</span>'+ic('arrow')+'</button><p class="help" id="help-'+key+'">Invites open when they are back online.</p>')
+    + '</div>'
+
+    + '<div class="xp">'
+    +   '<div class="xp-top"><span class="xp-lv">Level '+P.level+'</span><span class="xp-num">'+fmt(P.xp)+' / '+fmt(P.xpNext)+' XP</span></div>'
+    +   '<div class="bar" role="progressbar" aria-label="Experience to next level" aria-valuemin="0" aria-valuemax="'+P.xpNext+'" aria-valuenow="'+P.xp+'"><div class="fill" style="--pct:'+pct+'%"></div></div>'
+    +   '<div class="xp-msg"><span class="chip">'+fmt(need)+' XP to go</span><span>Almost at Level '+(P.level+1)+'!</span></div>'
+    +   '<div class="loyal"><span>Squad loyalty</span><span class="mini" role="meter" aria-label="Squad loyalty" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+P.loyalty+'"><i style="width:'+P.loyalty+'%"></i></span><b>'+P.loyalty+'%</b></div>'
+    + '</div>'
+
+    + '<div class="medals">'
+    +   '<div class="sec-h"><h3>Medal showcase</h3><span>'+earned+' of '+P.medals.length+' earned</span></div>'
+    +   '<div class="tiles">'+P.medals.map(function(m,i){ return tile(m,key,i); }).join('')+'</div>'
+    + '</div>'
+
+    + '<div class="stats">'
+    +   stat('#6ef0b0','\uD83C\uDFC1',fmt(P.stats.runs),'Runs played')
+    +   stat('#fbdc3f','\uD83C\uDFC6',P.stats.win+'%','Win rate')
+    +   stat('#ff5a7d','\uD83D\uDD25',P.stats.streak,'Best streak')
+    + '</div>'
+
+    + '<details class="details" data-key="'+key+'">'
+    +   '<summary><span class="sum-l">Card details<small>QR code and profile info</small></span>'+ic('chev','chev')+'</summary>'
+    +   '<div class="details-body"><div class="qr">'+qrSVG('vault://player/'+P.id)+'</div>'
+    +   '<dl class="meta"><dt>Player ID</dt><dd>'+esc(P.id)+'</dd><dt>Member since</dt><dd>'+esc(P.since)+'</dd><dt>Clearance</dt><dd>'+esc(P.clearance)+'</dd><dt>Favorite mode</dt><dd>'+esc(P.mode)+'</dd></dl></div>'
+    + '</details>'
+    + '</section>';
+  }
+
+  // ---------- Render ----------
+  function render(){
+    var openState = {};
+    $cards.querySelectorAll('details').forEach(function(d){ openState[d.dataset.key] = d.open; });
+    $cards.innerHTML =
+      '<div class="card-wrap" data-key="on">'+cardHTML('on', true)+'</div>' +
+      '<div class="card-wrap" data-key="off">'+cardHTML('off', false)+'</div>';
+    $cards.querySelectorAll('details').forEach(function(d){ if(openState[d.dataset.key]) d.open = true; });
+    $cards.querySelectorAll('[data-avatar] img').forEach(watchAvatar);
+    applyLayout();
+  }
+
+  function watchAvatar(img){
+    function fallback(){
+      var box = img.parentNode;
+      var name = data().name;
+      box.innerHTML = '<div class="fallback" role="img" aria-label="'+esc(name)+' avatar placeholder">'+esc(initials(name))+'</div>';
+    }
+    img.addEventListener('error', fallback);
+    img.addEventListener('load', function(){ if(img.naturalWidth && img.naturalWidth < 48) fallback(); });
+  }
+
+  function effectiveLayout(){ return (S.layout==='side' && !wide.matches) ? 'online' : S.layout; }
+  function applyLayout(){
+    var L = effectiveLayout();
+    $cards.dataset.layout = (L==='side') ? 'side' : 'single';
+    $cards.querySelector('.card-wrap[data-key="on"]').hidden = (L==='offline');
+    $cards.querySelector('.card-wrap[data-key="off"]').hidden = (L==='online');
+    document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.layout===L)); });
+  }
+
+  // ---------- Helpers ----------
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  }
+  function copyText(t){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(t).then(function(){ return true; }, function(){ return legacyCopy(t); });
+    }
+    return Promise.resolve(legacyCopy(t));
+  }
+  function legacyCopy(t){
+    try{
+      var ta = document.createElement('textarea'); ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); var ok = document.execCommand('copy'); ta.remove(); return ok;
+    }catch(e){ return false; }
+  }
+  function closeMenus(except){
+    document.querySelectorAll('.menu').forEach(function(m){
+      if(m===except) return;
+      if(!m.hidden){ m.hidden = true; var b = m.parentNode.querySelector('[data-act="menu"]'); if(b) b.setAttribute('aria-expanded','false'); }
+    });
+  }
+  function openMedal(key, i){
+    var m = data().medals[i], locked = !m.earned;
+    dlg.innerHTML = '<div class="dlg-in r-'+m.rarity+'">'
+      + '<button class="iconbtn closex" type="button" data-act="closedlg" aria-label="Close">'+ic('x')+'</button>'
+      + '<span class="sticker gold">'+ic('spark','solid')+'Medal details</span>'
+      + '<span class="plate big" aria-hidden="true">'+(locked?'\uD83D\uDD12':m.emoji)+'</span>'
+      + '<h3>'+esc(m.name)+'</h3>'
+      + '<span class="chip">'+RAR[m.rarity]+(locked?' \u00B7 Locked':'')+'</span>'
+      + '<p>'+esc(m.desc)+'</p>'
+      + '<p class="dstate">'+esc(m.date)+'</p>'
+      + '<button class="keep" type="button" data-act="closedlg">Back to profile</button></div>';
+    if(dlg.showModal){ dlg.showModal(); } else { dlg.setAttribute('open',''); }
+  }
+
+  // ---------- Events ----------
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(t === dlg){ dlg.close(); return; }
+    var seg = t.closest('.seg button');
+    if(seg){ S.layout = seg.dataset.layout; applyLayout(); return; }
+    var el = t.closest('[data-act]');
+    if(!el){ closeMenus(); return; }
+    var act = el.dataset.act;
+    if(act==='menu'){
+      var menu = el.parentNode.querySelector('.menu');
+      var willOpen = menu.hidden; closeMenus(menu);
+      menu.hidden = !willOpen; el.setAttribute('aria-expanded', String(willOpen));
+      if(willOpen){ var f = menu.querySelector('button'); if(f) f.focus(); }
+      return;
+    }
+    closeMenus();
+    if(act==='copyid'){
+      copyText(PLAYER.id).then(function(ok){
+        if(ok){
+          var u = el.querySelector('.ic use');
+          u.setAttribute('href','#i-check');
+          setTimeout(function(){ u.setAttribute('href','#i-copy'); }, 1600);
+          toast('Player ID copied');
+        } else { toast('Copy is not available here'); }
+      });
+    } else if(act==='copylink'){
+      copyText('vault://player/'+PLAYER.id).then(function(ok){ toast(ok ? 'Profile link copied' : 'Copy is not available here'); });
+    } else if(act==='stub'){
+      toast(el.dataset.msg);
+    } else if(act==='invite'){
+      var label = el.querySelector('span'); var u2 = el.querySelector('.ic use');
+      label.textContent = 'Invite sent'; u2.setAttribute('href','#i-check');
+      toast('Invite sent');
+      setTimeout(function(){ label.textContent = 'Invite to squad'; u2.setAttribute('href','#i-arrow'); }, 2200);
+    } else if(act==='medal'){
+      openMedal(el.dataset.key, +el.dataset.i);
+    } else if(act==='closedlg'){
+      dlg.close();
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){
+      var open = document.querySelector('.menu:not([hidden])');
+      if(open){ var b = open.parentNode.querySelector('[data-act="menu"]'); closeMenus(); if(b) b.focus(); }
+    }
+  });
+  document.getElementById('stress').addEventListener('change', function(e){ S.stress = e.target.checked; render(); });
+  document.getElementById('noav').addEventListener('change', function(e){ S.noAvatar = e.target.checked; render(); });
+  if(wide.addEventListener){ wide.addEventListener('change', applyLayout); }
+
+  render();
+})();
+</script>
+</body>
+</html>

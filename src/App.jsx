@@ -641,14 +641,12 @@ export default function App() {
       setAlarmFails(0);
 
       setAnalyticsModalOpen(true);
-      toast.success("📊 Operation Concluded. Generating Tactical Debrief & Skill Analytics.");
     } else {
       heistAudio.playRadioSquelch();
       setTimeLeft(defaultTime);
       setAlarmLevel('LOW_SECURITY');
       setAlarmFails(0);
 
-      toast.info("🚁 Emergency Exfiltration Confirmed. Mission timer reset to full duration.");
       setActiveTab('home');
     }
   };
@@ -814,7 +812,6 @@ export default function App() {
         if (res?.lobby) {
           setLobby(res.lobby);
           setActiveTab('lobby');
-          toast.success(`Joined squad room ${code}!`);
         }
       });
     }
@@ -848,25 +845,16 @@ export default function App() {
     };
 
     const handleLobbyPlayerJoined = (data) => {
-      toast.success(`Operative ${data.username} joined slot 0${data.slotId} (${data.role})!`);
       heistAudio.playSuccessChime();
     };
 
-    const handleLobbyPlayerLeft = (data) => {
-      toast.info(`Operative ${data.username} vacated slot 0${data.slotId}`);
-    };
+    const handleLobbyPlayerLeft = (data) => {};
 
-    const handleLobbyPlayerReady = (data) => {
-      toast.info(`${data.username} is ${data.isReady ? 'READY' : 'NOT READY'}`);
-    };
+    const handleLobbyPlayerReady = (data) => {};
 
-    const handleLobbyRoleChanged = (data) => {
-      toast.info(`${data.username} switched role to ${data.role}`);
-    };
+    const handleLobbyRoleChanged = (data) => {};
 
-    const handleLobbyHostChanged = (data) => {
-      toast.info(`Squad host reassigned to ${data.newHost}`);
-    };
+    const handleLobbyHostChanged = (data) => {};
 
     const handleLobbyKicked = (data) => {
       toast.error(data.message || 'You have been removed from the squad.');
@@ -932,7 +920,6 @@ export default function App() {
         if (activeRoles.every(r => nextSolvedForStage[r])) {
           setIsExtractionActive(true);
           heistAudio.playRadioSquelch();
-          toast.success("⚡ ALL 4 INTERLOCKS ALIGNED! EXTRACTION PROTOCOL ENGAGED!");
         }
       }
     };
@@ -995,7 +982,6 @@ export default function App() {
 
     const handleEndVoted = (data) => {
       setEndHeistVoteState(null);
-      toast.success("Majority vote reached! Ending heist.");
       handleConcludeHeist(data?.directive || 'abort', true);
     };
 
@@ -1045,7 +1031,6 @@ export default function App() {
     const handleExtractionStart = () => {
       setIsExtractionActive(true);
       heistAudio.playRadioSquelch();
-      toast.success("⚡ SQUAD INITIATED EXTRACTION PROTOCOL!");
     };
     onSocketEvent('heistExtractionStart', handleExtractionStart);
 
@@ -1203,7 +1188,6 @@ export default function App() {
       if (res?.lobby) {
         setLobby(res.lobby);
         setIsInSquadRoom(true);
-        toast.success(`Squad room ${code} created! Share invite code with friends.`);
         heistAudio.playSuccessChime();
       }
     });
@@ -1228,7 +1212,6 @@ export default function App() {
       if (res?.lobby) {
         setLobby(res.lobby);
         setIsInSquadRoom(true);
-        toast.success(`Joined room ${code}!`);
         heistAudio.playSuccessChime();
         setIsJoinRoomModalOpen(false);
         setJoinRoomCodeInput('');
@@ -1258,7 +1241,6 @@ export default function App() {
       if (res?.lobby) {
         setLobby(res.lobby);
         setIsInSquadRoom(true);
-        toast.success(`Enlisted in squad as ${chosenRole.toUpperCase()}!`);
         heistAudio.playSuccessChime();
       }
     });
@@ -1771,7 +1753,6 @@ export default function App() {
     if (allRoleSolved) {
       setIsExtractionActive(true);
       heistAudio.playRadioSquelch();
-      toast.success("⚡ ALL 4 INTERLOCKS ALIGNED! EXTRACTION PROTOCOL ENGAGED!");
       if (lobby?.code) {
         try { heistSocket.startExtraction(lobby.code); } catch (e) {}
       }
@@ -5582,7 +5563,6 @@ export default function App() {
         lobby={lobby}
         onExtractionSuccess={(bonusXp, timeElapsed) => {
           setIsExtractionActive(false);
-          toast.success(`🏆 EXTRACTION BREACH COMPLETE! +${bonusXp} XP`);
           triggerAchievementCheck('EXTRACTION_COMPLETE');
           handleStageVictory();
         }}

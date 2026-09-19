@@ -132,12 +132,29 @@ export default function OperativeIdCard({
             FRONT OF CARD — CANOPY PENITENTIARY CELL BLOCK 9 INMATE PASS
             ============================================================ */}
         <div 
-          className={`absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
+          className="absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between shadow-[5px_5px_0px_#020C07]"
           style={{ 
             borderColor: activeTheme.borderColor,
-            boxShadow: `6px 6px 0px #020C07, 0 0 25px ${activeTheme.statGlow}`
+            boxShadow: `6px 6px 0px #020C07, 0 0 30px ${activeTheme.statGlow}`,
+            backgroundImage: `linear-gradient(to bottom, rgba(28, 11, 4, 0.88), rgba(12, 6, 2, 0.94), rgba(4, 2, 1, 0.98)), url('/prison_card_bg.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
           }}
         >
+          {/* Industrial Corner Hex Bolts */}
+          <div className="absolute top-2 left-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 rotate-45" />
+          </div>
+          <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 -rotate-45" />
+          </div>
+          <div className="absolute bottom-2 left-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 -rotate-45" />
+          </div>
+          <div className="absolute bottom-2 right-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 rotate-45" />
+          </div>
+
           {/* Hologram Foil / Shimmer Overlay */}
           {config.hologramShimmer && (
             <div 
@@ -148,9 +165,9 @@ export default function OperativeIdCard({
 
           {/* Prison Cell Bars Texture */}
           <div 
-            className="absolute inset-0 opacity-15 pointer-events-none"
+            className="absolute inset-0 opacity-10 pointer-events-none"
             style={{
-              backgroundImage: 'repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 2px, transparent 2px, transparent 24px)'
+              backgroundImage: 'repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 2px, transparent 2px, transparent 22px)'
             }}
           />
 
@@ -168,7 +185,7 @@ export default function OperativeIdCard({
           </div>
 
           {/* Distressed Inmate Stamp Overlay */}
-          <div className="absolute top-14 right-3.5 rotate-12 border-2 border-red-500/80 text-red-400 bg-red-950/70 font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow-lg uppercase pointer-events-none select-none z-20">
+          <div className="absolute top-14 right-3.5 rotate-12 border-2 border-red-500/90 text-red-400 bg-red-950/80 font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow-xl uppercase pointer-events-none select-none z-20 backdrop-blur-sm">
             [ INMATE C-09 ]
           </div>
 
@@ -177,24 +194,21 @@ export default function OperativeIdCard({
             <div className="w-14 h-2 bg-[#020B06] border border-orange-950/80 rounded-full shadow-inner" />
           </div>
 
-          {/* Top Security Header */}
+          {/* Top Security Header with Official Seal & Smart Key */}
           <div className="relative z-10 border-b border-orange-900/60 pb-3">
             <div className="flex items-center justify-between">
               
               <div className="flex items-center space-x-2.5">
-                {/* Micro Smart Chip with 6 golden pins */}
+                {/* Official Cell Block 9 Graphic Emblem */}
                 <div 
-                  className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FBBF24] to-[#B45309] border border-amber-400 p-1 flex flex-col justify-between shadow-sm flex-shrink-0"
-                  title="Detention Smart Key Security Chip"
+                  className="w-10 h-10 rounded-full border-2 border-amber-400/80 p-0.5 bg-black shadow-[0_0_12px_rgba(251,191,36,0.35)] flex-shrink-0 overflow-hidden"
+                  title="Official Cell Block 9 Penitentiary Insignia"
                 >
-                  <div className="flex justify-between h-2 border-b border-amber-900/60">
-                    <div className="w-2 border-r border-amber-900/60" />
-                    <div className="w-2" />
-                  </div>
-                  <div className="flex justify-between h-2">
-                    <div className="w-2 border-r border-amber-900/60" />
-                    <div className="w-2" />
-                  </div>
+                  <img 
+                    src="/prison_seal_emblem.jpg" 
+                    alt="Cell Block 9 Seal" 
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
 
                 <div>
@@ -214,7 +228,7 @@ export default function OperativeIdCard({
 
               {/* Status indicator & Flip toggle */}
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border border-red-500/50 text-[9px] font-mono">
+                <div className="flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border border-red-500/50 text-[9px] font-mono shadow-inner">
                   <div className="w-1.5 h-1.5 rounded-full animate-pulse bg-red-500" />
                   <span className="font-bold tracking-wide text-red-400">
                     DETAINED
@@ -238,18 +252,38 @@ export default function OperativeIdCard({
           <div className="relative z-10 py-3 space-y-3">
             <div className="flex items-start space-x-3.5">
               
-              {/* Avatar + Yellow Level Ring — 100% Circular matching StatsDashboard */}
-              <div className="relative flex-shrink-0" style={{ width: 100, height: 100 }}>
+              {/* Avatar + Yellow Level Ring + Mugshot Height Scale Lineup */}
+              <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 106, height: 104 }}>
+                {/* Background Mugshot Height Grid */}
+                <div className="absolute inset-0 rounded-2xl bg-black/60 border border-orange-500/30 overflow-hidden pointer-events-none flex flex-col justify-between py-1 px-1 opacity-70">
+                  <div className="flex justify-between items-center border-b border-orange-500/20 text-[7px] font-mono text-orange-400/70 font-bold">
+                    <span>6'0"</span>
+                    <span className="w-6 border-b border-orange-500/30" />
+                  </div>
+                  <div className="flex justify-between items-center border-b border-orange-500/20 text-[7px] font-mono text-orange-400/70 font-bold">
+                    <span>5'8"</span>
+                    <span className="w-6 border-b border-orange-500/30" />
+                  </div>
+                  <div className="flex justify-between items-center border-b border-orange-500/20 text-[7px] font-mono text-orange-400/70 font-bold">
+                    <span>5'4"</span>
+                    <span className="w-6 border-b border-orange-500/30" />
+                  </div>
+                  <div className="flex justify-between items-center text-[7px] font-mono text-orange-400/70 font-bold">
+                    <span>5'0"</span>
+                    <span className="w-6 border-b border-orange-500/30" />
+                  </div>
+                </div>
+
                 {/* Direct SVG ring — yellow progress arc */}
                 {(() => {
-                  const size = 100, sw = 5;
+                  const size = 96, sw = 4.5;
                   const r = (size - sw) / 2;
                   const circ = 2 * Math.PI * r;
                   const offset = circ * (1 - levelProgress);
                   const c = size / 2;
                   return (
-                    <svg width={size} height={size} className="absolute inset-0 pointer-events-none" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx={c} cy={c} r={r} fill="none" stroke="#041E14" strokeWidth={sw} />
+                    <svg width={size} height={size} className="absolute inset-0 m-auto pointer-events-none" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#1c0e04" strokeWidth={sw} />
                       <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
                         strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
                         style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -262,7 +296,8 @@ export default function OperativeIdCard({
                 <div
                   className="absolute flex items-center justify-center overflow-hidden rounded-full shadow-lg"
                   style={{ 
-                    inset: 9,
+                    width: 78,
+                    height: 78,
                     borderRadius: '9999px',
                     WebkitMaskImage: '-webkit-radial-gradient(white, black)'
                   }}
@@ -276,7 +311,7 @@ export default function OperativeIdCard({
                 </div>
 
                 {/* LVL Badge matching StatsDashboard.jsx */}
-                <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[10px] font-black px-2 py-0.5 rounded-full font-game shadow whitespace-nowrap z-10">
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[10px] font-black px-2 py-0.5 rounded-full font-game shadow whitespace-nowrap z-20">
                   LVL {level}
                 </span>
               </div>
@@ -306,7 +341,7 @@ export default function OperativeIdCard({
                   </span>
                   <button
                     onClick={handleCopyAgentId}
-                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#020B06] border border-emerald-900/80 hover:border-amber-500/50 text-[#FBBF24] hover:text-white transition-all shadow-inner group"
+                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#020B06] border border-orange-900/80 hover:border-amber-500/50 text-[#FBBF24] hover:text-white transition-all shadow-inner group"
                     title="Click to copy Agent ID"
                   >
                     <span>{rawAgentId}</span>
@@ -319,11 +354,19 @@ export default function OperativeIdCard({
                 </div>
 
                 {/* Custom Motto / Slogan */}
-                <p className="text-[11px] text-emerald-200/80 font-mono italic truncate pt-0.5 leading-snug">
+                <p className="text-[11px] text-orange-200/90 font-mono italic truncate pt-0.5 leading-snug">
                   "{config.motto || 'Apex Infiltrator // Zero Trace'}"
                 </p>
               </div>
 
+            </div>
+
+            {/* SVG Barbed Wire Decorative Divider Graphic */}
+            <div className="relative py-0.5 overflow-hidden">
+              <svg className="w-full h-3 text-orange-500/50 pointer-events-none select-none" viewBox="0 0 340 10" preserveAspectRatio="none">
+                <line x1="0" y1="5" x2="340" y2="5" stroke="rgba(249,115,22,0.4)" strokeWidth="1" strokeDasharray="3 3" />
+                <path d="M 25 1 L 32 9 M 32 1 L 25 9 M 85 1 L 92 9 M 92 1 L 85 9 M 145 1 L 152 9 M 152 1 L 145 9 M 205 1 L 212 9 M 212 1 L 205 9 M 265 1 L 272 9 M 272 1 L 265 9 M 315 1 L 322 9 M 322 1 L 315 9" stroke="#F59E0B" strokeWidth="1.5" />
+              </svg>
             </div>
           </div>
 
@@ -476,17 +519,46 @@ export default function OperativeIdCard({
             BACK OF CARD — CANOPY PENITENTIARY INMATE DOSSIER
             ============================================================ */}
         <div 
-          className={`absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
+          className="absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between shadow-[5px_5px_0px_#020C07]"
           style={{ 
             borderColor: activeTheme.borderColor,
-            boxShadow: `6px 6px 0px #020C07, 0 0 25px ${activeTheme.statGlow}`
+            boxShadow: `6px 6px 0px #020C07, 0 0 30px ${activeTheme.statGlow}`,
+            backgroundImage: `linear-gradient(to bottom, rgba(28, 11, 4, 0.9), rgba(12, 6, 2, 0.96), rgba(4, 2, 1, 0.98)), url('/prison_card_bg.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
           }}
         >
+          {/* Industrial Corner Hex Bolts */}
+          <div className="absolute top-2 left-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 rotate-45" />
+          </div>
+          <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 -rotate-45" />
+          </div>
+          <div className="absolute bottom-2 left-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 -rotate-45" />
+          </div>
+          <div className="absolute bottom-2 right-2 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-slate-300 via-slate-600 to-slate-900 border border-slate-500/80 shadow flex items-center justify-center pointer-events-none z-30">
+            <div className="w-1 h-0.5 bg-slate-900 rotate-45" />
+          </div>
+
+          {/* Official Prison Emblem Watermark */}
+          <div className="absolute right-3 bottom-14 opacity-15 pointer-events-none select-none w-32 h-32 rounded-full overflow-hidden filter contrast-150">
+            <img src="/prison_seal_emblem.jpg" alt="Watermark Seal" className="w-full h-full object-cover" />
+          </div>
+
+          {/* Red Distressed Dossier Stamp */}
+          <div className="absolute top-14 right-3 -rotate-6 border-2 border-red-500/80 text-red-400 bg-red-950/70 font-mono font-black text-[8px] tracking-widest px-2 py-0.5 rounded shadow-lg uppercase pointer-events-none select-none z-20">
+            [ CLASSIFIED // FLIGHT RISK ]
+          </div>
+
           {/* Header */}
-          <div className="border-b border-orange-900/60 pb-3">
+          <div className="relative z-10 border-b border-orange-900/60 pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Fingerprint className="w-5 h-5 text-[#FBBF24]" />
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-full border border-amber-400/80 p-0.5 bg-black overflow-hidden flex-shrink-0">
+                  <img src="/prison_seal_emblem.jpg" alt="Prison Seal" className="w-full h-full object-cover" />
+                </div>
                 <div>
                   <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">
                     PENAL CONFINEMENT DOSSIER
@@ -509,8 +581,8 @@ export default function OperativeIdCard({
           </div>
 
           {/* Dossier Content */}
-          <div className="space-y-3.5 py-2">
-            <div className="bg-[#020B06]/80 border border-orange-900/60 rounded-xl p-3 space-y-2">
+          <div className="relative z-10 space-y-3 py-1">
+            <div className="bg-[#020B06]/85 border border-orange-900/60 rounded-xl p-3 space-y-2 shadow-inner">
               <div className="flex justify-between items-center text-xs font-mono">
                 <span className="text-slate-400">Inmate Callsign:</span>
                 <span className="text-white font-bold">{callsign}</span>
@@ -539,25 +611,30 @@ export default function OperativeIdCard({
                 Detention Cell Specializations
               </span>
               <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="bg-[#020B06]/70 border border-orange-900/50 p-2 rounded-lg">
+                <div className="bg-[#020B06]/75 border border-orange-900/50 p-2 rounded-lg">
                   <span className="text-slate-400 block text-[8px]">PRIMARY DISCIPLINE</span>
                   <span className="text-white font-bold">{role}</span>
                 </div>
-                <div className="bg-[#020B06]/70 border border-orange-900/50 p-2 rounded-lg">
+                <div className="bg-[#020B06]/75 border border-orange-900/50 p-2 rounded-lg">
                   <span className="text-slate-400 block text-[8px]">CELL BLOCK STATUS</span>
                   <span className="text-red-400 font-bold">High Flight Risk</span>
                 </div>
               </div>
             </div>
 
-            {/* Security Cryptographic Hash */}
-            <div className="bg-[#020B06]/90 border border-orange-900/70 p-3 rounded-xl space-y-1">
-              <span className="text-[8px] font-mono text-orange-400/90 uppercase block font-bold">
-                Penitentiary Booking Signature // Cell Block 9
-              </span>
-              <p className="font-mono text-[9px] text-slate-300 break-all leading-tight">
-                SHA-256: {rawAgentId.toLowerCase()}-77a94f81c9b4e0293d0a1
-              </p>
+            {/* Security Cryptographic Hash & Biometric Seal */}
+            <div className="bg-[#020B06]/90 border border-orange-900/70 p-2.5 rounded-xl space-y-1 flex items-center justify-between">
+              <div className="min-w-0 flex-1 pr-2">
+                <span className="text-[8px] font-mono text-orange-400/90 uppercase block font-bold">
+                  Penitentiary Booking Signature // Cell Block 9
+                </span>
+                <p className="font-mono text-[9px] text-slate-300 break-all leading-tight">
+                  SHA-256: {rawAgentId.toLowerCase()}-77a94f81c9b4e0293d0a1
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/40 p-1 flex items-center justify-center flex-shrink-0">
+                <Fingerprint className="w-5 h-5 text-orange-400 animate-pulse" />
+              </div>
             </div>
           </div>
 

@@ -188,8 +188,8 @@ export default function CardCustomizerModal({
 
                 {/* Primary Card Badge */}
                 <div className="p-4 rounded-2xl border border-orange-500/60 bg-gradient-to-r from-orange-950/40 via-black/60 to-black/40 shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center space-x-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/50 flex items-center justify-center flex-shrink-0 text-xl">
-                    🔒
+                  <div className="w-12 h-12 rounded-xl bg-black border border-amber-400/80 p-0.5 overflow-hidden flex-shrink-0 shadow-[0_0_12px_rgba(251,191,36,0.3)]">
+                    <img src="/prison_seal_emblem.jpg" alt="Cell Block 9" className="w-full h-full object-cover rounded-lg" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center space-x-2">

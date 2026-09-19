@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, ChevronRight, ChevronLeft, Terminal, Zap, FlaskConical, Key,
   Users, Compass, Play, BookOpen, Sparkles, Shield, GraduationCap,
-  ArrowRight
+  ArrowRight, Award
 } from 'lucide-react';
 
 import { heistAudio } from './HeistAudioEngine';
@@ -69,6 +69,23 @@ const TOUR_STEPS = [
     centered: false,
   },
   {
+    id: 'id-card',
+    title: '🪪 Operative ID Card',
+    subtitle: 'YOUR SYNDICATE IDENTITY & PASS',
+    description:
+      'Every operative has an official syndicate credential with a unique Agent ID. View your career rank, showcase up to 3 earned medals, personalize your title in the ID Studio, and copy your ID in 1 click for matchmaking and squad invites.',
+    icon: Award,
+    iconColor: '#FBBF24',
+    targetSelector: null,
+    centered: true,
+    features: [
+      { emoji: '🪪', label: 'Unique Agent ID', desc: '1-click copy for squad matchmaking' },
+      { emoji: '🎖️', label: 'Medal Showcase', desc: 'Display 3 earned milestone badges' },
+      { emoji: '🎨', label: 'ID Studio Studio', desc: 'Customize titles & callsign styling' },
+      { emoji: '📲', label: 'Profile Sharing', desc: 'Direct link & QR code profile access' },
+    ]
+  },
+  {
     id: 'coop-heist',
     title: '🚀 Launch Co-Op Heist',
     subtitle: 'THE FULL EXPERIENCE — 4 PLAYERS',
@@ -103,7 +120,7 @@ const TOUR_STEPS = [
   },
 ];
 
-const STORAGE_KEY = 'vault_tour_seen_v2';
+const STORAGE_KEY = 'vault_tour_seen_v3';
 
 export default function OnboardingTour({ onComplete }) {
   const [step, setStep] = useState(0);
@@ -370,6 +387,26 @@ export default function OnboardingTour({ onComplete }) {
                       <ArrowRight className="w-3 h-3 text-[#10B981] flex-shrink-0" />
                       <span className="text-[#10B981] font-bold flex-1 truncate">{f.to}</span>
                       <span className="text-emerald-300/50 text-[9px] truncate hidden sm:block">{f.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ID Card highlights */}
+              {currentStep.features && (
+                <div className="grid grid-cols-2 gap-2 mb-4 font-mono">
+                  {currentStep.features.map(feat => (
+                    <div
+                      key={feat.label}
+                      className="p-2.5 border-2 border-[#03140C] bg-[#020B06] space-y-0.5"
+                    >
+                      <div className="flex items-center space-x-1.5 text-[10px] font-black text-[#FBBF24] uppercase">
+                        <span>{feat.emoji}</span>
+                        <span>{feat.label}</span>
+                      </div>
+                      <p className="text-[9px] text-emerald-300/70 font-mono leading-tight">
+                        {feat.desc}
+                      </p>
                     </div>
                   ))}
                 </div>

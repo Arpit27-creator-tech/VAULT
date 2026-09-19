@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, Copy, Check, X, Zap, Radio, Shield, Sparkles, UserPlus, Eye } from 'lucide-react';
+import { Search, Users, X, Zap, Radio, Shield, Sparkles, UserPlus, Eye, Check } from 'lucide-react';
 import { userAPI, friendAPI } from '../services/api';
 import { heistAudio } from './HeistAudioEngine';
 import OperativeCardModal from './OperativeCardModal';
@@ -17,7 +17,6 @@ export default function OperativeDirectoryModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [operatives, setOperatives] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [copiedId, setCopiedId] = useState(null);
   const [sentFriendIds, setSentFriendIds] = useState(new Set());
   const [inspectingOperative, setInspectingOperative] = useState(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
@@ -54,15 +53,6 @@ export default function OperativeDirectoryModal({
   }, [searchQuery, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleCopyAgentId = (id) => {
-    navigator.clipboard.writeText(id).then(() => {
-      setCopiedId(id);
-      heistAudio.playKeyClick();
-      toast.success(`📋 Copied Agent ID: ${id}`);
-      setTimeout(() => setCopiedId(null), 2000);
-    });
-  };
 
   const handleSendFriendRequest = async (op) => {
     try {
@@ -116,13 +106,9 @@ export default function OperativeDirectoryModal({
                 {myAgentId}
               </span>
             </div>
-            <button
-              onClick={() => handleCopyAgentId(myAgentId)}
-              className="text-xs font-mono font-bold text-[#FBBF24] hover:text-white flex items-center space-x-1.5 transition-colors bg-black/30 px-3 py-1 rounded-xl border border-amber-500/30 hover:border-amber-400"
-            >
-              {copiedId === myAgentId ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedId === myAgentId ? 'Copied!' : 'Copy My ID'}</span>
-            </button>
+            <span className="text-[11px] font-mono text-emerald-400/60">
+              Active Operative
+            </span>
           </div>
         )}
 
@@ -231,24 +217,6 @@ export default function OperativeDirectoryModal({
                       >
                         <Eye className="w-3.5 h-3.5 text-[#FBBF24]" />
                         <span>ID Card</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleCopyAgentId(opTag)}
-                        className="bg-black/40 hover:bg-[#10B981]/20 text-slate-300 hover:text-white border border-emerald-500/30 hover:border-[#10B981]/60 font-mono text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center space-x-1"
-                        title="Copy Agent ID"
-                      >
-                        {copiedId === opTag ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-[#10B981]" />
-                            <span className="text-[#10B981] font-bold">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Copy ID</span>
-                          </>
-                        )}
                       </button>
 
                       {/* Add Friend Button */}

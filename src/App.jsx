@@ -498,26 +498,8 @@ export default function App() {
   };
 
   const handleLeaveHeistLocally = () => {
-    const code = lobby?.code || lobby?.roomCode;
-    if (code) {
-      lobbySocket.leave(code);
-    }
-    if (isLobbyVoiceConnected) {
-      try {
-        voiceEngine.leaveRoom();
-      } catch (e) {}
-      setIsLobbyVoiceConnected(false);
-    }
-    setIsInSquadRoom(false);
-    
-    setIsTimerRunning(false);
-    heistAudio.stopTension();
-    setIsEndHeistModalOpen(false);
-    exitHeistFullscreen();
-    setIsMatchVictory(false);
-    setActiveTab('operations');
-    heistAudio.playKeyClick();
-    toast.info("Left squad operation.");
+    setDeserterWarningIsHeistActive(true);
+    handleConfirmLeaveSquad();
   };
 
   const handleConcludeHeist = (actionType = 'abort', force = false) => {
@@ -1480,38 +1462,44 @@ export default function App() {
     setIsInSquadRoom(false);
     setIsLeaveSquadModalOpen(false);
     setIsDeserterWarningOpen(false);
+    setIsEndHeistModalOpen(false);
     heistAudio.playKeyClick();
 
-    // ── Loyalty Points deduction on leave ───────────────────────────────
-    const heistWasActive = isTimerRunning && activeTab === 'liveheist';
-    const eventKey = heistWasActive ? 'LEAVE_MID_HEIST' : 'LEAVE_LOBBY';
-    const lpResult = applyLP(eventKey);
-    if (lpResult && lpResult.delta < 0) {
-      const { newPoints, rank, previousRank } = lpResult;
-      const rankText = rank.name !== previousRank.name
-        ? ` ⬇ Rank dropped to ${rank.emoji} ${rank.name}!`
-        : ` ${rank.emoji} ${rank.name} · ${newPoints} LP`;
-      if (heistWasActive) {
-        toast.error(`💀 DESERTION: ${lpResult.delta} LP penalty.${rankText}`, { duration: 5000 });
-      } else {
-        toast.warning(`⚠️ Squad Abandoned: ${lpResult.delta} LP.${rankText}`, { duration: 4000 });
-      }
-    }
+    // ── Loyalty Points deduction ONLY when leaving mid-heist ───────────
+    const heistWasActive = (isTimerRunning && activeTab === 'liveheist') || deserterWarningIsHeistActive;
+    if (heistWasActive) {
+      setIsTimerRunning(false);
+      heistAudio.stopTension();
+      exitHeistFullscreen();
+      setIsMatchVictory(false);
+      setActiveTab('operations');
 
-    toast.info("Left squad operation.");
+      const lpResult = applyLP('LEAVE_MID_HEIST');
+      if (lpResult && lpResult.delta < 0) {
+        const { newPoints, rank, previousRank } = lpResult;
+        const rankText = rank.name !== previousRank.name
+          ? ` ⬇ Rank dropped to ${rank.emoji} ${rank.name}!`
+          : ` ${rank.emoji} ${rank.name} · ${newPoints} LP`;
+        toast.error(`💀 MID-HEIST DESERTION: ${lpResult.delta} LP penalty.${rankText}`, { duration: 5000 });
+      }
+      setDeserterWarningIsHeistActive(false);
+    } else {
+      // Leaving from squad lobby before heist: NO PENALTY!
+      toast.info("Left squad lobby.");
+    }
   };
 
   // ── Open the correct leave dialog depending on heist state ─────────────
   const handleRequestLeaveSquad = () => {
     const heistActive = isTimerRunning && activeTab === 'liveheist';
     if (heistActive) {
-      // Show dramatic Deserter Warning instead of plain modal
+      // Mid-heist: show dramatic Deserter Warning with penalty
+      setIsEndHeistModalOpen(false);
       setDeserterWarningIsHeistActive(true);
       setIsDeserterWarningOpen(true);
     } else {
-      // Lobby leave: show warning with smaller penalty
-      setDeserterWarningIsHeistActive(false);
-      setIsDeserterWarningOpen(true);
+      // Squad Lobby: standard confirmation modal with NO penalty
+      setIsLeaveSquadModalOpen(true);
     }
   };
 
@@ -5301,34 +5289,37 @@ export default function App() {
 
               {inSquad && (
                 <div
-                  onClick={handleLeaveHeistLocally}
-                  className="p-4 sm:p-5 rounded-3xl border-3 border-[#1E3A8A]/90 bg-[#1E40AF]/80 hover:bg-[#1D4ED8]/90 backdrop-blur-md shadow-[5px_5px_0px_#172554] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                  onClick={() => {
+                    handleRequestLeaveSquad();
+                    heistAudio.playKeyClick();
+                  }}
+                  className="p-4 sm:p-5 rounded-3xl border-3 border-[#2E0B12]/90 bg-[#3B111B]/85 hover:bg-[#4D1420]/95 backdrop-blur-md shadow-[5px_5px_0px_#1B060B] active:translate-x-0.5 active:translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#60A5FA] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 group-hover:animate-icon-wobble transition-transform">
+                    <div className="w-14 h-14 rounded-2xl bg-[#FF4D6D] border-2 border-black flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 group-hover:animate-icon-wobble transition-transform">
                       🏃
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#93C5FD] transition-colors">
+                        <h3 className="font-black text-base sm:text-lg text-white font-game group-hover:text-[#FDA4AF] transition-colors">
                           LEAVE SQUAD (SOLO EXFIL)
                         </h3>
-                        <span className="text-[10px] bg-[#1E3A8A] text-[#BFDBFE] font-bold px-2 py-0.5 rounded-md border border-[#1E40AF] hidden sm:inline-block">
-                          AWOL
+                        <span className="text-[10px] bg-[#881337] text-[#FECDD3] font-bold px-2 py-0.5 rounded-md border border-[#BE123C] hidden sm:inline-block">
+                          −25 LP PENALTY
                         </span>
                       </div>
-                      <p className="text-xs text-[#DBEAFE] font-medium mt-0.5">
-                        Abandon your teammates and exit the operation alone.
+                      <p className="text-xs text-[#FECDD3] font-medium mt-0.5">
+                        Abandon your teammates mid-heist and exit the operation alone (−25 LP).
                       </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    className="bg-[#3B82F6]/90 hover:bg-[#60A5FA] text-white font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
+                    className="bg-[#FF4D6D]/90 hover:bg-[#FF3366] text-white font-black text-xs px-4 py-3 rounded-2xl border-2 border-black shadow-[3px_3px_0px_#000] uppercase font-game transition-all flex items-center justify-center space-x-1.5 flex-shrink-0 group-hover:shadow-[4px_4px_0px_#000] backdrop-blur-sm"
                   >
-                    <span>Leave Squad</span>
+                    <span>Leave Heist</span>
                     <ArrowRight className="w-4 h-4 stroke-[3]" />
                   </button>
                 </div>

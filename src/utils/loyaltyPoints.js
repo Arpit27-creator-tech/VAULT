@@ -64,7 +64,7 @@ export const LP_EVENTS = {
   COMPLETE_HEIST: { amount: 50, label: 'Completed heist with squad', icon: '✅' },
   WIN_HEIST: { amount: 100, label: 'Won heist with squad', icon: '🏆' },
   SQUAD_STREAK_5: { amount: 200, label: 'Completed 5 heists same squad', icon: '🔥' },
-  LEAVE_LOBBY: { amount: -25, label: 'Abandoned squad lobby', icon: '⚠️' },
+  LEAVE_LOBBY: { amount: 0, label: 'Left squad lobby', icon: '🚪' },
   LEAVE_MID_HEIST: { amount: -25, label: 'Deserted mid-heist (BETRAYAL)', icon: '💀' },
   DISCONNECT_MID: { amount: -100, label: 'Disconnected during active heist', icon: '🔌' },
 };

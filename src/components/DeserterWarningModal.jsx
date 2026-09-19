@@ -42,14 +42,12 @@ export default function DeserterWarningModal({
 
   const currentLP = getLoyaltyPoints();
   const currentRank = getLoyaltyRank(currentLP);
-  const penalty = isHeistActive ? 25 : 25;
+  const penalty = 25;
   const newLP = Math.max(0, currentLP - penalty);
   const newRank = getLoyaltyRank(newLP);
   const rankDowngrade = newRank.name !== currentRank.name;
 
-  const penaltyLabel = isHeistActive
-    ? 'MID-HEIST DESERTION'
-    : 'SQUAD ABANDONMENT';
+  const penaltyLabel = 'MID-HEIST DESERTION';
 
   return (
     <AnimatePresence>

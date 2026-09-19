@@ -2152,15 +2152,6 @@ button, input, select, textarea {
   border-color: rgb(16 185 129 / 0.8);
 }
 
-.border-\[\#1E3A8A\]\/90 {
-  border-color: rgb(30 58 138 / 0.9);
-}
-
-.border-\[\#1E40AF\] {
-  --tw-border-opacity: 1;
-  border-color: rgb(30 64 175 / var(--tw-border-opacity, 1));
-}
-
 .border-\[\#2E0B12\]\/90 {
   border-color: rgb(46 11 18 / 0.9);
 }
@@ -3007,15 +2998,6 @@ button, input, select, textarea {
   background-color: rgb(28 13 18 / var(--tw-bg-opacity, 1));
 }
 
-.bg-\[\#1E3A8A\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(30 58 138 / var(--tw-bg-opacity, 1));
-}
-
-.bg-\[\#1E40AF\]\/80 {
-  background-color: rgb(30 64 175 / 0.8);
-}
-
 .bg-\[\#1a0007\] {
   --tw-bg-opacity: 1;
   background-color: rgb(26 0 7 / var(--tw-bg-opacity, 1));
@@ -3050,17 +3032,12 @@ button, input, select, textarea {
   background-color: rgb(59 13 20 / var(--tw-bg-opacity, 1));
 }
 
-.bg-\[\#3B82F6\]\/90 {
-  background-color: rgb(59 130 246 / 0.9);
+.bg-\[\#3B111B\]\/85 {
+  background-color: rgb(59 17 27 / 0.85);
 }
 
 .bg-\[\#4D1420\]\/80 {
   background-color: rgb(77 20 32 / 0.8);
-}
-
-.bg-\[\#60A5FA\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(96 165 250 / var(--tw-bg-opacity, 1));
 }
 
 .bg-\[\#881337\] {
@@ -4107,11 +4084,6 @@ button, input, select, textarea {
   color: rgb(167 243 208 / var(--tw-text-opacity, 1));
 }
 
-.text-\[\#BFDBFE\] {
-  --tw-text-opacity: 1;
-  color: rgb(191 219 254 / var(--tw-text-opacity, 1));
-}
-
 .text-\[\#C084FC\] {
   --tw-text-opacity: 1;
   color: rgb(192 132 252 / var(--tw-text-opacity, 1));
@@ -4128,11 +4100,6 @@ button, input, select, textarea {
 
 .text-\[\#D1FAE5\]\/80 {
   color: rgb(209 250 229 / 0.8);
-}
-
-.text-\[\#DBEAFE\] {
-  --tw-text-opacity: 1;
-  color: rgb(219 234 254 / var(--tw-text-opacity, 1));
 }
 
 .text-\[\#E2FBEA\] {
@@ -4873,12 +4840,6 @@ button, input, select, textarea {
 
 .shadow-\[5px_5px_0px_\#03180E\] {
   --tw-shadow: 5px 5px 0px #03180E;
-  --tw-shadow-colored: 5px 5px 0px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-}
-
-.shadow-\[5px_5px_0px_\#172554\] {
-  --tw-shadow: 5px 5px 0px #172554;
   --tw-shadow-colored: 5px 5px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
@@ -5875,10 +5836,6 @@ table tr, table td, table th {
   background-color: rgb(24 112 76 / 0.9);
 }
 
-.hover\:bg-\[\#1D4ED8\]\/90:hover {
-  background-color: rgb(29 78 216 / 0.9);
-}
-
 .hover\:bg-\[\#22D3EE\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(34 211 238 / var(--tw-bg-opacity, 1));
@@ -5899,9 +5856,8 @@ table tr, table td, table th {
   background-color: rgb(76 15 26 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:bg-\[\#60A5FA\]:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(96 165 250 / var(--tw-bg-opacity, 1));
+.hover\:bg-\[\#4D1420\]\/95:hover {
+  background-color: rgb(77 20 32 / 0.95);
 }
 
 .hover\:bg-\[\#631B2B\]\/90:hover {
@@ -6261,11 +6217,6 @@ table tr, table td, table th {
 .group:hover .group-hover\:text-\[\#34D399\] {
   --tw-text-opacity: 1;
   color: rgb(52 211 153 / var(--tw-text-opacity, 1));
-}
-
-.group:hover .group-hover\:text-\[\#93C5FD\] {
-  --tw-text-opacity: 1;
-  color: rgb(147 197 253 / var(--tw-text-opacity, 1));
 }
 
 .group:hover .group-hover\:text-\[\#FDA4AF\] {

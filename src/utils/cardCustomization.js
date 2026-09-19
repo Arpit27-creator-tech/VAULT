@@ -44,22 +44,20 @@ export const PRESET_MOTTOS = [
 ];
 
 export const AVAILABLE_SHOWCASE_MEDALS = [
-  { id: 'mvp_award', title: 'Operation MVP', icon: 'Trophy', tier: 'GOLD', desc: 'Awarded for supreme MVP performance in syndicate heists.' },
-  { id: 'first_breach', title: 'First Infiltration', icon: 'CheckCircle2', tier: 'BRONZE', desc: 'Successfully breached and cracked an operation chamber.' },
-  { id: 'speed_demon', title: 'Sub-Zero Velocity', icon: 'Clock', tier: 'SILVER', desc: 'Completed a heist operation in record sub-2-minute speed.' },
-  { id: 'apex_loyalty', title: 'Squad Vanguard', icon: 'Shield', tier: 'PLATINUM', desc: 'Maintains elite 1,000 Loyalty Point standing with squad.' },
-  { id: 'ghost_protocol', title: 'Ghost Protocol', icon: 'Sparkles', tier: 'GOLD', desc: 'Cracked secure vaults with zero alarms or triggers tripped.' },
-  { id: 'neural_hacker', title: 'Cybernetic Breaker', icon: 'Terminal', tier: 'PLATINUM', desc: 'Mastery of advanced terminal cryptography and relays.' },
-  { id: 'clutch_save', title: 'Clutch Specialist', icon: 'Zap', tier: 'GOLD', desc: 'Saved squad extraction with under 10 seconds on clock.' }
+  { id: 'vault_cracker', title: 'Vault Cracker', emoji: '🗝️', tier: 'LEGENDARY', desc: 'Open a Tier 5 vault without tripping a single alarm.' },
+  { id: 'ghost_protocol', title: 'Ghost Protocol', emoji: '👻', tier: 'EPIC', desc: 'Finish heists without being spotted with zero alarms tripped.' },
+  { id: 'squad_anchor', title: 'Squad Anchor', emoji: '⚓', tier: 'RARE', desc: 'Finish 25 runs with the same squad.' },
+  { id: 'speed_demon', title: 'Sub-Zero Velocity', emoji: '⏱️', tier: 'RARE', desc: 'Completed a heist operation in record sub-2-minute speed.' },
+  { id: 'quantum_heist', title: 'Quantum Heist', emoji: '⚡', tier: 'LEGENDARY', desc: 'Complete an operation in under 60 seconds.' },
+  { id: 'mvp_award', title: 'Operation MVP', emoji: '🏆', tier: 'EPIC', desc: 'Awarded for supreme MVP performance in syndicate heists.' },
+  { id: 'first_breach', title: 'First Infiltration', emoji: '🗝️', tier: 'RARE', desc: 'Successfully breached and cracked an operation chamber.' },
+  { id: 'apex_loyalty', title: 'Squad Vanguard', emoji: '🛡️', tier: 'LEGENDARY', desc: 'Maintains elite 1,000 Loyalty Point standing with squad.' }
 ];
 
 export const DEFAULT_CARD_CONFIG = {
-  theme: 'PRISON_INMATE',
-  frameStyle: 'prisonBars',
-  motto: 'Cell Block 9 Mastermind // High Flight Risk',
-  showcasedMedals: ['mvp_award', 'speed_demon', 'apex_loyalty'],
-  hologramShimmer: true,
-  showBarcode: true
+  theme: 'DEFAULT',
+  motto: 'FIELD OPERATIVE',
+  showcasedMedals: ['vault_cracker', 'ghost_protocol', 'squad_anchor']
 };
 
 /**

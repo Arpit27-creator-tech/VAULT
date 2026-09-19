@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Copy, Check, UserPlus, Zap, Eye, RotateCw, Share2, Shield, Trophy } from 'lucide-react';
+import React from 'react';
+import { X } from 'lucide-react';
 import OperativeIdCard from './OperativeIdCard';
 import { heistAudio } from './HeistAudioEngine';
 import { friendAPI } from '../services/api';
@@ -14,16 +14,12 @@ export default function OperativeCardModal({
   onInviteToLobby,
   onOpenCustomizer
 }) {
-  const [copiedId, setCopiedId] = useState(false);
-  const [sentFriend, setSentFriend] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false);
-
   if (!isOpen || !operative) return null;
 
   const rawAgentId = operative?.agentId || (
     operative?.id 
-      ? `VAULT-${operative.id.replace(/-/g, '').substring(0, 8).toUpperCase()}` 
-      : 'VAULT-00000000'
+      ? `VLT-${operative.id.replace(/-/g, '').substring(0, 4).toUpperCase()}-${operative.id.replace(/-/g, '').substring(4, 7).toUpperCase()}` 
+      : 'VLT-4827-9QX'
   );
 
   const isMe = currentUser && (
@@ -33,136 +29,49 @@ export default function OperativeCardModal({
     (currentUser.username && currentUser.username.toLowerCase() === (operative.username || '').toLowerCase())
   );
 
-  const handleCopyAgentId = () => {
-    navigator.clipboard?.writeText(rawAgentId);
-    setCopiedId(true);
-    heistAudio.playKeyClick();
-    toast.success(`📋 Copied Agent ID: ${rawAgentId}`);
-    setTimeout(() => setCopiedId(false), 2000);
-  };
-
-  const handleSendFriendRequest = async () => {
+  const handleInvite = async (op) => {
+    if (currentLobbyCode && onInviteToLobby) {
+      onInviteToLobby(op || operative);
+      toast.success(`🎮 Squad invite dispatched to ${operative.callsign || 'operative'}!`);
+      return;
+    }
     try {
       const res = await friendAPI.sendRequest(operative.callsign || rawAgentId);
       heistAudio.playSuccessChime();
       toast.success(res?.message || `🤝 Friend request sent to ${operative.callsign}!`);
-      setSentFriend(true);
     } catch (err) {
-      toast.error(err.message || 'Failed to send friend request');
+      toast.error(err.message || 'Failed to send invite');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="relative max-w-md w-full flex flex-col items-center">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="relative max-w-4xl w-full flex flex-col items-center my-auto">
         
-        {/* Top Floating Control Bar */}
-        <div className="w-full flex items-center justify-between mb-3 px-1 text-xs font-mono">
-          <div className="flex items-center space-x-2 text-[#A7F3D0]">
-            <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-            <span className="font-bold uppercase tracking-wider text-[#10B981]">
-              INMATE RECORD // CELL BLOCK 9
-            </span>
-          </div>
+        {/* Floating Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute -top-11 right-1 sm:right-2 p-2 text-emerald-300 hover:text-white bg-[#061D13] hover:bg-[#0B3020] border-2 border-[#134830] rounded-2xl transition-all shadow-[2px_2px_0px_#020C07] z-30"
+          title="Close ID Card"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-          <button 
-            onClick={onClose}
-            className="p-2 text-[#A7F3D0] hover:text-white bg-[#072418] hover:bg-[#0A2E20] border border-[#059669] rounded-xl transition-all"
-            title="Close inspection"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* The Holographic ID Card */}
-        <div className="flex justify-center w-full">
-          <OperativeIdCard 
-            operative={operative} 
-            isFlipped={isFlipped}
-            onFlip={setIsFlipped}
-            interactive={true}
-          />
-        </div>
-
-        {/* Bottom Inspection Actions */}
-        <div className="mt-4 w-[340px] sm:w-[380px] bg-[#051C12] border-2 border-[#059669] rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-[6px_6px_0px_#020C07]">
-          
-          {/* Flip Card Action */}
-          <button
-            onClick={() => {
-              heistAudio.playKeyClick();
-              setIsFlipped(!isFlipped);
-            }}
-            className="flex-1 py-2 px-3 bg-[#072418] hover:bg-[#0A2E20] text-[#A7F3D0] hover:text-white border border-[#059669] rounded-xl font-mono text-xs flex items-center justify-center space-x-1.5 transition-all"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            <span>{isFlipped ? 'Front View' : 'Flip to Dossier'}</span>
-          </button>
-
-          {/* Copy Agent ID */}
-          <button
-            onClick={handleCopyAgentId}
-            className="py-2 px-3 bg-[#072418] hover:bg-[#0A2E20] text-[#A7F3D0] hover:text-white border border-[#059669] rounded-xl font-mono text-xs flex items-center space-x-1.5 transition-all"
-            title="Copy Booking ID"
-          >
-            {copiedId ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedId ? 'Copied' : 'Booking ID'}</span>
-          </button>
-
-          {/* If inspecting myself: open customizer button */}
-          {isMe && onOpenCustomizer && (
-            <button
-              onClick={() => {
-                onClose();
-                onOpenCustomizer();
-              }}
-              className="w-full py-2.5 px-4 bg-[#10B981] hover:bg-[#059669] text-[#020C07] font-bold font-mono text-xs rounded-xl shadow-[4px_4px_0px_#020C07] transition-all flex items-center justify-center space-x-2"
-            >
-              <span>🔒 Customize Inmate Pass</span>
-            </button>
-          )}
-
-          {/* If inspecting someone else: Add friend or invite */}
-          {!isMe && currentUser && (
-            <div className="w-full flex items-center gap-2 pt-1">
-              <button
-                disabled={sentFriend}
-                onClick={handleSendFriendRequest}
-                className={`flex-1 py-2 px-3 font-mono font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 border shadow-sm ${
-                  sentFriend 
-                    ? 'bg-[#072418] text-[#A7F3D0] border-[#059669] cursor-default' 
-                    : 'bg-[#10B981] hover:bg-[#059669] text-[#020C07] border-[#059669]'
-                }`}
-              >
-                {sentFriend ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Request Sent</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>Add Friend</span>
-                  </>
-                )}
-              </button>
-
-              {currentLobbyCode && onInviteToLobby && (
-                <button
-                  onClick={() => {
-                    onInviteToLobby(operative);
-                    toast.success(`Invited ${operative.callsign} to active squad!`);
-                  }}
-                  className="py-2 px-3 bg-[#072418] hover:bg-[#0A2E20] text-[#10B981] border border-[#059669] font-mono font-bold text-xs rounded-xl transition-all flex items-center space-x-1"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span>Squad</span>
-                </button>
-              )}
-            </div>
-          )}
-
-        </div>
+        {/* The Exact Target Gamified ID Card */}
+        <OperativeIdCard 
+          operative={operative} 
+          isMe={isMe}
+          onClose={onClose}
+          onInvite={handleInvite}
+          onOpenCustomizer={onOpenCustomizer}
+        />
 
       </div>
     </div>

@@ -76,12 +76,12 @@ export default function CardCustomizerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="bg-[#0e0703]/95 border border-orange-500/40 rounded-[28px] w-full max-w-5xl max-h-[92vh] flex flex-col shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(249,115,22,0.2)] overflow-hidden transition-all">
+      <div className="bg-[#121214] border-2 border-zinc-800 rounded-[28px] w-full max-w-5xl max-h-[92vh] flex flex-col shadow-[8px_8px_0px_#000000] overflow-hidden transition-all">
         
         {/* Header */}
-        <div className="p-5 sm:p-6 pb-4 flex items-center justify-between border-b border-orange-500/20 bg-gradient-to-b from-white/[0.04] to-transparent">
+        <div className="p-5 sm:p-6 pb-4 flex items-center justify-between border-b border-zinc-800 bg-transparent">
           <div className="flex items-center space-x-3">
-            <div className="bg-orange-500/20 text-orange-400 p-2.5 rounded-2xl border border-orange-500/40 shadow-inner">
+            <div className="bg-[#18181B] text-[#EA580C] p-2.5 rounded-2xl border border-zinc-700">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -89,11 +89,11 @@ export default function CardCustomizerModal({
                 <h2 className="text-lg font-black uppercase text-white font-mono tracking-wider">
                   INMATE ID PASS STUDIO
                 </h2>
-                <span className="bg-orange-500/20 text-orange-400 border border-orange-500/40 text-[9px] font-mono font-black px-2 py-0.5 rounded-full uppercase">
+                <span className="bg-[#18181B] text-[#EA580C] border border-zinc-700 text-[9px] font-mono font-black px-2 py-0.5 rounded uppercase">
                   CELL BLOCK 9
                 </span>
               </div>
-              <p className="text-xs text-orange-200/70 mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 Personalize your Cell Block 9 detention pass, inmate motto, and showcase heist commendations
               </p>
             </div>
@@ -101,7 +101,7 @@ export default function CardCustomizerModal({
 
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-white/[0.05] hover:bg-[#FF4D6D]/30 border border-white/10 hover:border-[#FF4D6D]/50 rounded-2xl transition-all"
+            className="p-2 text-zinc-400 hover:text-white bg-[#18181B] hover:bg-[#27272A] border border-zinc-700 rounded-xl transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -111,9 +111,9 @@ export default function CardCustomizerModal({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Column: Live Interactive Card Preview (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center space-y-3 p-4 bg-black/40 rounded-2xl border border-white/10 shadow-inner">
-            <div className="flex items-center justify-between w-full px-2 text-xs font-mono text-slate-400">
-              <span className="flex items-center space-x-1 text-orange-400 font-bold">
+          <div className="lg:col-span-5 flex flex-col items-center justify-center space-y-3 p-4 bg-[#09090B] rounded-2xl border border-zinc-800 shadow-inner">
+            <div className="flex items-center justify-between w-full px-2 text-xs font-mono text-zinc-400">
+              <span className="flex items-center space-x-1 text-[#EA580C] font-bold">
                 <Eye className="w-3.5 h-3.5" />
                 <span>LIVE PREVIEW</span>
               </span>
@@ -122,7 +122,7 @@ export default function CardCustomizerModal({
                   heistAudio.playKeyClick();
                   setIsFlipped(!isFlipped);
                 }}
-                className="text-[11px] text-amber-300 hover:text-white flex items-center space-x-1 bg-black/50 px-2.5 py-1 rounded-lg border border-amber-500/30"
+                className="text-[11px] text-zinc-300 hover:text-white flex items-center space-x-1 bg-[#18181B] px-2.5 py-1 rounded-lg border border-zinc-700"
               >
                 <RotateCw className="w-3 h-3" />
                 <span>{isFlipped ? 'Front View' : 'Flip Dossier'}</span>
@@ -137,7 +137,7 @@ export default function CardCustomizerModal({
               interactive={true}
             />
 
-            <p className="text-[11px] text-slate-400 font-mono text-center px-4">
+            <p className="text-[11px] text-zinc-400 font-mono text-center px-4">
               💡 Click the flip icon on the card to inspect the reverse penal confinement dossier.
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function CardCustomizerModal({
           <div className="lg:col-span-7 space-y-5">
             
             {/* Customizer Tabs Navigation */}
-            <div className="flex items-center space-x-1.5 p-1 bg-black/50 rounded-2xl border border-orange-500/20">
+            <div className="flex items-center space-x-1.5 p-1 bg-[#09090B] rounded-2xl border border-zinc-800">
               {[
                 { id: 'MOTTO', label: 'Inmate Motto', icon: Type },
                 { id: 'MEDALS', label: 'Showcase Medals', icon: Award },
@@ -163,8 +163,8 @@ export default function CardCustomizerModal({
                     }}
                     className={`flex-1 py-2 px-2.5 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                       isActive 
-                        ? 'bg-orange-500 text-black shadow-md' 
-                        : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                        ? 'bg-[#EA580C] text-black shadow' 
+                        : 'text-zinc-400 hover:text-white hover:bg-[#18181B]'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -181,14 +181,14 @@ export default function CardCustomizerModal({
                   <h3 className="text-sm font-bold text-white font-mono uppercase">
                     Penitentiary Pass Features
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">
+                  <p className="text-xs text-zinc-400 font-mono">
                     Permanent maximum security detention pass with reinforced cell bars and hazard caution banner.
                   </p>
                 </div>
 
                 {/* Primary Card Badge */}
-                <div className="p-4 rounded-2xl border border-orange-500/60 bg-gradient-to-r from-orange-950/40 via-black/60 to-black/40 shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center space-x-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-black border border-amber-400/80 p-0.5 overflow-hidden flex-shrink-0 shadow-[0_0_12px_rgba(251,191,36,0.3)]">
+                <div className="p-4 rounded-2xl border border-zinc-800 bg-[#18181B] flex items-center space-x-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-black border border-zinc-700 p-0.5 overflow-hidden flex-shrink-0">
                     <img src="/prison_seal_emblem.jpg" alt="Cell Block 9" className="w-full h-full object-cover rounded-lg" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -196,11 +196,11 @@ export default function CardCustomizerModal({
                       <span className="font-mono text-xs font-black text-white">
                         Cell Block 9 Inmate Pass
                       </span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#09090B] text-[#EA580C] border border-zinc-800 font-bold">
                         STANDARD ISSUE
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
                       Reinforced steel cell bars, diagonal hazard caution stripes, and booking identification stamp.
                     </p>
                   </div>
@@ -212,7 +212,7 @@ export default function CardCustomizerModal({
                     <span className="text-xs font-mono font-bold text-white block">
                       Prismatic Hologram Shimmer
                     </span>
-                    <span className="text-[11px] text-slate-400 font-mono">
+                    <span className="text-[11px] text-zinc-400 font-mono">
                       Dynamic light refraction across card surface
                     </span>
                   </div>
@@ -223,8 +223,8 @@ export default function CardCustomizerModal({
                     }}
                     className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all border ${
                       config.hologramShimmer 
-                        ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
-                        : 'bg-black/50 text-slate-400 border-white/15'
+                        ? 'bg-[#18181B] text-[#EA580C] border-[#EA580C]' 
+                        : 'bg-[#09090B] text-zinc-400 border-zinc-700'
                     }`}
                   >
                     {config.hologramShimmer ? 'ENABLED' : 'DISABLED'}
@@ -232,12 +232,12 @@ export default function CardCustomizerModal({
                 </div>
 
                 {/* Barcode & Booking Tag Toggle */}
-                <div className="p-3.5 bg-black/40 border border-white/10 rounded-2xl flex items-center justify-between">
+                <div className="p-3.5 bg-[#18181B] border border-zinc-800 rounded-2xl flex items-center justify-between">
                   <div>
                     <span className="text-xs font-mono font-bold text-white block">
                       Penitentiary Booking QR / Barcode
                     </span>
-                    <span className="text-[11px] text-slate-400 font-mono">
+                    <span className="text-[11px] text-zinc-400 font-mono">
                       Cell block biometric booking scan on card footer
                     </span>
                   </div>
@@ -248,8 +248,8 @@ export default function CardCustomizerModal({
                     }}
                     className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all border ${
                       config.showBarcode 
-                        ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
-                        : 'bg-black/50 text-slate-400 border-white/15'
+                        ? 'bg-[#18181B] text-[#EA580C] border-[#EA580C]' 
+                        : 'bg-[#09090B] text-zinc-400 border-zinc-700'
                     }`}
                   >
                     {config.showBarcode ? 'ENABLED' : 'DISABLED'}
@@ -265,14 +265,14 @@ export default function CardCustomizerModal({
                   <h3 className="text-sm font-bold text-white font-mono uppercase">
                     Operative Callsign Motto & Slogan
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">
+                  <p className="text-xs text-zinc-400 font-mono">
                     Displayed directly below your Callsign on the front of your ID card.
                   </p>
                 </div>
 
                 {/* Custom Text Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-slate-300">
+                  <label className="text-xs font-mono font-bold text-zinc-300">
                     Custom Motto / Tagline:
                   </label>
                   <input
@@ -281,9 +281,9 @@ export default function CardCustomizerModal({
                     value={config.motto || ''}
                     onChange={(e) => setConfig(prev => ({ ...prev, motto: e.target.value }))}
                     placeholder="Enter convict motto..."
-                    className="w-full px-4 py-3 bg-[#020B06] border border-orange-500/30 rounded-xl text-white font-mono text-xs sm:text-sm focus:border-orange-400 outline-none"
+                    className="w-full px-4 py-3 bg-[#09090B] border border-zinc-700 rounded-xl text-white font-mono text-xs sm:text-sm focus:border-[#EA580C] outline-none"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                  <div className="flex justify-between text-[10px] font-mono text-zinc-400">
                     <span>Appears in quotes on inmate card face</span>
                     <span>{(config.motto || '').length} / 48 characters</span>
                   </div>
@@ -291,7 +291,7 @@ export default function CardCustomizerModal({
 
                 {/* Preset Suggestions */}
                 <div className="space-y-2">
-                  <span className="text-xs font-mono font-bold text-slate-300 block">
+                  <span className="text-xs font-mono font-bold text-zinc-300 block">
                     Or pick from Cell Block 9 presets:
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -301,8 +301,8 @@ export default function CardCustomizerModal({
                         onClick={() => handleSelectMotto(preset)}
                         className={`text-[11px] font-mono px-3 py-1.5 rounded-xl border transition-all ${
                           config.motto === preset
-                            ? 'bg-orange-500 text-black font-bold border-orange-500'
-                            : 'bg-black/40 text-slate-300 hover:text-white border-white/10 hover:border-white/30'
+                            ? 'bg-[#EA580C] text-black font-bold border-[#EA580C]'
+                            : 'bg-[#18181B] text-zinc-300 hover:text-white border-zinc-700 hover:border-zinc-500'
                         }`}
                       >
                         {preset}
@@ -320,7 +320,7 @@ export default function CardCustomizerModal({
                   <h3 className="text-sm font-bold text-white font-mono uppercase">
                     Select 3 Showcased Medals
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">
+                  <p className="text-xs text-zinc-400 font-mono">
                     Pin up to 3 prestigious medals to the front of your inmate clearance pass.
                   </p>
                 </div>
@@ -332,16 +332,16 @@ export default function CardCustomizerModal({
                       <div
                         key={medal.id}
                         onClick={() => handleToggleMedal(medal.id)}
-                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center space-x-3 bg-black/40 hover:bg-black/60 relative ${
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center space-x-3 relative ${
                           isSelected 
-                            ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)] bg-[#241903]/40' 
-                            : 'border-white/10 hover:border-white/25'
+                            ? 'border-2 border-[#EA580C] bg-[#27272A]' 
+                            : 'border border-zinc-800 bg-[#18181B] hover:border-zinc-700'
                         }`}
                       >
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
                           isSelected 
-                            ? 'border-amber-400 bg-amber-500/20 text-amber-300' 
-                            : 'border-white/15 bg-black/40 text-slate-400'
+                            ? 'border-[#EA580C] bg-[#18181B] text-[#EA580C]' 
+                            : 'border-zinc-700 bg-black text-zinc-400'
                         }`}>
                           <Award className="w-5 h-5" />
                         </div>
@@ -351,17 +351,17 @@ export default function CardCustomizerModal({
                             <span className="font-mono text-xs font-bold text-white truncate">
                               {medal.title}
                             </span>
-                            <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-white/10 text-amber-300">
+                            <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-black text-zinc-300 border border-zinc-700">
                               {medal.tier}
                             </span>
                           </div>
-                          <p className="text-[10px] text-slate-400 font-mono truncate">
+                          <p className="text-[10px] text-zinc-400 font-mono truncate">
                             {medal.desc}
                           </p>
                         </div>
 
                         {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center flex-shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-[#EA580C] text-black flex items-center justify-center flex-shrink-0">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
@@ -370,8 +370,8 @@ export default function CardCustomizerModal({
                   })}
                 </div>
 
-                <div className="text-[11px] font-mono text-slate-400 pt-1">
-                  Selected: <span className="text-amber-300 font-bold">{(config.showcasedMedals || []).length}</span> / 3 medals
+                <div className="text-[11px] font-mono text-zinc-400 pt-1">
+                  Selected: <span className="text-[#EA580C] font-bold">{(config.showcasedMedals || []).length}</span> / 3 medals
                 </div>
               </div>
             )}
@@ -381,10 +381,10 @@ export default function CardCustomizerModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 px-6 border-t border-orange-500/20 bg-gradient-to-t from-white/[0.04] to-transparent flex items-center justify-between">
+        <div className="p-4 sm:p-5 px-6 border-t border-zinc-800 bg-transparent flex items-center justify-between">
           <button
             onClick={handleReset}
-            className="text-xs font-mono text-slate-400 hover:text-white flex items-center space-x-1 px-3 py-2 rounded-xl hover:bg-white/[0.05] transition-all"
+            className="text-xs font-mono text-zinc-400 hover:text-white flex items-center space-x-1 px-3 py-2 rounded-xl hover:bg-[#18181B] transition-all"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Reset Defaults</span>
@@ -393,13 +393,13 @@ export default function CardCustomizerModal({
           <div className="flex items-center space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/[0.05] text-xs font-mono text-slate-300 hover:text-white transition-all"
+              className="px-4 py-2 rounded-xl border border-zinc-700 hover:bg-[#18181B] text-xs font-mono text-zinc-300 hover:text-white transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="bg-orange-500 hover:bg-orange-400 text-black font-bold px-6 py-2.5 rounded-xl font-mono text-xs transition-all shadow-lg shadow-orange-950/60 flex items-center space-x-1.5"
+              className="bg-[#EA580C] hover:bg-[#C2410C] text-black font-bold px-6 py-2.5 rounded-xl font-mono text-xs transition-all shadow-[4px_4px_0px_#000000] flex items-center space-x-1.5"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Save & Equip Inmate Pass</span>

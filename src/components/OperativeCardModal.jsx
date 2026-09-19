@@ -58,16 +58,16 @@ export default function OperativeCardModal({
         
         {/* Top Floating Control Bar */}
         <div className="w-full flex items-center justify-between mb-3 px-1 text-xs font-mono">
-          <div className="flex items-center space-x-2 text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping" />
-            <span className="font-bold uppercase tracking-wider text-orange-400">
+          <div className="flex items-center space-x-2 text-zinc-300">
+            <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
+            <span className="font-bold uppercase tracking-wider text-[#EA580C]">
               INMATE RECORD // CELL BLOCK 9
             </span>
           </div>
 
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-white/[0.08] hover:bg-[#FF4D6D]/30 border border-white/15 hover:border-[#FF4D6D]/50 rounded-xl transition-all"
+            className="p-2 text-zinc-400 hover:text-white bg-[#18181B] hover:bg-[#27272A] border border-zinc-700 rounded-xl transition-all"
             title="Close inspection"
           >
             <X className="w-4 h-4" />
@@ -85,7 +85,7 @@ export default function OperativeCardModal({
         </div>
 
         {/* Bottom Inspection Actions */}
-        <div className="mt-4 w-[340px] sm:w-[380px] bg-[#0d0703]/90 border border-orange-500/30 backdrop-blur-md rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-2xl">
+        <div className="mt-4 w-[340px] sm:w-[380px] bg-[#121214] border-2 border-zinc-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-[6px_6px_0px_#000000]">
           
           {/* Flip Card Action */}
           <button
@@ -93,7 +93,7 @@ export default function OperativeCardModal({
               heistAudio.playKeyClick();
               setIsFlipped(!isFlipped);
             }}
-            className="flex-1 py-2 px-3 bg-black/40 hover:bg-white/10 text-slate-300 hover:text-white border border-white/15 rounded-xl font-mono text-xs flex items-center justify-center space-x-1.5 transition-all"
+            className="flex-1 py-2 px-3 bg-[#18181B] hover:bg-[#27272A] text-zinc-300 hover:text-white border border-zinc-700 rounded-xl font-mono text-xs flex items-center justify-center space-x-1.5 transition-all"
           >
             <RotateCw className="w-3.5 h-3.5" />
             <span>{isFlipped ? 'Front View' : 'Flip to Dossier'}</span>
@@ -102,10 +102,10 @@ export default function OperativeCardModal({
           {/* Copy Agent ID */}
           <button
             onClick={handleCopyAgentId}
-            className="py-2 px-3 bg-black/40 hover:bg-orange-500/20 text-amber-300 hover:text-white border border-amber-500/30 hover:border-orange-500/50 rounded-xl font-mono text-xs flex items-center space-x-1.5 transition-all"
+            className="py-2 px-3 bg-[#18181B] hover:bg-[#27272A] text-zinc-300 hover:text-white border border-zinc-700 rounded-xl font-mono text-xs flex items-center space-x-1.5 transition-all"
             title="Copy Booking ID"
           >
-            {copiedId ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copiedId ? <Check className="w-3.5 h-3.5 text-[#EA580C]" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copiedId ? 'Copied' : 'Booking ID'}</span>
           </button>
 
@@ -116,7 +116,7 @@ export default function OperativeCardModal({
                 onClose();
                 onOpenCustomizer();
               }}
-              className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-400 text-black font-bold font-mono text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+              className="w-full py-2.5 px-4 bg-[#EA580C] hover:bg-[#C2410C] text-black font-bold font-mono text-xs rounded-xl shadow-[4px_4px_0px_#000000] transition-all flex items-center justify-center space-x-2"
             >
               <span>🔒 Customize Inmate Pass</span>
             </button>
@@ -130,8 +130,8 @@ export default function OperativeCardModal({
                 onClick={handleSendFriendRequest}
                 className={`flex-1 py-2 px-3 font-mono font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 border shadow-sm ${
                   sentFriend 
-                    ? 'bg-emerald-950/60 text-[#34D399] border-emerald-600/40 cursor-default' 
-                    : 'bg-[#10B981] hover:bg-[#34D399] text-[#02140D] border-[#10B981]'
+                    ? 'bg-[#18181B] text-zinc-400 border-zinc-700 cursor-default' 
+                    : 'bg-[#15803D] hover:bg-[#16A34A] text-white border-[#166534]'
                 }`}
               >
                 {sentFriend ? (
@@ -153,7 +153,7 @@ export default function OperativeCardModal({
                     onInviteToLobby(operative);
                     toast.success(`Invited ${operative.callsign} to active squad!`);
                   }}
-                  className="py-2 px-3 bg-[#020B06] hover:bg-[#07281A] text-[#FBBF24] border border-amber-500/40 font-mono font-bold text-xs rounded-xl transition-all flex items-center space-x-1"
+                  className="py-2 px-3 bg-[#18181B] hover:bg-[#27272A] text-[#EA580C] border border-zinc-700 font-mono font-bold text-xs rounded-xl transition-all flex items-center space-x-1"
                 >
                   <Zap className="w-3.5 h-3.5 fill-current" />
                   <span>Squad</span>

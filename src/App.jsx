@@ -270,11 +270,7 @@ export default function App() {
     return () => window.removeEventListener('vault:achievement-event', handleCustomAchEvent);
   }, [triggerAchievementCheck]);
 
-  useEffect(() => {
-    if (currentUser?.level) {
-      triggerAchievementCheck('LOGIN', { level: currentUser.level });
-    }
-  }, [currentUser?.id, currentUser?.level, triggerAchievementCheck]);
+
 
   useEffect(() => {
     if (activeTab === 'lobby') {

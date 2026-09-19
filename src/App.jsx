@@ -321,9 +321,16 @@ export default function App() {
     try {
       const saved = localStorage.getItem('vault_current_user');
       const user = saved ? JSON.parse(saved) : null;
-      return initLoyaltyFromUser(user);
+      const lp = initLoyaltyFromUser(user);
+      // Seed to 1000 if no points have been earned yet
+      if (lp === 0) {
+        setLoyaltyPoints(1000);
+        return 1000;
+      }
+      return lp;
     } catch {
-      return getLoyaltyPoints();
+      const lp = getLoyaltyPoints();
+      return lp === 0 ? 1000 : lp;
     }
   });
 
@@ -699,8 +706,14 @@ export default function App() {
   };
 
   const handleLoginSuccess = (userData) => {
-    setCurrentUser(userData);
-    localStorage.setItem('vault_current_user', JSON.stringify(userData));
+    // Seed LP to 1000 if user has no stored points
+    const seededLP = initLoyaltyFromUser(userData);
+    const finalLP = seededLP === 0 ? 1000 : seededLP;
+    if (finalLP !== seededLP) setLoyaltyPoints(finalLP);
+    setLoyaltyPointsState(finalLP);
+    const userWithLP = { ...userData, loyaltyPoints: finalLP };
+    setCurrentUser(userWithLP);
+    localStorage.setItem('vault_current_user', JSON.stringify(userWithLP));
     setSidebarCollapsed(false);
     setActiveTab('home');
     // Connect to Socket.io after successful login

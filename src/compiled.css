@@ -788,6 +788,10 @@ button, input, select, textarea {
   top: 3rem;
 }
 
+.top-14 {
+  top: 3.5rem;
+}
+
 .top-2 {
   top: 0.5rem;
 }
@@ -888,6 +892,11 @@ button, input, select, textarea {
   grid-column: span 2 / span 2;
 }
 
+.-mx-5 {
+  margin-left: -1.25rem;
+  margin-right: -1.25rem;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -932,6 +941,10 @@ button, input, select, textarea {
   margin-top: -0.25rem;
 }
 
+.-mt-5 {
+  margin-top: -1.25rem;
+}
+
 .mb-0\.5 {
   margin-bottom: 0.125rem;
 }
@@ -946,6 +959,10 @@ button, input, select, textarea {
 
 .mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.mb-2\.5 {
+  margin-bottom: 0.625rem;
 }
 
 .mb-3 {
@@ -1540,6 +1557,11 @@ button, input, select, textarea {
 
 .-rotate-90 {
   --tw-rotate: -90deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.rotate-12 {
+  --tw-rotate: 12deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -2504,6 +2526,14 @@ button, input, select, textarea {
   border-color: rgb(2 44 34 / 0.8);
 }
 
+.border-orange-500\/50 {
+  border-color: rgb(249 115 22 / 0.5);
+}
+
+.border-orange-500\/60 {
+  border-color: rgb(249 115 22 / 0.6);
+}
+
 .border-purple-500\/30 {
   border-color: rgb(168 85 247 / 0.3);
 }
@@ -2549,6 +2579,14 @@ button, input, select, textarea {
 
 .border-red-500\/40 {
   border-color: rgb(239 68 68 / 0.4);
+}
+
+.border-red-500\/50 {
+  border-color: rgb(239 68 68 / 0.5);
+}
+
+.border-red-500\/80 {
+  border-color: rgb(239 68 68 / 0.8);
 }
 
 .border-red-700 {
@@ -3243,6 +3281,11 @@ button, input, select, textarea {
   background-color: rgb(69 26 3 / 0.9);
 }
 
+.bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+
 .bg-black\/20 {
   background-color: rgb(0 0 0 / 0.2);
 }
@@ -3357,6 +3400,10 @@ button, input, select, textarea {
   background-color: rgb(2 44 34 / 0.9);
 }
 
+.bg-orange-500\/20 {
+  background-color: rgb(249 115 22 / 0.2);
+}
+
 .bg-purple-950 {
   --tw-bg-opacity: 1;
   background-color: rgb(59 7 100 / var(--tw-bg-opacity, 1));
@@ -3408,6 +3455,10 @@ button, input, select, textarea {
 
 .bg-red-950\/40 {
   background-color: rgb(69 10 10 / 0.4);
+}
+
+.bg-red-950\/70 {
+  background-color: rgb(69 10 10 / 0.7);
 }
 
 .bg-red-950\/80 {
@@ -3598,6 +3649,18 @@ button, input, select, textarea {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.from-\[\#2a0e05\] {
+  --tw-gradient-from: #2a0e05 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(42 14 5 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-\[\#EA580C\] {
+  --tw-gradient-from: #EA580C var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(234 88 12 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-\[\#EAB308\] {
   --tw-gradient-from: #EAB308 var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(234 179 8 / 0) var(--tw-gradient-to-position);
@@ -3723,6 +3786,11 @@ button, input, select, textarea {
   --tw-gradient-stops: var(--tw-gradient-from), #10B981 var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
+.via-\[\#140b07\] {
+  --tw-gradient-to: rgb(20 11 7 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #140b07 var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
 .via-\[\#15803D\] {
   --tw-gradient-to: rgb(21 128 61 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), #15803D var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -3736,6 +3804,11 @@ button, input, select, textarea {
 .via-\[\#B45309\] {
   --tw-gradient-to: rgb(180 83 9 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), #B45309 var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.via-\[\#C2410C\] {
+  --tw-gradient-to: rgb(194 65 12 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #C2410C var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
 .via-\[\#FBBF24\] {
@@ -3795,8 +3868,16 @@ button, input, select, textarea {
   --tw-gradient-to: rgb(5 33 21 / 0.85) var(--tw-gradient-to-position);
 }
 
+.to-\[\#080402\] {
+  --tw-gradient-to: #080402 var(--tw-gradient-to-position);
+}
+
 .to-\[\#10B981\] {
   --tw-gradient-to: #10B981 var(--tw-gradient-to-position);
+}
+
+.to-\[\#1C1917\] {
+  --tw-gradient-to: #1C1917 var(--tw-gradient-to-position);
 }
 
 .to-\[\#34D399\] {
@@ -4587,6 +4668,11 @@ button, input, select, textarea {
 .text-emerald-700 {
   --tw-text-opacity: 1;
   color: rgb(4 120 87 / var(--tw-text-opacity, 1));
+}
+
+.text-orange-400 {
+  --tw-text-opacity: 1;
+  color: rgb(251 146 60 / var(--tw-text-opacity, 1));
 }
 
 .text-purple-300 {

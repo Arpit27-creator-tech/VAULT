@@ -119,10 +119,12 @@ export default function OperativeIdCard({
     });
   }, [config.showcasedMedals]);
 
-  // Frame styles
-  const isHolo = config.frameStyle === 'holographic';
-  const isCarbon = config.frameStyle === 'carbon';
-  const isCircuit = config.frameStyle === 'circuit';
+  // Frame & Theme styles
+  const isPrison = activeTheme.isPrison || config.theme === 'PRISON_INMATE' || config.frameStyle === 'prisonBars';
+  const isHolo = config.frameStyle === 'holographic' && !isPrison;
+  const isCarbon = config.frameStyle === 'carbon' && !isPrison;
+  const isCircuit = config.frameStyle === 'circuit' && !isPrison;
+  const isBars = isPrison || config.frameStyle === 'prisonBars';
 
   return (
     <div className={`perspective-1000 select-none ${className}`}>
@@ -172,6 +174,38 @@ export default function OperativeIdCard({
             />
           )}
 
+          {/* Prison Cell Bars Texture */}
+          {isBars && (
+            <div 
+              className="absolute inset-0 opacity-15 pointer-events-none"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 2px, transparent 2px, transparent 24px)'
+              }}
+            />
+          )}
+
+          {/* Prison Hazard Caution Banner */}
+          {isPrison && (
+            <div 
+              className="relative -mx-5 -mt-5 mb-2.5 py-1 px-3 flex items-center justify-between text-[8px] font-mono font-black uppercase text-black tracking-wider shadow-md"
+              style={{ background: 'repeating-linear-gradient(45deg, #F59E0B, #F59E0B 10px, #000 10px, #000 20px)' }}
+            >
+              <span className="bg-black text-[#FBBF24] px-2 py-0.5 rounded font-black tracking-widest flex items-center space-x-1">
+                <span>⚠️ CANOPY PENITENTIARY</span>
+              </span>
+              <span className="bg-red-600 text-white px-1.5 py-0.5 rounded font-black animate-pulse">
+                CELL BLOCK 9
+              </span>
+            </div>
+          )}
+
+          {/* Distressed Inmate Stamp Overlay */}
+          {isPrison && (
+            <div className="absolute top-14 right-3.5 rotate-12 border-2 border-red-500/80 text-red-400 bg-red-950/70 font-mono font-black text-[9px] tracking-widest px-2 py-0.5 rounded shadow-lg uppercase pointer-events-none select-none z-20">
+              [ INMATE C-09 ]
+            </div>
+          )}
+
           {/* Top Lanyard Badge Slot Cutout (Authentic ID Pass Detail) */}
           <div className="relative z-10 flex justify-center -mt-1 mb-2">
             <div className="w-14 h-2 bg-[#020B06] border border-emerald-900/80 rounded-full shadow-inner" />
@@ -200,23 +234,37 @@ export default function OperativeIdCard({
                 <div>
                   <div className="flex items-center space-x-1.5">
                     <span className="font-game font-black text-sm text-white tracking-wider">
-                      🌲 V.A.U.L.T.
+                      {isPrison ? '🔒 CELL BLOCK 9' : '🌲 V.A.U.L.T.'}
                     </span>
-                    <span className="bg-[#10B981]/20 text-[#34D399] font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border border-[#10B981]/40 uppercase">
-                      SEC PASS
+                    <span 
+                      className={`font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase ${
+                        isPrison 
+                          ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
+                          : 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40'
+                      }`}
+                    >
+                      {isPrison ? 'INMATE PASS' : 'SEC PASS'}
                     </span>
                   </div>
                   <p className="text-[10px] font-mono text-emerald-300/70">
-                    OPERATIVE IDENTIFICATION
+                    {isPrison ? 'MAX SECURITY INCARCERATION' : 'OPERATIVE IDENTIFICATION'}
                   </p>
                 </div>
               </div>
 
               {/* Status indicator & Flip toggle */}
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border border-emerald-800/60 text-[9px] font-mono">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                  <span className="text-emerald-300 font-bold tracking-wide">ACTIVE</span>
+                <div className={`flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border text-[9px] font-mono ${
+                  isPrison ? 'border-red-500/50' : 'border-emerald-800/60'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                    isPrison ? 'bg-red-500' : 'bg-[#10B981]'
+                  }`} />
+                  <span className={`font-bold tracking-wide ${
+                    isPrison ? 'text-red-400' : 'text-emerald-300'
+                  }`}>
+                    {isPrison ? 'DETAINED' : 'ACTIVE'}
+                  </span>
                 </div>
                 {interactive && (
                   <button
@@ -282,8 +330,12 @@ export default function OperativeIdCard({
               {/* Callsign & Tag details */}
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="bg-[#10B981]/20 text-[#34D399] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-[#10B981]/40 uppercase">
-                    {role}
+                  <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                    isPrison 
+                      ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' 
+                      : 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40'
+                  }`}>
+                    {isPrison ? `Convict ${role}` : role}
                   </span>
                   {mvpCount > 0 && (
                     <span className="inline-flex items-center space-x-1 bg-[#FBBF24]/15 text-[#FDE047] font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#FBBF24]/50">
@@ -294,12 +346,14 @@ export default function OperativeIdCard({
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-black text-white font-game uppercase tracking-tight truncate">
-                  {callsign}
+                  {isPrison ? `INMATE: ${callsign}` : callsign}
                 </h2>
 
-                {/* Unique Agent ID */}
+                {/* Unique Agent ID / Booking Code */}
                 <div className="flex items-center space-x-1.5 pt-0.5">
-                  <span className="text-[10px] font-mono font-bold text-slate-400">TAG:</span>
+                  <span className="text-[10px] font-mono font-bold text-slate-400">
+                    {isPrison ? 'BOOKING:' : 'TAG:'}
+                  </span>
                   <button
                     onClick={handleCopyAgentId}
                     className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#020B06] border border-emerald-900/80 hover:border-amber-500/50 text-[#FBBF24] hover:text-white transition-all shadow-inner group"
@@ -485,10 +539,10 @@ export default function OperativeIdCard({
                 <Fingerprint className="w-5 h-5 text-[#FBBF24]" />
                 <div>
                   <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">
-                    OPERATIVE DOSSIER
+                    {isPrison ? 'PENAL CONFINEMENT DOSSIER' : 'OPERATIVE DOSSIER'}
                   </h3>
                   <p className="text-[9px] font-mono text-emerald-300/70">
-                    BIOMETRIC RECORD // {rawAgentId}
+                    {isPrison ? 'INMATE RECORD // CELL BLOCK 9' : `BIOMETRIC RECORD // ${rawAgentId}`}
                   </p>
                 </div>
               </div>
@@ -508,23 +562,23 @@ export default function OperativeIdCard({
           <div className="space-y-3.5 py-2">
             <div className="bg-[#020B06]/80 border border-emerald-900/60 rounded-xl p-3 space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Operative Callsign:</span>
+                <span className="text-slate-400">{isPrison ? 'Inmate Callsign:' : 'Operative Callsign:'}</span>
                 <span className="text-white font-bold">{callsign}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Assigned Specialization:</span>
+                <span className="text-slate-400">{isPrison ? 'Criminal Discipline:' : 'Assigned Specialization:'}</span>
                 <span className="text-[#34D399] font-bold">{role}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Security Clearance:</span>
-                <span className="text-[#FBBF24] font-bold">LEVEL {level}</span>
+                <span className="text-slate-400">{isPrison ? 'Flight Risk Classification:' : 'Security Clearance:'}</span>
+                <span className="text-[#FBBF24] font-bold">{isPrison ? `LEVEL ${level} // CRITICAL` : `LEVEL ${level}`}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Squad Loyalty Standing:</span>
+                <span className="text-slate-400">{isPrison ? 'Inmate Loyalty Standing:' : 'Squad Loyalty Standing:'}</span>
                 <span className="text-emerald-400 font-bold">{loyaltyRank.name} ({lp} LP)</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">MVP Commendations:</span>
+                <span className="text-slate-400">{isPrison ? 'Heist Commendations:' : 'MVP Commendations:'}</span>
                 <span className="text-[#FBBF24] font-bold">{mvpCount} Trophies Awarded</span>
               </div>
             </div>

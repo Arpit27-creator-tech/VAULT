@@ -93,6 +93,22 @@ export const CARD_THEMES = {
     holoGradient: 'linear-gradient(135deg, rgba(239,68,68,0.3) 0%, rgba(249,115,22,0.2) 40%, rgba(239,68,68,0.3) 100%)',
     statGlow: 'rgba(239, 68, 68, 0.3)',
     previewSwatch: 'bg-gradient-to-br from-[#EF4444] via-[#064e3b] to-[#020B06]'
+  },
+  PRISON_INMATE: {
+    id: 'PRISON_INMATE',
+    name: 'Cell Block Inmate (Prison)',
+    subtitle: 'Max Security Penitentiary Pass & Hazard Stripes',
+    primaryColor: '#F97316',
+    accentColor: '#FBBF24',
+    goldColor: '#EA580C',
+    borderColor: 'rgba(249, 115, 22, 0.7)',
+    bgGradient: 'from-[#2a0e05] via-[#140b07] to-[#080402]',
+    chipColor: '#F97316',
+    badgeBg: 'bg-orange-500/20 text-orange-400 border-orange-500/60',
+    holoGradient: 'linear-gradient(135deg, rgba(249,115,22,0.35) 0%, rgba(251,191,36,0.25) 30%, rgba(0,0,0,0.4) 60%, rgba(249,115,22,0.35) 100%)',
+    statGlow: 'rgba(249, 115, 22, 0.45)',
+    previewSwatch: 'bg-gradient-to-br from-[#EA580C] via-[#C2410C] to-[#1C1917]',
+    isPrison: true
   }
 };
 
@@ -101,6 +117,11 @@ export const FRAME_STYLES = {
     id: 'forestCard',
     name: 'Forest Syndicate (Default)',
     description: 'Crisp emerald border with tactile 3px shadow matching V.A.U.L.T interface'
+  },
+  prisonBars: {
+    id: 'prisonBars',
+    name: 'Prison Cell Bars & Hazard',
+    description: 'Reinforced prison bars, diagonal hazard caution stripes, and booking plate'
   },
   holographic: {
     id: 'holographic',
@@ -121,13 +142,15 @@ export const FRAME_STYLES = {
 
 export const PRESET_MOTTOS = [
   'Apex Infiltrator // Zero Trace',
+  'Cell Block 9 Mastermind // High Flight Risk',
+  'Maximum Security Escapee',
+  'Guilty as Charged // No Prison Can Hold Me',
   'Never Leave a Partner Behind',
   'Keymaster of the Canopy Vault',
   'Ghost of the Syndicate',
+  'Solitary Confinement Survivor',
   'Laser Grid Specialist',
-  'Mastermind Locksmith',
-  'Clutch Operator Under Pressure',
-  'Silent Infiltration Expert'
+  'Mastermind Locksmith'
 ];
 
 export const AVAILABLE_SHOWCASE_MEDALS = [

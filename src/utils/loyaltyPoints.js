@@ -75,7 +75,7 @@ export const LP_EVENTS = {
   WIN_HEIST: { amount: 100, label: 'Won heist with squad', icon: '🏆' },
   SQUAD_STREAK_5: { amount: 200, label: 'Completed 5 heists same squad', icon: '🔥' },
   LEAVE_LOBBY: { amount: -25, label: 'Abandoned squad lobby', icon: '⚠️' },
-  LEAVE_MID_HEIST: { amount: -150, label: 'Deserted mid-heist (BETRAYAL)', icon: '💀' },
+  LEAVE_MID_HEIST: { amount: -25, label: 'Deserted mid-heist (BETRAYAL)', icon: '💀' },
   DISCONNECT_MID: { amount: -100, label: 'Disconnected during active heist', icon: '🔌' },
 };
 
@@ -87,8 +87,8 @@ const MAX_LOG_ENTRIES = 20;
 export function getLoyaltyPoints() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const val = raw !== null ? parseInt(raw, 10) : 0;
-    return isNaN(val) ? 0 : Math.max(0, val);
+    const val = raw !== null ? parseInt(raw, 10) : 1000;
+    return isNaN(val) ? 1000 : Math.max(0, val);
   } catch {
     return 0;
   }
@@ -152,7 +152,7 @@ export function initLoyaltyFromUser(user) {
   if (!user) return getLoyaltyPoints();
   // If user object has loyaltyPoints, use the higher of the two (be generous)
   const stored = getLoyaltyPoints();
-  const fromUser = typeof user.loyaltyPoints === 'number' ? user.loyaltyPoints : 0;
+  const fromUser = typeof user.loyaltyPoints === 'number' ? user.loyaltyPoints : 1000;
   const merged = Math.max(stored, fromUser);
   setLoyaltyPoints(merged);
   return merged;

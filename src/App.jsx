@@ -2195,17 +2195,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[#051811] text-[#F0FDF4] selection:bg-[#10B981] selection:text-[#02140D] font-sans antialiased">
-      <Toaster 
-        position="top-right" 
-        theme="dark"
-        closeButton={false}
-        duration={1000}
-        richColors={false}
-        toastOptions={{
-          className: 'vault-toast',
-          duration: 1000
-        }}
-      />
+
 
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         {bgVideoActive && (

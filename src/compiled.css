@@ -887,6 +887,11 @@ button, input, select, textarea {
   margin-bottom: 0.5rem;
 }
 
+.my-3 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
 .my-3\.5 {
   margin-top: 0.875rem;
   margin-bottom: 0.875rem;
@@ -1193,12 +1198,20 @@ button, input, select, textarea {
   max-height: 12rem;
 }
 
+.max-h-\[340px\] {
+  max-height: 340px;
+}
+
 .max-h-\[480px\] {
   max-height: 480px;
 }
 
 .max-h-\[85vh\] {
   max-height: 85vh;
+}
+
+.max-h-\[88vh\] {
+  max-height: 88vh;
 }
 
 .max-h-\[92vh\] {
@@ -1351,10 +1364,6 @@ button, input, select, textarea {
 
 .w-\[300px\] {
   width: 300px;
-}
-
-.w-\[90vw\] {
-  width: 90vw;
 }
 
 .w-\[92vw\] {
@@ -6553,6 +6562,10 @@ table tr, table td, table th {
     height: calc(100vh - 65px);
   }
 
+  .sm\:max-h-\[380px\] {
+    max-height: 380px;
+  }
+
   .sm\:w-14 {
     width: 3.5rem;
   }
@@ -6579,6 +6592,10 @@ table tr, table td, table th {
 
   .sm\:w-auto {
     width: auto;
+  }
+
+  .sm\:max-w-3xl {
+    max-width: 48rem;
   }
 
   .sm\:flex-none {

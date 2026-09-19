@@ -7,6 +7,26 @@ import {
 } from 'lucide-react';
 
 import { heistAudio } from './HeistAudioEngine';
+import OperativeIdCard from './OperativeIdCard';
+
+const TOUR_DEMO_OPERATIVE = {
+  callsign: 'CIPHER_GHOST',
+  username: 'ghost_operative',
+  agentId: 'VLT-4827-9QX',
+  role: 'Canopy Hacker',
+  level: 14,
+  xp: 14250,
+  stats: {
+    heistsCompleted: 42,
+    successRate: 94,
+    mvpAwards: 8,
+    coopRuns: 38
+  },
+  cardConfig: {
+    motto: 'APEX INFILTRATOR',
+    showcasedMedals: ['speed_runner', 'mvp_award', 'cipher_grandmaster']
+  }
+};
 
 // ─── Tour Step Definitions ────────────────────────────────────────────────────
 // Each step optionally has a `targetSelector` (CSS selector for a real DOM
@@ -122,11 +142,13 @@ const TOUR_STEPS = [
 
 const STORAGE_KEY = 'vault_tour_seen_v3';
 
-export default function OnboardingTour({ onComplete }) {
+export default function OnboardingTour({ onComplete, currentUser }) {
   const [step, setStep] = useState(0);
   const [spotlightRect, setSpotlightRect] = useState(null);
   const [isVisible, setIsVisible] = useState(true);
   const rafRef = useRef(null);
+
+  const demoOperative = (currentUser?.callsign || currentUser?.username) ? currentUser : TOUR_DEMO_OPERATIVE;
 
   const currentStep = TOUR_STEPS[step];
   const isLast = step === TOUR_STEPS.length - 1;
@@ -293,7 +315,9 @@ export default function OnboardingTour({ onComplete }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: currentStep.centered ? -12 : (tooltipAbove ? 12 : -12), scale: 0.97 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`absolute z-10 w-[90vw] max-w-md ${
+            className={`absolute z-10 w-[92vw] ${
+              currentStep.id === 'id-card' ? 'max-w-2xl sm:max-w-3xl' : 'max-w-md'
+            } ${
               currentStep.centered || !spotlightRect
                 ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
                 : tooltipAbove
@@ -323,7 +347,7 @@ export default function OnboardingTour({ onComplete }) {
             }
           >
             {/* Card */}
-            <div className="bg-[#071E14]/97 backdrop-blur-2xl border-[3px] border-[#03140C] shadow-[8px_8px_0px_#020C07,0_0_40px_rgba(16,185,129,0.15)] p-5 sm:p-6">
+            <div className="bg-[#071E14]/97 backdrop-blur-2xl border-[3px] border-[#03140C] shadow-[8px_8px_0px_#020C07,0_0_40px_rgba(16,185,129,0.15)] p-5 sm:p-6 max-h-[88vh] overflow-y-auto">
 
               {/* Role badge + title */}
               <div className="flex items-start space-x-3 mb-4">
@@ -409,6 +433,27 @@ export default function OnboardingTour({ onComplete }) {
                       </p>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Live ID Card Preview */}
+              {currentStep.id === 'id-card' && (
+                <div className="my-3 rounded-2xl border-2 border-[#03140C] bg-[#020B06] overflow-hidden shadow-inner flex flex-col">
+                  <div className="bg-[#051C12] px-3 py-1.5 border-b border-[#134830] flex items-center justify-between text-[11px] font-mono text-[#34D399]">
+                    <span className="flex items-center space-x-1.5 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                      <span>OPERATIVE PASS PREVIEW</span>
+                    </span>
+                    <span className="text-slate-400 text-[10px]">Active Credential Card</span>
+                  </div>
+                  <div className="max-h-[340px] sm:max-h-[380px] overflow-y-auto p-2 sm:p-3 flex justify-center">
+                    <div className="w-full flex justify-center">
+                      <OperativeIdCard 
+                        operative={demoOperative}
+                        isMe={true}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 

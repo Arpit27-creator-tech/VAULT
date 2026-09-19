@@ -5639,7 +5639,7 @@ export default function App() {
 
       {/* ── Onboarding Spotlight Tour ── */}
       {showTour && (
-        <OnboardingTour onComplete={() => setShowTour(false)} />
+        <OnboardingTour currentUser={currentUser} onComplete={() => setShowTour(false)} />
       )}
 
       {/* ── Solo Training Modal ── */}

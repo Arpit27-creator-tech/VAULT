@@ -640,12 +640,20 @@ button, input, select, textarea {
   inset: 0.5rem;
 }
 
+.inset-\[5px\] {
+  inset: 5px;
+}
+
+.inset-\[6px\] {
+  inset: 6px;
+}
+
 .-bottom-0\.5 {
   bottom: -0.125rem;
 }
 
-.-bottom-2\.5 {
-  bottom: -0.625rem;
+.-bottom-2 {
+  bottom: -0.5rem;
 }
 
 .-bottom-3 {
@@ -1963,6 +1971,10 @@ button, input, select, textarea {
 
 .rounded-3xl {
   border-radius: 1.5rem;
+}
+
+.rounded-\[13px\] {
+  border-radius: 13px;
 }
 
 .rounded-\[22px\] {

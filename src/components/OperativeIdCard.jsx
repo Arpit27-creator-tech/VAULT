@@ -236,67 +236,45 @@ export default function OperativeIdCard({
           <div className="relative z-10 py-3 space-y-3">
             <div className="flex items-start space-x-3.5">
               
-              {/* Photo inside Forest Avatar Frame with Level Progress Arc */}
-              <div className="relative flex-shrink-0" style={{ width: 96, height: 96 }}>
-                {config.avatarShape === 'roundedRect' ? (
-                  // Squarish Tactical Frame with matching rounded-rect progress bar
-                  (() => {
-                    const size = 96, sw = 5, rectSize = 86, rx = 16;
-                    const perimeter = 2 * (rectSize + rectSize) - 8 * rx + 2 * Math.PI * rx;
-                    const offset = perimeter * (1 - levelProgress);
-                    const pos = (size - rectSize) / 2;
-                    return (
-                      <>
-                        <svg width={size} height={size} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
-                          <rect x={pos} y={pos} width={rectSize} height={rectSize} rx={rx} ry={rx} fill="none" stroke="#041E14" strokeWidth={sw} />
-                          <rect x={pos} y={pos} width={rectSize} height={rectSize} rx={rx} ry={rx} fill="none" stroke="#FBBF24" strokeWidth={sw}
-                            strokeLinecap="round" strokeDasharray={perimeter} strokeDashoffset={offset}
-                            style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
-                          />
-                        </svg>
-                        <div className="absolute inset-[6px] rounded-[13px] overflow-hidden border-2 border-[#020B06] shadow-md bg-[#020B06]">
-                          <img 
-                            src={avatarUrl} 
-                            alt={callsign}
-                            className="w-full h-full object-cover rounded-[13px]"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none animate-scanline" />
-                        </div>
-                      </>
-                    );
-                  })()
-                ) : (
-                  // Default: True Concentric Circular Avatar with Golden Level Arc
-                  (() => {
-                    const size = 96, sw = 5;
-                    const r = (size - sw) / 2;
-                    const circ = 2 * Math.PI * r;
-                    const offset = circ * (1 - levelProgress);
-                    const c = size / 2;
-                    return (
-                      <>
-                        <svg width={size} height={size} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
-                          <circle cx={c} cy={c} r={r} fill="none" stroke="#041E14" strokeWidth={sw} />
-                          <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
-                            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-                            style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
-                          />
-                        </svg>
-                        <div className="absolute inset-[5px] rounded-full overflow-hidden border-2 border-[#020B06] shadow-md bg-[#020B06]">
-                          <img 
-                            src={avatarUrl} 
-                            alt={callsign}
-                            className="w-full h-full object-cover rounded-full"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none animate-scanline" />
-                        </div>
-                      </>
-                    );
-                  })()
-                )}
+              {/* Avatar + Yellow Level Ring — 100% Circular matching StatsDashboard */}
+              <div className="relative flex-shrink-0" style={{ width: 100, height: 100 }}>
+                {/* Direct SVG ring — yellow progress arc */}
+                {(() => {
+                  const size = 100, sw = 5;
+                  const r = (size - sw) / 2;
+                  const circ = 2 * Math.PI * r;
+                  const offset = circ * (1 - levelProgress);
+                  const c = size / 2;
+                  return (
+                    <svg width={size} height={size} className="absolute inset-0 pointer-events-none" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#041E14" strokeWidth={sw} />
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
+                        strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+                        style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                      />
+                    </svg>
+                  );
+                })()}
+
+                {/* Avatar image perfectly circular inside */}
+                <div
+                  className="absolute flex items-center justify-center overflow-hidden rounded-full shadow-lg"
+                  style={{ 
+                    inset: 9,
+                    borderRadius: '9999px',
+                    WebkitMaskImage: '-webkit-radial-gradient(white, black)'
+                  }}
+                >
+                  <img 
+                    src={avatarUrl} 
+                    alt={callsign}
+                    className="w-full h-full rounded-full object-cover"
+                    style={{ borderRadius: '9999px' }}
+                  />
+                </div>
 
                 {/* LVL Badge matching StatsDashboard.jsx */}
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[10px] font-black px-2 py-0.5 rounded-full font-game shadow whitespace-nowrap z-10">
+                <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[10px] font-black px-2 py-0.5 rounded-full font-game shadow whitespace-nowrap z-10">
                   LVL {level}
                 </span>
               </div>

@@ -143,7 +143,6 @@ export const AVAILABLE_SHOWCASE_MEDALS = [
 export const DEFAULT_CARD_CONFIG = {
   theme: 'CANOPY_EMERALD',
   frameStyle: 'forestCard',
-  avatarShape: 'circle', // 'circle' | 'roundedRect'
   motto: 'Apex Infiltrator // Zero Trace',
   showcasedMedals: ['mvp_award', 'speed_demon', 'apex_loyalty'],
   hologramShimmer: true,

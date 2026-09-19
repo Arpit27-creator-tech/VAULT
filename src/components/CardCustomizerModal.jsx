@@ -293,56 +293,6 @@ export default function CardCustomizerModal({
                     );
                   })}
                 </div>
-
-                {/* Avatar Shape Option */}
-                <div className="pt-2 border-t border-white/10 space-y-2">
-                  <span className="text-xs font-mono font-bold text-white block">
-                    Avatar Photo & Level Bar Geometry
-                  </span>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        heistAudio.playKeyClick();
-                        setConfig(prev => ({ ...prev, avatarShape: 'circle' }));
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        config.avatarShape !== 'roundedRect'
-                          ? 'border-[#10B981] bg-[#10B981]/15 text-white'
-                          : 'border-white/10 bg-black/40 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold">Circular Ring (Default)</span>
-                        {config.avatarShape !== 'roundedRect' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        Concentric circular photo wrapped by gold XP arc
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        heistAudio.playKeyClick();
-                        setConfig(prev => ({ ...prev, avatarShape: 'roundedRect' }));
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        config.avatarShape === 'roundedRect'
-                          ? 'border-[#10B981] bg-[#10B981]/15 text-white'
-                          : 'border-white/10 bg-black/40 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold">Tactical Rounded</span>
-                        {config.avatarShape === 'roundedRect' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        Squarish photo wrapped by rounded-rect bar
-                      </p>
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
 

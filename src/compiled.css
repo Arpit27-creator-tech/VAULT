@@ -640,20 +640,12 @@ button, input, select, textarea {
   inset: 0.5rem;
 }
 
-.inset-\[5px\] {
-  inset: 5px;
-}
-
-.inset-\[6px\] {
-  inset: 6px;
-}
-
 .-bottom-0\.5 {
   bottom: -0.125rem;
 }
 
-.-bottom-2 {
-  bottom: -0.5rem;
+.-bottom-2\.5 {
+  bottom: -0.625rem;
 }
 
 .-bottom-3 {
@@ -1971,10 +1963,6 @@ button, input, select, textarea {
 
 .rounded-3xl {
   border-radius: 1.5rem;
-}
-
-.rounded-\[13px\] {
-  border-radius: 13px;
 }
 
 .rounded-\[22px\] {
@@ -3773,11 +3761,6 @@ button, input, select, textarea {
 .via-transparent {
   --tw-gradient-to: rgb(0 0 0 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), transparent var(--tw-gradient-via-position), var(--tw-gradient-to);
-}
-
-.via-white\/10 {
-  --tw-gradient-to: rgb(255 255 255 / 0)  var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 255 255 / 0.1) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
 .to-\[\#010402\] {

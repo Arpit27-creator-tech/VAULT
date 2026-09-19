@@ -3041,6 +3041,14 @@ export default function App() {
                   return prereq ? !currentStageSolved[prereq] : false;
                 };
 
+                const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
+                const myName = currentUser?.username || currentUser?.name || '';
+                const isSquadMode = !!(lobby?.code && (lobby?.players || []).filter(p => p.userId || p.username).length > 1);
+                const myLobbySlot = isSquadMode
+                  ? (lobby?.players || []).find(p => (p.userId && p.userId === myId) || (myName && p.username === myName))
+                  : null;
+                const myAssignedRole = myLobbySlot?.role ? normalizeRoleKey(myLobbySlot.role) : null;
+
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {[
@@ -3052,7 +3060,15 @@ export default function App() {
                       const Icon = roleItem.icon;
                       const isRoleSolved = !!currentStageSolved[roleItem.id];
                       const isActive = activeCockpitRole === roleItem.id;
-                      const locked = isPuzzleLocked(roleItem.id);
+                      const prereqLocked = isPuzzleLocked(roleItem.id);
+                      // In squad mode, lock roles that don't belong to this player
+                      const notMyRole = isSquadMode && myAssignedRole && roleItem.id !== myAssignedRole;
+                      const locked = prereqLocked || notMyRole;
+                      const lockTitle = notMyRole
+                        ? `This is another operative's role`
+                        : prereqLocked
+                          ? `Waiting for ${PREREQ_LABEL[roleItem.id]} to complete their puzzle first`
+                          : roleItem.name;
 
                       return (
                         <button
@@ -3063,7 +3079,7 @@ export default function App() {
                             setActiveCockpitRole(roleItem.id);
                             heistAudio.playKeyClick();
                           }}
-                          title={locked ? `Waiting for ${PREREQ_LABEL[roleItem.id]} to complete their puzzle first` : roleItem.name}
+                          title={lockTitle}
                           className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between relative overflow-hidden ${
                             locked
                               ? 'bg-[#02100A] border-slate-800 opacity-50 cursor-not-allowed'
@@ -3086,7 +3102,7 @@ export default function App() {
                             ) : null}
                           </div>
                           <p className={`text-[10px] font-mono mt-1.5 ${locked ? 'text-slate-700' : 'text-slate-400'}`}>
-                            {locked ? `Awaiting ${PREREQ_LABEL[roleItem.id]}` : roleItem.discipline}
+                            {notMyRole ? 'Another operative' : prereqLocked ? `Awaiting ${PREREQ_LABEL[roleItem.id]}` : roleItem.discipline}
                           </p>
                         </button>
                       );
@@ -3094,6 +3110,7 @@ export default function App() {
                   </div>
                 );
               })()}
+
 
               {/* ── Role Status Bar ─────────────────────────────────────────── */}
               {/* Shows at-a-glance which specialists are done/pending/active   */}

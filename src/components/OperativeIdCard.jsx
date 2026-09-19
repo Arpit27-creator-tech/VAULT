@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Shield, Award, Trophy, Zap, Terminal, Clock, CheckCircle2, 
-  Sparkles, Cpu, RotateCw, Copy, Check, Eye, Lock, Radio, Key, 
-  Star, Flame, QrCode, Fingerprint, Compass, ShieldCheck
+  Sparkles, RotateCw, Copy, Check, Eye, Lock, Radio, Key, 
+  Star, Flame, QrCode, Fingerprint, Compass, ShieldCheck, Cpu
 } from 'lucide-react';
 import { CARD_THEMES, FRAME_STYLES, AVAILABLE_SHOWCASE_MEDALS, getOperativeCardConfig } from '../utils/cardCustomization';
 import { getLoyaltyRank } from '../utils/loyaltyPoints';
@@ -26,10 +26,10 @@ const ICON_MAP = {
 };
 
 const TIER_COLORS = {
-  BRONZE: 'border-[#CD7F32]/80 text-[#CD7F32] bg-[#CD7F32]/10 shadow-[0_0_10px_rgba(205,127,50,0.2)]',
-  SILVER: 'border-slate-300/80 text-slate-200 bg-slate-300/10 shadow-[0_0_10px_rgba(224,231,255,0.2)]',
-  GOLD: 'border-[#FBBF24]/80 text-[#FBBF24] bg-[#FBBF24]/15 shadow-[0_0_12px_rgba(251,191,36,0.3)]',
-  PLATINUM: 'border-[#34D399]/80 text-[#34D399] bg-[#10B981]/15 shadow-[0_0_14px_rgba(52,211,153,0.35)]'
+  BRONZE: 'border-[#CD7F32]/80 text-[#CD7F32] bg-[#CD7F32]/15 shadow-[0_0_8px_rgba(205,127,50,0.25)]',
+  SILVER: 'border-slate-300/80 text-slate-200 bg-slate-300/15 shadow-[0_0_8px_rgba(224,231,255,0.25)]',
+  GOLD: 'border-[#FBBF24]/80 text-[#FBBF24] bg-[#FBBF24]/20 shadow-[0_0_10px_rgba(251,191,36,0.35)]',
+  PLATINUM: 'border-[#34D399]/80 text-[#34D399] bg-[#10B981]/20 shadow-[0_0_12px_rgba(52,211,153,0.4)]'
 };
 
 export default function OperativeIdCard({
@@ -67,7 +67,7 @@ export default function OperativeIdCard({
     return getOperativeCardConfig(operative);
   }, [operative, customConfig]);
 
-  const activeTheme = CARD_THEMES[config.theme] || CARD_THEMES.EMERALD_SYNDICATE;
+  const activeTheme = CARD_THEMES[config.theme] || CARD_THEMES.CANOPY_EMERALD;
 
   // Operative metrics
   const callsign = operative?.callsign || operative?.username || 'GHOST OPERATIVE';
@@ -76,14 +76,14 @@ export default function OperativeIdCard({
       ? `VAULT-${operative.id.replace(/-/g, '').substring(0, 8).toUpperCase()}` 
       : 'VAULT-00000000'
   );
-  const role = operative?.role || 'Syndicate Operative';
+  const role = operative?.role || 'Canopy Hacker';
   const level = operative?.level || 1;
   const xp = operative?.xp || 0;
   const { progress: levelProgress } = getLevelProgress(xp);
   const xpPercent = Math.min(100, Math.round(levelProgress * 100));
 
   // Squad Loyalty (strictly capped at 1000)
-  const rawLp = typeof operative?.loyaltyPoints === 'number' ? operative.loyaltyPoints : 1000;
+  const rawLp = typeof operative?.loyaltyPoints === 'number' ? operative.loyaltyPoints : (operative?.lp ?? 1000);
   const lp = Math.min(1000, Math.max(0, rawLp));
   const loyaltyRank = getLoyaltyRank(lp);
   const lpPercent = Math.min(100, Math.max(0, Math.round((lp / 1000) * 100)));
@@ -127,25 +127,25 @@ export default function OperativeIdCard({
   return (
     <div className={`perspective-1000 select-none ${className}`}>
       <div 
-        className={`relative w-[340px] sm:w-[380px] min-h-[580px] transition-transform duration-700 transform-style-3d ${
+        className={`relative w-[340px] sm:w-[380px] min-h-[600px] transition-transform duration-700 transform-style-3d ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
       >
         
         {/* ============================================================
-            FRONT OF CARD — BIOMETRIC SMART ID CLEARANCE PASS
+            FRONT OF CARD — V.A.U.L.T. OPERATIVE ID CLEARANCE PASS
             ============================================================ */}
         <div 
-          className={`absolute inset-0 rounded-[24px] border backface-hidden overflow-hidden p-5 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-gradient-to-b ${activeTheme.bgGradient}`}
+          className={`absolute inset-0 rounded-[22px] border-2 backface-hidden overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
           style={{ 
             borderColor: activeTheme.borderColor,
-            boxShadow: `0 20px 50px rgba(0,0,0,0.85), 0 0 25px ${activeTheme.statGlow}`
+            boxShadow: `6px 6px 0px #020C07, 0 0 25px ${activeTheme.statGlow}`
           }}
         >
           {/* Hologram Foil / Shimmer Overlay */}
           {isHolo && config.hologramShimmer && (
             <div 
-              className="absolute inset-0 opacity-25 pointer-events-none mix-blend-overlay animate-holo-sheen"
+              className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay animate-holo-sheen"
               style={{ background: activeTheme.holoGradient }}
             />
           )}
@@ -172,110 +172,118 @@ export default function OperativeIdCard({
             />
           )}
 
+          {/* Top Lanyard Badge Slot Cutout (Authentic ID Pass Detail) */}
+          <div className="relative z-10 flex justify-center -mt-1 mb-2">
+            <div className="w-14 h-2 bg-[#020B06] border border-emerald-900/80 rounded-full shadow-inner" />
+          </div>
+
           {/* Top Security Header */}
-          <div className="relative z-10 border-b border-white/10 pb-3">
+          <div className="relative z-10 border-b border-emerald-900/60 pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+              
+              <div className="flex items-center space-x-2.5">
+                {/* Micro Smart Chip with 6 golden pins */}
                 <div 
-                  className="w-7 h-7 rounded-lg flex items-center justify-center border font-mono font-black text-xs shadow-inner"
-                  style={{ 
-                    backgroundColor: `${activeTheme.primaryColor}22`,
-                    borderColor: `${activeTheme.primaryColor}66`,
-                    color: activeTheme.primaryColor 
-                  }}
+                  className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FBBF24] to-[#B45309] border border-amber-400 p-1 flex flex-col justify-between shadow-sm flex-shrink-0"
+                  title="Syndicate Smart Key Security Chip"
                 >
-                  <Cpu className="w-4 h-4" />
+                  <div className="flex justify-between h-2 border-b border-amber-900/60">
+                    <div className="w-2 border-r border-amber-900/60" />
+                    <div className="w-2" />
+                  </div>
+                  <div className="flex justify-between h-2">
+                    <div className="w-2 border-r border-amber-900/60" />
+                    <div className="w-2" />
+                  </div>
                 </div>
+
                 <div>
                   <div className="flex items-center space-x-1.5">
-                    <span className="font-mono text-[9px] font-black tracking-widest text-slate-300 uppercase">
-                      V.A.U.L.T. CLEARANCE
+                    <span className="font-game font-black text-sm text-white tracking-wider">
+                      🌲 V.A.U.L.T.
                     </span>
-                    <span 
-                      className="text-[8px] font-mono font-black px-1.5 py-0.2 rounded uppercase"
-                      style={{ 
-                        backgroundColor: `${activeTheme.primaryColor}25`,
-                        color: activeTheme.accentColor 
-                      }}
-                    >
-                      LVL {level}
+                    <span className="bg-[#10B981]/20 text-[#34D399] font-mono text-[9px] font-bold px-1.5 py-0.2 rounded border border-[#10B981]/40 uppercase">
+                      SEC PASS
                     </span>
                   </div>
-                  <p className="text-[10px] font-mono text-slate-400">
-                    ID // SYNDICATE OPERATIVE PASS
+                  <p className="text-[10px] font-mono text-emerald-300/70">
+                    OPERATIVE IDENTIFICATION
                   </p>
                 </div>
               </div>
 
               {/* Status indicator & Flip toggle */}
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1 bg-black/40 px-2 py-0.5 rounded-full border border-white/10 text-[9px] font-mono">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-emerald-300 font-bold">ACTIVE</span>
+                <div className="flex items-center space-x-1.5 bg-[#020B06] px-2.5 py-1 rounded-full border border-emerald-800/60 text-[9px] font-mono">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                  <span className="text-emerald-300 font-bold tracking-wide">ACTIVE</span>
                 </div>
                 {interactive && (
                   <button
                     onClick={handleFlipToggle}
-                    className="p-1 text-slate-400 hover:text-white bg-black/40 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-[#07281A] border border-emerald-800/60 rounded-lg transition-colors"
                     title="Flip to Operative Dossier"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
+
             </div>
           </div>
 
           {/* Main Identity: Photo + Bio + Callsign */}
           <div className="relative z-10 py-3 space-y-3">
-            <div className="flex items-start space-x-4">
+            <div className="flex items-start space-x-3.5">
               
-              {/* Photo in Biometric HUD Frame */}
-              <div className="relative flex-shrink-0">
+              {/* Photo inside Forest Avatar Frame with Level Arc */}
+              <div className="relative flex-shrink-0" style={{ width: 92, height: 92 }}>
+                {/* Yellow Level Arc */}
+                {(() => {
+                  const size = 92, sw = 4;
+                  const r = (size - sw) / 2;
+                  const circ = 2 * Math.PI * r;
+                  const offset = circ * (1 - levelProgress);
+                  const c = size / 2;
+                  return (
+                    <svg width={size} height={size} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#041E14" strokeWidth={sw} />
+                      <circle cx={c} cy={c} r={r} fill="none" stroke="#FBBF24" strokeWidth={sw}
+                        strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+                        style={{ transition: 'stroke-dashoffset 1s ease' }}
+                      />
+                    </svg>
+                  );
+                })()}
+
+                {/* Avatar Image centered */}
                 <div 
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 relative shadow-lg group"
-                  style={{ borderColor: activeTheme.primaryColor }}
+                  className="absolute inset-2 rounded-full overflow-hidden border-2 border-[#020B06] shadow-md bg-[#020B06]"
                 >
                   <img 
                     src={avatarUrl} 
                     alt={callsign}
                     className="w-full h-full object-cover"
                   />
-                  {/* Biometric Scanline sweep */}
+                  {/* Subtle scanline */}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none animate-scanline" />
-                  
-                  {/* Cybernetic Corner Brackets */}
-                  <div className="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-white/60 pointer-events-none" />
-                  <div className="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-white/60 pointer-events-none" />
-                  <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-white/60 pointer-events-none" />
-                  <div className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-white/60 pointer-events-none" />
-
-                  {/* Level Pill */}
-                  <div 
-                    className="absolute bottom-1 right-1 text-[9px] font-mono font-black px-1.5 py-0.5 rounded shadow-sm text-black"
-                    style={{ backgroundColor: activeTheme.accentColor }}
-                  >
-                    L{level}
-                  </div>
                 </div>
+
+                {/* LVL Badge matching StatsDashboard.jsx */}
+                <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-[#FBBF24] text-[#02140D] text-[10px] font-black px-2 py-0.2 rounded-full font-game shadow whitespace-nowrap z-10">
+                  LVL {level}
+                </span>
               </div>
 
-              {/* Identity Details */}
+              {/* Callsign & Tag details */}
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span 
-                    className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border"
-                    style={{ 
-                      backgroundColor: `${activeTheme.primaryColor}20`,
-                      borderColor: `${activeTheme.primaryColor}40`,
-                      color: activeTheme.accentColor 
-                    }}
-                  >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="bg-[#10B981]/20 text-[#34D399] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-[#10B981]/40 uppercase">
                     {role}
                   </span>
                   {mvpCount > 0 && (
-                    <span className="flex items-center space-x-1 text-[9px] font-mono font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/40">
-                      <Trophy className="w-2.5 h-2.5 fill-current" />
+                    <span className="inline-flex items-center space-x-1 bg-[#FBBF24]/15 text-[#FDE047] font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#FBBF24]/50">
+                      <Trophy className="w-3 h-3 text-[#FBBF24] fill-current" />
                       <span>{mvpCount} MVP</span>
                     </span>
                   )}
@@ -290,12 +298,12 @@ export default function OperativeIdCard({
                   <span className="text-[10px] font-mono font-bold text-slate-400">TAG:</span>
                   <button
                     onClick={handleCopyAgentId}
-                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-black/50 border border-white/15 hover:border-white/40 text-amber-300 hover:text-white transition-all shadow-inner group"
+                    className="flex items-center space-x-1 text-[11px] font-mono font-black px-2 py-0.5 rounded bg-[#020B06] border border-emerald-900/80 hover:border-amber-500/50 text-[#FBBF24] hover:text-white transition-all shadow-inner group"
                     title="Click to copy Agent ID"
                   >
                     <span>{rawAgentId}</span>
                     {copiedId ? (
-                      <Check className="w-3 h-3 text-emerald-400" />
+                      <Check className="w-3 h-3 text-[#10B981]" />
                     ) : (
                       <Copy className="w-3 h-3 text-slate-400 group-hover:text-white" />
                     )}
@@ -303,7 +311,7 @@ export default function OperativeIdCard({
                 </div>
 
                 {/* Custom Motto / Slogan */}
-                <p className="text-[11px] text-slate-300 font-mono italic truncate pt-1 leading-snug">
+                <p className="text-[11px] text-emerald-200/80 font-mono italic truncate pt-0.5 leading-snug">
                   "{config.motto || 'Apex Infiltrator // Zero Trace'}"
                 </p>
               </div>
@@ -311,45 +319,42 @@ export default function OperativeIdCard({
             </div>
           </div>
 
-          {/* Progression Dual Telemetry (XP & Squad LP) */}
-          <div className="relative z-10 bg-black/40 border border-white/10 rounded-xl p-2.5 space-y-2.5 shadow-inner">
+          {/* Dual Progress Bars matching StatsDashboard */}
+          <div className="relative z-10 bg-[#020B06]/80 border border-emerald-900/60 rounded-xl p-3 space-y-2.5 shadow-inner">
             
-            {/* XP Progression */}
+            {/* XP Progression Bar */}
             <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-slate-400 font-bold flex items-center space-x-1">
+                <span className="text-slate-300 font-bold flex items-center space-x-1">
                   <Star className="w-3 h-3 text-amber-400" />
-                  <span>Level {level} Infiltrator</span>
+                  <span>XP Progress to Level {level + 1}</span>
                 </span>
-                <span className="text-amber-300 font-bold">
+                <span className="text-[#FBBF24] font-bold">
                   {xp.toLocaleString()} XP ({xpPercent}%)
                 </span>
               </div>
-              <div className="w-full bg-[#020B06] h-1.5 rounded-full overflow-hidden border border-white/10">
+              <div className="w-full bg-[#04160E] h-2 rounded-full overflow-hidden border border-amber-900/60">
                 <div 
-                  className="h-full rounded-full transition-all duration-500 shadow-sm"
-                  style={{ 
-                    width: `${xpPercent}%`,
-                    backgroundColor: activeTheme.accentColor 
-                  }}
+                  className="bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] h-full rounded-full transition-all duration-500 shadow-sm shadow-amber-500/30"
+                  style={{ width: `${xpPercent}%` }}
                 />
               </div>
             </div>
 
-            {/* Squad Loyalty Progress Bar (Clamped strictly to 1000) */}
-            <div className="space-y-1 border-t border-white/10 pt-1.5">
+            {/* Squad Loyalty Progress Bar (Strictly 1000 max) */}
+            <div className="space-y-1 border-t border-emerald-900/40 pt-2">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-slate-400 font-bold flex items-center space-x-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span className="text-slate-300 font-bold flex items-center space-x-1">
+                  <Shield className="w-3 h-3 text-amber-400" />
                   <span>Squad Loyalty ({loyaltyRank.emoji} {loyaltyRank.name})</span>
                 </span>
-                <span className="text-emerald-300 font-bold">
+                <span className="text-[#FBBF24] font-bold">
                   {lp.toLocaleString()} / 1,000 LP
                 </span>
               </div>
-              <div className="w-full bg-[#020B06] h-1.5 rounded-full overflow-hidden border border-white/10">
+              <div className="w-full bg-[#04160E] h-2 rounded-full overflow-hidden border border-amber-900/60">
                 <div 
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-[#10B981] transition-all duration-500 shadow-sm"
+                  className="bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] h-full rounded-full transition-all duration-500 shadow-sm shadow-amber-500/30"
                   style={{ width: `${lpPercent}%` }}
                 />
               </div>
@@ -360,11 +365,11 @@ export default function OperativeIdCard({
           {/* Showcased Medals & Pins */}
           <div className="relative z-10 py-2">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-mono font-black uppercase text-slate-400 tracking-wider flex items-center space-x-1">
-                <Award className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] font-mono font-black uppercase text-slate-300 tracking-wider flex items-center space-x-1">
+                <Award className="w-3.5 h-3.5 text-amber-400" />
                 <span>Showcased Medals</span>
               </span>
-              <span className="text-[9px] font-mono text-slate-500">
+              <span className="text-[9px] font-mono text-emerald-400/80">
                 {showcasedMedalsList.length} FEATURED
               </span>
             </div>
@@ -380,10 +385,10 @@ export default function OperativeIdCard({
                     key={medal.id}
                     onMouseEnter={() => setHoveredMedal(medal.id)}
                     onMouseLeave={() => setHoveredMedal(null)}
-                    className={`relative p-2 rounded-xl border text-center transition-all cursor-pointer bg-black/40 hover:bg-black/60 ${tierClass}`}
+                    className={`relative p-2 rounded-xl border text-center transition-all cursor-pointer bg-[#020B06]/80 hover:bg-[#072418] ${tierClass}`}
                   >
                     <div className="flex items-center justify-center mb-1">
-                      <IconComponent className="w-5 h-5" />
+                      <IconComponent className="w-4 h-4" />
                     </div>
                     <span className="text-[9px] font-mono font-bold block truncate leading-tight">
                       {medal.title}
@@ -394,12 +399,12 @@ export default function OperativeIdCard({
 
                     {/* Hover Tooltip */}
                     {isHovered && (
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-44 p-2 bg-[#020B06] border border-white/20 rounded-lg text-left shadow-2xl z-30 pointer-events-none animate-in fade-in">
-                        <div className="flex items-center space-x-1 text-[10px] font-mono font-bold text-white mb-0.5">
-                          <IconComponent className="w-3 h-3 text-amber-400" />
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-48 p-2.5 bg-[#020B06] border border-emerald-600/50 rounded-xl text-left shadow-2xl z-30 pointer-events-none animate-in fade-in">
+                        <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold text-white mb-0.5">
+                          <IconComponent className="w-3.5 h-3.5 text-amber-400" />
                           <span>{medal.title}</span>
                         </div>
-                        <p className="text-[9px] font-mono text-slate-300 leading-snug">
+                        <p className="text-[9px] font-mono text-emerald-200/80 leading-snug">
                           {medal.desc}
                         </p>
                       </div>
@@ -410,38 +415,38 @@ export default function OperativeIdCard({
             </div>
           </div>
 
-          {/* Telemetry Micro Grid */}
+          {/* Quick Telemetry Grid matching StatsDashboard stats */}
           <div className="relative z-10 grid grid-cols-3 gap-1.5 py-1 text-center">
-            <div className="bg-black/30 border border-white/10 rounded-lg py-1.5 px-1">
-              <span className="text-[8px] font-mono text-slate-400 uppercase block">Heists Done</span>
-              <span className="text-xs font-black font-game text-white">
+            <div className="bg-[#020B06] border border-emerald-900/60 rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-slate-400 uppercase block font-bold">Heists Done</span>
+              <span className="text-xs font-black font-game text-[#10B981]">
                 {stats.missionsCompleted || 0}
               </span>
             </div>
-            <div className="bg-black/30 border border-white/10 rounded-lg py-1.5 px-1">
-              <span className="text-[8px] font-mono text-slate-400 uppercase block">Vaults Cracked</span>
-              <span className="text-xs font-black font-game text-cyan-300">
+            <div className="bg-[#020B06] border border-emerald-900/60 rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-slate-400 uppercase block font-bold">Vaults Cracked</span>
+              <span className="text-xs font-black font-game text-cyan-400">
                 {stats.vaultsCracked || 0}
               </span>
             </div>
-            <div className="bg-black/30 border border-white/10 rounded-lg py-1.5 px-1">
-              <span className="text-[8px] font-mono text-slate-400 uppercase block">Infiltrate Win %</span>
-              <span className="text-xs font-black font-game text-emerald-300">
-                {stats.winRate || 100}%
+            <div className="bg-[#020B06] border border-emerald-900/60 rounded-xl py-1.5 px-1">
+              <span className="text-[8px] font-mono text-slate-400 uppercase block font-bold">Squad LP</span>
+              <span className="text-xs font-black font-game text-amber-400">
+                {lp} LP
               </span>
             </div>
           </div>
 
-          {/* Card Footer: Security Barcode & Smart Card Chip */}
-          <div className="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+          {/* Card Footer: Security Barcode & Syndicate Seal */}
+          <div className="relative z-10 pt-2 border-t border-emerald-900/60 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <QrCode className="w-5 h-5 text-slate-400" />
+              <QrCode className="w-5 h-5 text-emerald-400" />
               <div className="space-y-0.5">
-                <div className="font-mono text-[8px] text-slate-400 tracking-wider">
-                  AUTH // {rawAgentId.replace('VAULT-', '')}
+                <div className="font-mono text-[8px] text-emerald-300/80 font-bold tracking-wider">
+                  V.A.U.L.T // {rawAgentId.replace('VAULT-', '')}
                 </div>
-                <div className="font-mono text-[7px] text-slate-500">
-                  SEC-ZONE // SYNDICATE-NET
+                <div className="font-mono text-[7px] text-slate-400">
+                  CANOPY SYNDICATE CLEARANCE
                 </div>
               </div>
             </div>
@@ -449,7 +454,7 @@ export default function OperativeIdCard({
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-slate-400 hover:text-white flex items-center space-x-1 bg-black/40 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/15 transition-all"
+                className="text-[9px] font-mono font-bold text-slate-300 hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-[#072418] px-2.5 py-1 rounded-lg border border-emerald-800/60 transition-all"
               >
                 <span>Dossier</span>
                 <RotateCw className="w-3 h-3" />
@@ -463,30 +468,30 @@ export default function OperativeIdCard({
             BACK OF CARD — SYNDICATE OPERATIVE DOSSIER
             ============================================================ */}
         <div 
-          className={`absolute inset-0 rounded-[24px] border backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-gradient-to-b ${activeTheme.bgGradient}`}
+          className={`absolute inset-0 rounded-[22px] border-2 backface-hidden rotate-y-180 overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-b ${activeTheme.bgGradient} shadow-[5px_5px_0px_#020C07]`}
           style={{ 
             borderColor: activeTheme.borderColor,
-            boxShadow: `0 20px 50px rgba(0,0,0,0.85), 0 0 25px ${activeTheme.statGlow}`
+            boxShadow: `6px 6px 0px #020C07, 0 0 25px ${activeTheme.statGlow}`
           }}
         >
           {/* Header */}
-          <div className="border-b border-white/10 pb-3">
+          <div className="border-b border-emerald-900/60 pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Fingerprint className="w-5 h-5 text-amber-400" />
+                <Fingerprint className="w-5 h-5 text-[#FBBF24]" />
                 <div>
                   <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">
                     OPERATIVE DOSSIER
                   </h3>
-                  <p className="text-[9px] font-mono text-slate-400">
-                    BIOMETRIC SECURITY RECORD // {rawAgentId}
+                  <p className="text-[9px] font-mono text-emerald-300/70">
+                    BIOMETRIC RECORD // {rawAgentId}
                   </p>
                 </div>
               </div>
               {interactive && (
                 <button
                   onClick={handleFlipToggle}
-                  className="p-1 text-slate-400 hover:text-white bg-black/40 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-white bg-[#020B06] hover:bg-[#072418] border border-emerald-800/60 rounded-lg transition-colors"
                   title="Flip to Front"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
@@ -497,62 +502,66 @@ export default function OperativeIdCard({
 
           {/* Dossier Content */}
           <div className="space-y-3.5 py-2">
-            <div className="bg-black/40 border border-white/10 rounded-xl p-3 space-y-2">
+            <div className="bg-[#020B06]/80 border border-emerald-900/60 rounded-xl p-3 space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Enlistment Role:</span>
-                <span className="text-white font-bold">{role}</span>
+                <span className="text-slate-400">Operative Callsign:</span>
+                <span className="text-white font-bold">{callsign}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-slate-400">Assigned Specialization:</span>
+                <span className="text-[#34D399] font-bold">{role}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
                 <span className="text-slate-400">Security Clearance:</span>
-                <span className="text-amber-300 font-bold">LEVEL {level}</span>
+                <span className="text-[#FBBF24] font-bold">LEVEL {level}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Loyalty Designation:</span>
-                <span className="text-emerald-400 font-bold">{loyaltyRank.name}</span>
+                <span className="text-slate-400">Squad Loyalty Standing:</span>
+                <span className="text-emerald-400 font-bold">{loyaltyRank.name} ({lp} LP)</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Syndicate MVP Trophies:</span>
-                <span className="text-yellow-400 font-bold">{mvpCount} Awarded</span>
+                <span className="text-slate-400">MVP Commendations:</span>
+                <span className="text-[#FBBF24] font-bold">{mvpCount} Trophies Awarded</span>
               </div>
             </div>
 
             {/* Specialization telemetry */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-                Combat & Breach Protocols
+              <span className="text-[10px] font-mono uppercase text-slate-300 font-bold block">
+                Chamber Specializations
               </span>
               <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="bg-black/30 border border-white/10 p-2 rounded-lg">
-                  <span className="text-slate-400 block text-[8px]">PRIMARY SKILL</span>
-                  <span className="text-white font-bold">Neural Cryptography</span>
+                <div className="bg-[#020B06]/70 border border-emerald-900/50 p-2 rounded-lg">
+                  <span className="text-slate-400 block text-[8px]">PRIMARY DISCIPLINE</span>
+                  <span className="text-white font-bold">{role}</span>
                 </div>
-                <div className="bg-black/30 border border-white/10 p-2 rounded-lg">
-                  <span className="text-slate-400 block text-[8px]">EXTRACTION</span>
-                  <span className="text-emerald-400 font-bold">Sub-Zero Protocol</span>
+                <div className="bg-[#020B06]/70 border border-emerald-900/50 p-2 rounded-lg">
+                  <span className="text-slate-400 block text-[8px]">EXTRACTION PROTOCOL</span>
+                  <span className="text-emerald-400 font-bold">Sub-Zero Extraction</span>
                 </div>
               </div>
             </div>
 
-            {/* Signature Hash */}
-            <div className="bg-black/50 border border-white/10 p-3 rounded-xl space-y-1">
-              <span className="text-[8px] font-mono text-slate-500 uppercase block">
-                Cryptographic Authentication Hash
+            {/* Security Cryptographic Hash */}
+            <div className="bg-[#020B06]/90 border border-emerald-900/70 p-3 rounded-xl space-y-1">
+              <span className="text-[8px] font-mono text-emerald-400/80 uppercase block font-bold">
+                Cryptographic Signature // V.A.U.L.T Protocol
               </span>
-              <p className="font-mono text-[9px] text-slate-400 break-all leading-tight">
+              <p className="font-mono text-[9px] text-slate-300 break-all leading-tight">
                 SHA-256: {rawAgentId.toLowerCase()}-77a94f81c9b4e0293d0a1
               </p>
             </div>
           </div>
 
           {/* Bottom Back Button */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-            <span className="text-[8px] font-mono text-slate-500">
-              CONFIDENTIAL // V.A.U.L.T HQ
+          <div className="pt-2 border-t border-emerald-900/60 flex items-center justify-between">
+            <span className="text-[8px] font-mono text-slate-400">
+              CONFIDENTIAL // V.A.U.L.T SYNDICATE
             </span>
             {interactive && (
               <button
                 onClick={handleFlipToggle}
-                className="text-[9px] font-mono font-bold text-amber-300 hover:text-white flex items-center space-x-1 bg-black/40 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-amber-500/30 transition-all"
+                className="text-[9px] font-mono font-bold text-[#FBBF24] hover:text-white flex items-center space-x-1 bg-[#020B06] hover:bg-[#072418] px-3 py-1.5 rounded-lg border border-amber-500/40 transition-all"
               >
                 <span>Return to ID Front</span>
                 <RotateCw className="w-3 h-3" />

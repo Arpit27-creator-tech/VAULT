@@ -685,7 +685,7 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
 
                 {/* Info tip */}
                 <p className="text-[10px] font-mono text-slate-600 leading-relaxed">
-                  💡 Earn LP by completing squad heists. Leaving mid-heist costs <span className="text-rose-500 font-bold">−150 LP</span>.
+                  💡 Earn LP by completing squad heists. Leaving mid-heist costs <span className="text-rose-500 font-bold">−25 LP</span>.
                 </p>
               </div>
             </div>

@@ -49,22 +49,12 @@ export const LOYALTY_RANKS = [
   {
     name: 'Syndicate',
     min: 1000,
-    max: 2499,
+    max: Infinity,
     emoji: '🔱',
     color: '#F59E0B',
     glowColor: 'rgba(245,158,11,0.5)',
     description: 'Elite-tier loyalty. A cornerstone of every operation.',
     border: '#D97706',
-  },
-  {
-    name: 'Phantom',
-    min: 2500,
-    max: Infinity,
-    emoji: '👻',
-    color: '#C084FC',
-    glowColor: 'rgba(192,132,252,0.5)',
-    description: 'Legendary fidelity. Never deserts. Never flinches.',
-    border: '#A855F7',
   },
 ];
 

@@ -42,7 +42,7 @@ export default function DeserterWarningModal({
 
   const currentLP = getLoyaltyPoints();
   const currentRank = getLoyaltyRank(currentLP);
-  const penalty = isHeistActive ? 150 : 25;
+  const penalty = isHeistActive ? 25 : 25;
   const newLP = Math.max(0, currentLP - penalty);
   const newRank = getLoyaltyRank(newLP);
   const rankDowngrade = newRank.name !== currentRank.name;

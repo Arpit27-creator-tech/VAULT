@@ -578,7 +578,8 @@ export default function StatsDashboard({ currentUser, loyaltyPoints: loyaltyPoin
 
         {/* Squad Loyalty Progress Bar */}
         {(() => {
-          const lp = typeof loyaltyPointsProp === 'number' ? loyaltyPointsProp : (currentUser?.loyaltyPoints || 1000);
+          const rawLp = typeof loyaltyPointsProp === 'number' ? loyaltyPointsProp : (currentUser?.loyaltyPoints ?? 1000);
+          const lp = Math.min(1000, Math.max(0, rawLp));
           const rank = getLoyaltyRank(lp);
           const maxLP = 1000;
           const pct = Math.min(100, Math.max(0, Math.round((lp / maxLP) * 100)));

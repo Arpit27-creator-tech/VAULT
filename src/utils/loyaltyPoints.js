@@ -49,7 +49,7 @@ export const LOYALTY_RANKS = [
   {
     name: 'Syndicate',
     min: 1000,
-    max: Infinity,
+    max: 1000,
     emoji: '🔱',
     color: '#F59E0B',
     glowColor: 'rgba(245,158,11,0.5)',
@@ -69,6 +69,7 @@ export const LP_EVENTS = {
   DISCONNECT_MID: { amount: -100, label: 'Disconnected during active heist', icon: '🔌' },
 };
 
+export const MAX_LOYALTY_POINTS = 1000;
 const STORAGE_KEY = 'vault_loyalty_points';
 const LOG_KEY = 'vault_loyalty_log';
 const MAX_LOG_ENTRIES = 20;
@@ -78,15 +79,15 @@ export function getLoyaltyPoints() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const val = raw !== null ? parseInt(raw, 10) : 1000;
-    return isNaN(val) ? 1000 : Math.max(0, val);
+    return isNaN(val) ? 1000 : Math.min(MAX_LOYALTY_POINTS, Math.max(0, val));
   } catch {
     return 0;
   }
 }
 
-/** Set LP in localStorage */
+/** Set LP in localStorage (strictly capped between 0 and 1000) */
 export function setLoyaltyPoints(amount) {
-  const clamped = Math.max(0, Math.round(amount));
+  const clamped = Math.min(MAX_LOYALTY_POINTS, Math.max(0, Math.round(amount)));
   try {
     localStorage.setItem(STORAGE_KEY, String(clamped));
   } catch {}
@@ -103,14 +104,15 @@ export function getLoyaltyLog() {
   }
 }
 
-/** Apply an LP event — returns { newPoints, delta, rank } */
+/** Apply an LP event — returns { newPoints, delta, rank } (cannot exceed 1000 LP) */
 export function applyLoyaltyEvent(eventKey, overrideLabel) {
   const event = LP_EVENTS[eventKey];
   if (!event) return null;
 
   const current = getLoyaltyPoints();
-  const delta = event.amount;
-  const newPoints = Math.max(0, current + delta);
+  const rawTarget = current + event.amount;
+  const newPoints = Math.min(MAX_LOYALTY_POINTS, Math.max(0, rawTarget));
+  const delta = newPoints - current;
   setLoyaltyPoints(newPoints);
 
   // Append to log
@@ -137,13 +139,12 @@ export function applyLoyaltyEvent(eventKey, overrideLabel) {
   };
 }
 
-/** Initialize LP for a user from their stored profile (merge localStorage + user object) */
+/** Initialize LP for a user from their stored profile (merge localStorage + user object, capped at 1000) */
 export function initLoyaltyFromUser(user) {
   if (!user) return getLoyaltyPoints();
-  // If user object has loyaltyPoints, use the higher of the two (be generous)
   const stored = getLoyaltyPoints();
   const fromUser = typeof user.loyaltyPoints === 'number' ? user.loyaltyPoints : 1000;
-  const merged = Math.max(stored, fromUser);
+  const merged = Math.min(MAX_LOYALTY_POINTS, Math.max(stored, fromUser));
   setLoyaltyPoints(merged);
   return merged;
 }
@@ -159,7 +160,7 @@ export function getLoyaltyRank(lp) {
 /** Get progress (0-1) within current rank toward next rank */
 export function getLoyaltyProgress(lp) {
   const rank = getLoyaltyRank(lp);
-  if (rank.max === Infinity) return 1; // max rank
+  if (rank.max === Infinity || rank.min >= 1000 || lp >= 1000) return 1; // max rank
   const rangeSize = rank.max - rank.min + 1;
   const progress = (lp - rank.min) / rangeSize;
   return Math.min(1, Math.max(0, progress));

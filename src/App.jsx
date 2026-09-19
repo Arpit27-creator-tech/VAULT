@@ -155,6 +155,52 @@ export default function App() {
     };
   }, []);
 
+  // Security protocol: Restrict direct text copy and clipboard extraction across VAULT chambers
+  useEffect(() => {
+    const isEditable = (target) => {
+      if (!target) return false;
+      const tag = target.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.isContentEditable ||
+        Boolean(target.closest?.('input, textarea, [contenteditable="true"]'))
+      );
+    };
+
+    const handleCopy = (e) => {
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      toast.error("🔒 Security Protocol: Direct text extraction is disabled in VAULT chambers.", {
+        id: 'vault-copy-restriction',
+        duration: 3000
+      });
+    };
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'c') {
+        if (isEditable(e.target)) return;
+        const selection = window.getSelection()?.toString();
+        if (selection && selection.trim().length > 0) {
+          e.preventDefault();
+          toast.warning("🔒 Security Protocol: Direct clipboard extraction blocked.", {
+            id: 'vault-copy-key-restriction',
+            duration: 3000
+          });
+        }
+      }
+    };
+
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');

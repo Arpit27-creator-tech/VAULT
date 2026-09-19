@@ -973,43 +973,102 @@ export default function App() {
     const handleHeistStarted = (data) => {
       setIsLaunchingCountdown(false);
       
+      const incomingRoomCode = data?.roomCode || data?.code || lobby?.code || lobby?.roomCode;
+      if (incomingRoomCode) {
+        setLobby(prev => ({
+          ...(prev || {}),
+          ...(data?.lobby || {}),
+          code: incomingRoomCode,
+          roomCode: incomingRoomCode,
+          players: data?.players || data?.lobby?.players || prev?.players || []
+        }));
+      }
+
       const currentLobby = data?.lobby || lobby;
       const myId = currentUser?.id || localStorage.getItem('vault_guest_id');
       const myName = currentUser?.username || localStorage.getItem('vault_guest_name');
-      const mySlot = currentLobby?.players?.find(p => (p.userId && p.userId === myId) || (myName && p.username === myName));
+      const playersList = data?.players || currentLobby?.players || [];
+      const mySlot = playersList.find(p => (p.userId && p.userId === myId) || (myName && p.username === myName));
       const assignedRole = mySlot?.role ? normalizeRoleKey(mySlot.role) : 'hacker';
       const attemptSeed = data?.attemptSeed ? String(data.attemptSeed) : String(Date.now());
+      const isHost = mySlot?.isHost || (currentLobby?.hostId && currentLobby.hostId === myId);
 
-      handleStartHeistStage(0, false, assignedRole, attemptSeed);
+      handleStartHeistStage(0, !!isHost, assignedRole, attemptSeed, incomingRoomCode);
     };
 
     const handleRemotePuzzleSolved = (data) => {
       if (data?.role) {
+        const roleKey = (data.role || '').toLowerCase().trim();
         const stage = allStages[currentStageIdx] || heistStages[0];
         const sId = stage.stageId || 1;
-        setStageSolvedRoles(prev => ({
-          ...prev,
-          [sId]: { ...(prev[sId] || {}), [data.role]: true }
-        }));
+
+        setStageSolvedRoles(prev => {
+          const currentForStage = {
+            ...(prev[sId] || {}),
+            ...(data.solvedRoles || {}),
+            [roleKey]: true
+          };
+
+          const activeRoles = stage.selectedRoles 
+            ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
+            : ['hacker', 'engineer', 'scientist', 'cryptographer'];
+
+          if (activeRoles.every(r => currentForStage[r])) {
+            setIsExtractionActive(true);
+            heistAudio.playRadioSquelch();
+          }
+
+          return {
+            ...prev,
+            [sId]: currentForStage
+          };
+        });
+
         if (data.clue) {
           setStageRoleClues(prev => ({
             ...prev,
-            [sId]: { ...(prev[sId] || {}), [data.role]: data.clue }
+            [sId]: { ...(prev[sId] || {}), [roleKey]: data.clue }
           }));
         }
-        heistAudio.playSuccessChime();
-        toast.success(`🔓 ${data.role.toUpperCase()} puzzle solved by ${data.solvedBy || 'teammate'}!`);
 
-        // Check if remote solve completes all 4 roles to engage extraction
-        const activeRoles = stage.selectedRoles 
-          ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
-          : ['hacker', 'engineer', 'scientist', 'cryptographer'];
-        const nextSolvedForStage = { ...(stageSolvedRoles[sId] || {}), [data.role]: true };
-        if (activeRoles.every(r => nextSolvedForStage[r])) {
-          setIsExtractionActive(true);
-          heistAudio.playRadioSquelch();
-        }
+        const solverName = data.solvedBy || `${roleKey.toUpperCase()} Specialist`;
+        const timeStr = data.time || `${Math.floor((180 - timeLeft) / 60)}:${((180 - timeLeft) % 60).toString().padStart(2, '0')}`;
+        setRadioMessages(prev => {
+          const text = `[PASSED] ${data.clue || 'Security protocol bypassed'} — Transmitting across interdependence pipeline!`;
+          const last = prev[prev.length - 1];
+          if (last && last.text === text && last.sender === solverName) return prev;
+          return [...prev, {
+            sender: solverName,
+            role: roleKey,
+            text,
+            time: timeStr
+          }];
+        });
+
+        heistAudio.playSuccessChime();
+        toast.success(`🔓 ${roleKey.toUpperCase()} puzzle solved by ${solverName}!`);
       }
+    };
+
+    const handleRemoteHeistState = (state) => {
+      if (!state) return;
+      const stage = allStages[currentStageIdx] || heistStages[0];
+      const sId = stage.stageId || 1;
+      if (state.solvedRoles && Object.keys(state.solvedRoles).length > 0) {
+        setStageSolvedRoles(prev => ({
+          ...prev,
+          [sId]: { ...(prev[sId] || {}), ...state.solvedRoles }
+        }));
+      }
+      if (state.clues && Object.keys(state.clues).length > 0) {
+        setStageRoleClues(prev => ({
+          ...prev,
+          [sId]: { ...(prev[sId] || {}), ...state.clues }
+        }));
+      }
+      if (state.timeLeft !== undefined) setTimeLeft(state.timeLeft);
+      if (state.alarmLevel) setAlarmLevel(state.alarmLevel);
+      if (state.alarmFails !== undefined) setAlarmFails(state.alarmFails);
     };
 
     const handleRemotePuzzleFailed = (data) => {
@@ -1106,6 +1165,7 @@ export default function App() {
     onSocketEvent('lobbyVoiceUpdate', handleLobbyVoiceUpdate);
     onSocketEvent('lobbyError', handleLobbyError);
     onSocketEvent('heistStarted', handleHeistStarted);
+    onSocketEvent('heistState', handleRemoteHeistState);
     onSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
     onSocketEvent('heistPuzzleFailed', handleRemotePuzzleFailed);
     onSocketEvent('lobbyRadioMessage', handleRemoteRadioMessage);
@@ -1137,6 +1197,7 @@ export default function App() {
       offSocketEvent('lobbyVoiceUpdate', handleLobbyVoiceUpdate);
       offSocketEvent('lobbyError', handleLobbyError);
       offSocketEvent('heistStarted', handleHeistStarted);
+      offSocketEvent('heistState', handleRemoteHeistState);
       offSocketEvent('heistPuzzleSolved', handleRemotePuzzleSolved);
       offSocketEvent('heistPuzzleFailed', handleRemotePuzzleFailed);
       offSocketEvent('lobbyRadioMessage', handleRemoteRadioMessage);
@@ -1595,9 +1656,10 @@ export default function App() {
     setActiveTab('lobby');
   };
 
-  const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null, incomingAttemptSeed = null) => {
+  const handleStartHeistStage = (stageIdx = 0, isInitiator = true, overrideRole = null, incomingAttemptSeed = null, targetRoomCode = null) => {
     setCurrentStageIdx(stageIdx);
-    if (lobby?.code && (lobby?.players?.length > 1 || lobby?.status === 'active')) {
+    const sessionRoomCode = targetRoomCode || lobby?.code || lobby?.roomCode;
+    if (sessionRoomCode && (lobby?.players?.length > 1 || lobby?.status === 'active')) {
       triggerAchievementCheck('HEIST_LAUNCH', { isCoop: true });
     }
     const stage = allStages[stageIdx] || heistStages[0];
@@ -1616,7 +1678,7 @@ export default function App() {
     // Pick a puzzle set from the pool, deterministically, so every client
     // in the same room computes the identical selection without needing
     // any puzzle data to be transmitted over the socket.
-    const puzzleSet = getPuzzleSetForHeist(lobby?.code, stageIdx, attemptSeed);
+    const puzzleSet = getPuzzleSetForHeist(sessionRoomCode || lobby?.code, stageIdx, attemptSeed);
     setActivePuzzleOverrides(puzzleSet);
 
     // ── Reset all per-heist state so the previous run's data is never visible ──
@@ -1647,7 +1709,6 @@ export default function App() {
     heistAudio.playRadioSquelch();
 
     // Save active heist session for recovery if page is refreshed
-    const sessionRoomCode = lobby?.code || lobby?.roomCode;
     if (sessionRoomCode) {
       localStorage.setItem('vault_active_session', JSON.stringify({
         roomCode: sessionRoomCode,
@@ -1658,9 +1719,11 @@ export default function App() {
     }
 
     try {
-      heistSocket.joinRoom(lobby.code);
-      if (isInitiator) {
-        heistSocket.start(lobby.code, stageIdx, stage.timeLimit || 180, puzzleSet, stage.selectedRoles);
+      if (sessionRoomCode) {
+        heistSocket.joinRoom(sessionRoomCode);
+        if (isInitiator) {
+          heistSocket.start(sessionRoomCode, stageIdx, stage.timeLimit || 180, puzzleSet, stage.selectedRoles);
+        }
       }
     } catch (e) {
       console.warn('[SOCKET] Heist start fallback');
@@ -1867,9 +1930,12 @@ export default function App() {
 
 
 
-    try {
-      heistSocket.puzzleSolved(lobby.code, role, clue, solverName);
-    } catch (e) { /* socket broadcast */ }
+    const activeRoomCode = lobby?.code || lobby?.roomCode || (typeof recoverySession?.roomCode === 'string' ? recoverySession.roomCode : null);
+    if (activeRoomCode) {
+      try {
+        heistSocket.puzzleSolved(activeRoomCode, role, clue, solverName);
+      } catch (e) { /* socket broadcast */ }
+    }
 
     const activeRoles = stage.selectedRoles 
       ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
@@ -1879,8 +1945,8 @@ export default function App() {
     if (allRoleSolved) {
       setIsExtractionActive(true);
       heistAudio.playRadioSquelch();
-      if (lobby?.code) {
-        try { heistSocket.startExtraction(lobby.code); } catch (e) {}
+      if (activeRoomCode) {
+        try { heistSocket.startExtraction(activeRoomCode); } catch (e) {}
       }
     }
   };
@@ -1943,9 +2009,12 @@ export default function App() {
     }
 
     const failerName = currentUser?.username || localStorage.getItem('vault_guest_name') || 'Specialist';
-    try {
-      heistSocket.puzzleFailed(lobby.code, role, reason, failerName);
-    } catch (e) { /* socket broadcast */ }
+    const activeRoomCode = lobby?.code || lobby?.roomCode || (typeof recoverySession?.roomCode === 'string' ? recoverySession.roomCode : null);
+    if (activeRoomCode) {
+      try {
+        heistSocket.puzzleFailed(activeRoomCode, role, reason, failerName);
+      } catch (e) { /* socket broadcast */ }
+    }
 
     const timeStr = `${Math.floor((180 - timeLeft) / 60)}:${((180 - timeLeft) % 60).toString().padStart(2, '0')}`;
     setRadioMessages(prev => [

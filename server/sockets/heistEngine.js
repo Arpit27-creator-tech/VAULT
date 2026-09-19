@@ -563,46 +563,115 @@ function clearHeistTimer(roomCode) {
 // Game Logic Handlers
 // ─────────────────────────────────────────────────────────────
 
-function handlePuzzleSolved(io, roomCode, role, clue, socket, solvedByName) {
-  let state = activeHeists.get(roomCode);
+export function initHeistSession(io, roomCode, stageIdx = 0, timeLimit = 180, selectedRoles = { hacker: true, engineer: true, scientist: true, cryptographer: true }) {
+  const norm = normCode(roomCode);
+  if (!norm) return null;
+  let state = activeHeists.get(norm);
   if (!state) {
-    return;
+    state = {
+      roomCode: norm,
+      stageIdx,
+      timeLimit,
+      timeLeft: timeLimit,
+      alarmLevel: 'LOW_SECURITY',
+      alarmFails: 0,
+      solvedRoles: {},
+      clues: {},
+      selectedRoles,
+      startedAt: Date.now(),
+      status: 'active'
+    };
+    activeHeists.set(norm, state);
+    if (io) {
+      startHeistTimer(io, norm);
+      io.to(`heist:${norm}`).emit('heist:state', state);
+      io.to(`lobby:${norm}`).emit('heist:state', state);
+    }
+  }
+  return state;
+}
+
+function handlePuzzleSolved(io, roomCode, role, clue, socket, solvedByName) {
+  const norm = normCode(roomCode);
+  if (!norm) return;
+
+  let state = activeHeists.get(norm);
+  if (!state) {
+    console.log(`[HEIST] Auto-initializing missing heist state for room ${norm} on puzzle solve`);
+    state = {
+      roomCode: norm,
+      stageIdx: 0,
+      timeLimit: 180,
+      timeLeft: 180,
+      alarmLevel: 'LOW_SECURITY',
+      alarmFails: 0,
+      solvedRoles: {},
+      clues: {},
+      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
+      startedAt: Date.now(),
+      status: 'active'
+    };
+    activeHeists.set(norm, state);
+    startHeistTimer(io, norm);
   }
 
-  state.solvedRoles[role] = true;
-  state.clues[role] = clue;
+  const roleKey = (role || '').toLowerCase().trim();
+  state.solvedRoles[roleKey] = true;
+  if (clue) {
+    state.clues[roleKey] = clue;
+  }
 
-  const timeElapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+  const timeElapsed = Math.floor((Date.now() - (state.startedAt || Date.now())) / 1000);
   const timeStr = `${Math.floor(timeElapsed / 60)}:${(timeElapsed % 60).toString().padStart(2, '0')}`;
   const solver = solvedByName || socket.username || 'Specialist';
 
-  // Broadcast to all squad members
+  // Broadcast to all squad members in both rooms
   const payload = {
-    role,
+    role: roleKey,
     clue,
     solvedBy: solver,
     time: timeStr,
-    solvedRoles: state.solvedRoles
+    solvedRoles: { ...state.solvedRoles },
+    stageIdx: state.stageIdx || 0
   };
 
-  io.to(`heist:${roomCode}`).emit('heist:puzzle-solved', payload);
-  io.to(`lobby:${roomCode}`).emit('heist:puzzle-solved', payload);
+  console.log(`[HEIST] Broadcasting puzzle solved: Room ${norm}, Role ${roleKey} by ${solver}`);
+  io.to(`heist:${norm}`).emit('heist:puzzle-solved', payload);
+  io.to(`lobby:${norm}`).emit('heist:puzzle-solved', payload);
 
   // Check if all active roles are solved
   const activeRoles = Object.keys(state.selectedRoles).filter(k => state.selectedRoles[k]);
   const allSolved = activeRoles.every(r => state.solvedRoles[r]);
 
   if (allSolved) {
-    handleStageVictory(io, roomCode);
+    handleStageVictory(io, norm);
   }
 }
 
 function handlePuzzleFailed(io, roomCode, role, reason, socket, failedByName) {
-  let state = activeHeists.get(roomCode);
+  const norm = normCode(roomCode);
+  if (!norm) return;
+
+  let state = activeHeists.get(norm);
   if (!state) {
-    return;
+    state = {
+      roomCode: norm,
+      stageIdx: 0,
+      timeLimit: 180,
+      timeLeft: 180,
+      alarmLevel: 'LOW_SECURITY',
+      alarmFails: 0,
+      solvedRoles: {},
+      clues: {},
+      selectedRoles: { hacker: true, engineer: true, scientist: true, cryptographer: true },
+      startedAt: Date.now(),
+      status: 'active'
+    };
+    activeHeists.set(norm, state);
+    startHeistTimer(io, norm);
   }
 
+  const roleKey = (role || '').toLowerCase().trim();
   state.alarmFails += 1;
   state.timeLeft = Math.max(5, state.timeLeft - 12); // -12s penalty
   const failer = failedByName || socket.username || 'Specialist';
@@ -615,7 +684,7 @@ function handlePuzzleFailed(io, roomCode, role, reason, socket, failedByName) {
   }
 
   const payload = {
-    role,
+    role: roleKey,
     reason,
     failedBy: failer,
     alarmFails: state.alarmFails,
@@ -624,12 +693,12 @@ function handlePuzzleFailed(io, roomCode, role, reason, socket, failedByName) {
     penalty: 12
   };
 
-  io.to(`heist:${roomCode}`).emit('heist:puzzle-failed', payload);
-  io.to(`lobby:${roomCode}`).emit('heist:puzzle-failed', payload);
+  io.to(`heist:${norm}`).emit('heist:puzzle-failed', payload);
+  io.to(`lobby:${norm}`).emit('heist:puzzle-failed', payload);
 
   // 6+ failures = auto-bust
   if (state.alarmFails >= 6) {
-    handleHeistTimeout(io, roomCode);
+    handleHeistTimeout(io, norm);
   }
 }
 

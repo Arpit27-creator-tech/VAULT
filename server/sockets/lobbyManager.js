@@ -4,6 +4,8 @@
 // ============================================================
 
 // In-memory lobby state (backed by DB for persistence)
+import { initHeistSession } from './heistEngine.js';
+
 const activeLobbies = new Map();
 
 export function getLobbyState(roomCode) {
@@ -382,10 +384,17 @@ export function setupLobbyManager(io, socket) {
     // After countdown, emit live heist start
     setTimeout(() => {
       lobby.status = 'active';
+      try {
+        initHeistSession(io, roomCode, 0, 180, { hacker: true, engineer: true, scientist: true, cryptographer: true });
+      } catch (err) {
+        console.error('[LOBBY] Error initializing heist session:', err);
+      }
       io.to(lobbyRoom).emit('heist:started', {
         heistId: lobby.heistId,
         players: activePlayers,
         roomCode,
+        code: roomCode,
+        lobby,
         // Changes on every fresh launch so puzzle content varies between
         // separate heist attempts in the same lobby, while staying
         // identical across all clients (computed once, server-side).

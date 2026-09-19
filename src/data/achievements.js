@@ -202,5 +202,15 @@ export const ACHIEVEMENTS = [
     xpReward: 450,
     icon: BookOpen,
     hint: 'Conquer all 4 roles alone in the Solo Training simulator.'
+  },
+  {
+    id: 'synchronized_breach',
+    title: 'Extraction Synchronizer',
+    description: 'Successfully execute a 4-way synchronized vault core breach during the extraction protocol.',
+    tier: 'GOLD',
+    category: 'squad',
+    xpReward: 600,
+    icon: Flame,
+    hint: 'Lock all 4 operative tumbler pins within the 5-second synchronization window.'
   }
 ];

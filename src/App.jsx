@@ -29,6 +29,7 @@ import EngineerLaserGrid from './components/EngineerLaserGrid';
 import ScientistLab from './components/ScientistLab';
 import CryptographerDeck from './components/CryptographerDeck';
 import InterdependenceMatrix from './components/InterdependenceMatrix';
+import ExtractionProtocolModal from './components/ExtractionProtocolModal';
 import RadioComms from './components/RadioComms';
 import SkillAnalyticsModal from './components/SkillAnalyticsModal';
 import ParticleBurst from './components/ParticleBurst';
@@ -195,6 +196,7 @@ export default function App() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isExtractionActive, setIsExtractionActive] = useState(false);
   // Tracks how many times each role has failed a puzzle this stage (for micro-hint threshold)
   const [roleFailCounts, setRoleFailCounts] = useState({});
   const [radioMessages, setRadioMessages] = useState([
@@ -921,6 +923,17 @@ export default function App() {
         }
         heistAudio.playSuccessChime();
         toast.success(`🔓 ${data.role.toUpperCase()} puzzle solved by ${data.solvedBy || 'teammate'}!`);
+
+        // Check if remote solve completes all 4 roles to engage extraction
+        const activeRoles = stage.selectedRoles 
+          ? Object.keys(stage.selectedRoles).filter(k => stage.selectedRoles[k])
+          : ['hacker', 'engineer', 'scientist', 'cryptographer'];
+        const nextSolvedForStage = { ...(stageSolvedRoles[sId] || {}), [data.role]: true };
+        if (activeRoles.every(r => nextSolvedForStage[r])) {
+          setIsExtractionActive(true);
+          heistAudio.playRadioSquelch();
+          toast.success("⚡ ALL 4 INTERLOCKS ALIGNED! EXTRACTION PROTOCOL ENGAGED!");
+        }
       }
     };
 
@@ -1029,7 +1042,15 @@ export default function App() {
     onSocketEvent('heistEndVoted', handleEndVoted);
     onSocketEvent('heistVoteFailed', handleVoteFailed);
 
+    const handleExtractionStart = () => {
+      setIsExtractionActive(true);
+      heistAudio.playRadioSquelch();
+      toast.success("⚡ SQUAD INITIATED EXTRACTION PROTOCOL!");
+    };
+    onSocketEvent('heistExtractionStart', handleExtractionStart);
+
     return () => {
+      offSocketEvent('heistExtractionStart', handleExtractionStart);
       offSocketEvent('connected', handleConnected);
       offSocketEvent('disconnected', handleDisconnected);
       offSocketEvent('lobbyState', handleLobbyState);
@@ -1494,6 +1515,7 @@ export default function App() {
     setStageSolvedRoles({ 1: {}, 2: {}, 3: {}, 99: {} });
     setStageRoleClues({ 1: {}, 2: {}, 3: {}, 99: {} });
     setRoleFailCounts({});
+    setIsExtractionActive(false);
     setRadioMessages([
       { sender: "Sylvan HQ", role: "hq", text: "Expedition crew deployed. Interlock sequence initialized. Coordinate all 4 roles!", time: "00:01" },
       { sender: "Scientist Cleo", role: "scientist", text: "Analyzing compound stoichiometry now. Will transmit optical density to Engineer.", time: "00:04" }
@@ -1747,7 +1769,12 @@ export default function App() {
     const nextSolved = { ...(stageSolvedRoles[stageId] || {}), [role]: true };
     const allRoleSolved = activeRoles.every(r => nextSolved[r]);
     if (allRoleSolved) {
-      handleStageVictory();
+      setIsExtractionActive(true);
+      heistAudio.playRadioSquelch();
+      toast.success("⚡ ALL 4 INTERLOCKS ALIGNED! EXTRACTION PROTOCOL ENGAGED!");
+      if (lobby?.code) {
+        try { heistSocket.startExtraction(lobby.code); } catch (e) {}
+      }
     }
   };
 
@@ -2942,6 +2969,7 @@ export default function App() {
                 stageData={currentStageData}
                 solvedRoles={currentStageSolved}
                 roleClues={currentStageClues}
+                onInitiateExtraction={() => setIsExtractionActive(true)}
               />
 
               {/* ── Puzzle unlock chain: scientist → engineer → hacker → cryptographer ── */}
@@ -5542,6 +5570,29 @@ export default function App() {
           onClose={() => setAchievementQueue(prev => prev.slice(1))}
         />
       )}
+
+      {/* ── Extraction Protocol Synchronized Vault Core Modal ── */}
+      <ExtractionProtocolModal
+        isOpen={isExtractionActive}
+        activeRole={activeCockpitRole || 'hacker'}
+        stageData={allStages[currentStageIdx] || heistStages[0]}
+        solvedRoles={currentStageSolved}
+        roleClues={currentStageClues}
+        currentUser={currentUser}
+        lobby={lobby}
+        onExtractionSuccess={(bonusXp, timeElapsed) => {
+          setIsExtractionActive(false);
+          toast.success(`🏆 EXTRACTION BREACH COMPLETE! +${bonusXp} XP`);
+          triggerAchievementCheck('EXTRACTION_COMPLETE');
+          handleStageVictory();
+        }}
+        onExtractionFail={(reason) => {
+          setIsExtractionActive(false);
+          toast.error(`🚨 EXTRACTION FAILED: ${reason}`);
+          handleHeistTimeout();
+        }}
+        onClose={() => setIsExtractionActive(false)}
+      />
 
     </div>
   );

@@ -124,6 +124,13 @@ export function connectSocket(overrideAuth = {}) {
   socket.on('heist:vote-state', (data) => triggerHandler('heistVoteState', data));
   socket.on('heist:end-voted', (data) => triggerHandler('heistEndVoted', data));
   socket.on('heist:vote-failed', (data) => triggerHandler('heistVoteFailed', data));
+
+  // ─── Extraction Protocol Events ────────────────────────
+  socket.on('heist:extraction-start', (data) => triggerHandler('heistExtractionStart', data));
+  socket.on('heist:extraction-ring-update', (data) => triggerHandler('heistExtractionRingUpdate', data));
+  socket.on('heist:extraction-pin-locked', (data) => triggerHandler('heistExtractionPinLocked', data));
+  socket.on('heist:extraction-breached', (data) => triggerHandler('heistExtractionBreached', data));
+  socket.on('heist:extraction-desync', (data) => triggerHandler('heistExtractionDesync', data));
   // ─── Presence Events ───────────────────────────────────
   socket.on('presence:friend-update', (data) => triggerHandler('presenceFriendUpdate', data));
 
@@ -278,6 +285,23 @@ export const heistSocket = {
 
   conclude(roomCode) {
     socket?.emit('heist:conclude', { roomCode });
+  },
+
+  // Extraction Protocol Emitters
+  startExtraction(roomCode) {
+    socket?.emit('heist:extraction-start', { roomCode });
+  },
+
+  updateExtractionRing(roomCode, role, angle, isAligned) {
+    socket?.emit('heist:extraction-ring-update', { roomCode, role, angle, isAligned });
+  },
+
+  lockExtractionPin(roomCode, role) {
+    socket?.emit('heist:extraction-pin-locked', { roomCode, role });
+  },
+
+  completeExtraction(roomCode) {
+    socket?.emit('heist:extraction-breached', { roomCode });
   }
 };
 

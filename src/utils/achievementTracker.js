@@ -109,6 +109,10 @@ export function evaluateAchievements(currentUser, eventType, eventData = {}) {
         if (eventType === 'SOLO_COMPLETE') shouldUnlock = true;
         break;
 
+      case 'synchronized_breach':
+        if (eventType === 'EXTRACTION_COMPLETE') shouldUnlock = true;
+        break;
+
       default:
         break;
     }

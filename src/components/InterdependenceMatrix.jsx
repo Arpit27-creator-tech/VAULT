@@ -69,7 +69,7 @@ const DEFAULT_CHAIN = [
   },
 ];
 
-export default function InterdependenceMatrix({ stageData, solvedRoles = {}, roleClues = {} }) {
+export default function InterdependenceMatrix({ stageData, solvedRoles = {}, roleClues = {}, onInitiateExtraction }) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [viewMode, setViewMode] = useState('schematic'); // 'schematic' | 'compact'
   const [lastSolvedCount, setLastSolvedCount] = useState(0);
@@ -358,6 +358,19 @@ export default function InterdependenceMatrix({ stageData, solvedRoles = {}, rol
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
+
+                {isFullySolved && (
+                  <button
+                    onClick={() => {
+                      onInitiateExtraction?.();
+                      heistAudio.playKeyClick();
+                    }}
+                    className="mt-2 w-full py-1.5 px-2 rounded bg-[#10B981] hover:bg-[#34D399] text-[#02140D] font-game font-black text-[10px] uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(16,185,129,0.5)] flex items-center justify-center space-x-1 animate-pulse"
+                  >
+                    <Zap className="w-3 h-3 fill-current" />
+                    <span>LAUNCH EXTRACTION</span>
+                  </button>
+                )}
               </div>
             </div>
 

@@ -447,6 +447,29 @@ export function setupHeistEngine(io, socket) {
       io.to(`lobby:${roomCode}`).emit('heist:vote-failed', { message: 'Majority voted to continue the mission!' });
     }
   });
+
+  // ─────────────────────────────────────────────────────────
+  // heist:extraction-* — Synchronized vault breach events
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:extraction-start', (data) => {
+    const roomCode = normCode(data.roomCode);
+    io.to(`heist:${roomCode}`).emit('heist:extraction-start', data);
+  });
+
+  socket.on('heist:extraction-ring-update', (data) => {
+    const roomCode = normCode(data.roomCode);
+    socket.to(`heist:${roomCode}`).emit('heist:extraction-ring-update', data);
+  });
+
+  socket.on('heist:extraction-pin-locked', (data) => {
+    const roomCode = normCode(data.roomCode);
+    io.to(`heist:${roomCode}`).emit('heist:extraction-pin-locked', data);
+  });
+
+  socket.on('heist:extraction-breached', (data) => {
+    const roomCode = normCode(data.roomCode);
+    io.to(`heist:${roomCode}`).emit('heist:extraction-breached', data);
+  });
 }
 
 /**

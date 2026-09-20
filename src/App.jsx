@@ -2947,10 +2947,10 @@ export default function App() {
           {activeTab === 'home' && (
             <motion.div
               key="home"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <HeroPage
                 onNavigate={navigateToTab}
@@ -4376,10 +4376,10 @@ export default function App() {
           {activeTab === 'characters' && (
             <motion.div
               key="characters"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-8"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-4 border-[#03140C] pb-4 bg-[#071E14]/70 p-4 backdrop-blur-md">
@@ -4633,10 +4633,10 @@ export default function App() {
           {activeTab === 'builder' && (
             <motion.div
               key="builder"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="forest-card p-6 sm:p-8 space-y-6"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-[#03140C] pb-4">
@@ -4750,10 +4750,10 @@ export default function App() {
           {activeTab === 'settings' && (
             <motion.div
               key="settings"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-5 max-w-2xl mx-auto"
             >
               <div className="flex items-center space-x-3">
@@ -5041,10 +5041,10 @@ export default function App() {
           {activeTab === 'waitlist' && (
             <motion.div 
               key="waitlist"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="forest-card p-6 sm:p-8 space-y-6 max-w-2xl mx-auto text-center"
             >
               <Rocket className="w-12 h-12 text-[#FBBF24] mx-auto animate-bounce" />
@@ -5092,10 +5092,10 @@ export default function App() {
           {activeTab === 'stats' && (
             <motion.div
               key="stats"
-              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(3px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <StatsDashboard
                 currentUser={currentUser}
@@ -5620,12 +5620,19 @@ export default function App() {
       {/* Leave Squad Confirmation Modal (Styled per Tactical Broadcast Blueprint) */}
       <AnimatePresence>
         {isLeaveSquadModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020B06]/75 backdrop-blur-xl"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.92, y: 14 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="max-w-xl w-full p-6 sm:p-8 space-y-6 border-4 border-[#042416]/90 bg-[#0D4A32]/55 backdrop-blur-2xl rounded-[36px] shadow-[10px_10px_0px_#03140C] text-left relative overflow-hidden text-white animate-cartoon-pop"
+              exit={{ opacity: 0, scale: 0.94, y: 10 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26, mass: 0.8 }}
+              className="max-w-xl w-full p-6 sm:p-8 space-y-6 border-4 border-[#042416]/90 bg-[#0D4A32]/55 backdrop-blur-2xl rounded-[36px] shadow-[10px_10px_0px_#03140C] text-left relative overflow-hidden text-white"
             >
               {/* Playful Ambient Background Dots & Frost Glow */}
               <div className="absolute inset-0 bg-[radial-gradient(#34d39925_2px,transparent_2px)] [background-size:16px_16px] pointer-events-none opacity-80" />
@@ -5748,7 +5755,7 @@ export default function App() {
               </div>
 
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

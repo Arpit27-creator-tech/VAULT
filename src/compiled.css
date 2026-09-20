@@ -5135,11 +5135,6 @@ button, input, select, textarea {
   --tw-ring-color: rgb(241 245 249 / var(--tw-ring-opacity, 1));
 }
 
-.blur {
-  --tw-blur: blur(8px);
-  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
-}
-
 .blur-2xl {
   --tw-blur: blur(40px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -5336,11 +5331,16 @@ button, input, select, textarea {
   border: 3px solid #03140C;
   border-radius: 12px;
   box-shadow: 5px 5px 0px #020C07;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .forest-card:hover {
-  transform: translate(-2px, -2px);
+  transform: translate3d(-2px, -2px, 0);
   box-shadow: 7px 7px 0px #10B981, 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
@@ -5348,16 +5348,20 @@ button, input, select, textarea {
   border: 3px solid #03140C;
   border-radius: 9px;
   box-shadow: 3px 3px 0px #03140C;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .neo-btn-emerald:hover {
-  transform: translate(-1px, -1px);
+  transform: translate3d(-1px, -1px, 0);
   box-shadow: 4px 4px 0px #10B981;
 }
 
 .neo-btn-emerald:active {
-  transform: translate(2px, 2px);
+  transform: translate3d(2px, 2px, 0);
   box-shadow: 1px 1px 0px #03140C;
 }
 

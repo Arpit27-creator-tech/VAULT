@@ -290,6 +290,17 @@ export function setupHeistEngine(io, socket) {
   });
 
   // ─────────────────────────────────────────────────────────
+  // heist:leave — Leave the heist room to stop receiving ticks/alarms
+  // ─────────────────────────────────────────────────────────
+  socket.on('heist:leave', (data) => {
+    const roomCode = normCode(data?.roomCode);
+    if (roomCode) {
+      socket.leave(`heist:${roomCode}`);
+      socket.leave(`lobby:${roomCode}`);
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────
   // heist:abort — Abort the current heist
   // ─────────────────────────────────────────────────────────
   socket.on('heist:abort', (data) => {

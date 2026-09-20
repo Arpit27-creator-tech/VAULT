@@ -259,6 +259,10 @@ export const heistSocket = {
     socket?.emit('heist:join-room', { roomCode });
   },
 
+  leave(roomCode) {
+    socket?.emit('heist:leave', { roomCode });
+  },
+
   submitAnswer(roomCode, role, answer, expected, puzzleType, clue, reason, solvedBy, callback) {
     socket?.emit('heist:submit-answer', { roomCode, role, answer, expected, puzzleType, clue, reason, solvedBy }, callback);
   },

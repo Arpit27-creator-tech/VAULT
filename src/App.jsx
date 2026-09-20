@@ -362,6 +362,25 @@ export default function App() {
   const [isDeserterWarningOpen, setIsDeserterWarningOpen] = useState(false);
   const [deserterWarningIsHeistActive, setDeserterWarningIsHeistActive] = useState(false);
 
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  const isInSquadRoomRef = useRef(isInSquadRoom);
+  useEffect(() => {
+    isInSquadRoomRef.current = isInSquadRoom;
+  }, [isInSquadRoom]);
+
+  // Clean up timers, alarms, and audio when navigating away from live heist
+  useEffect(() => {
+    if (activeTab !== 'liveheist') {
+      if (isTimerRunning) setIsTimerRunning(false);
+      if (alarmLevel !== 'LOW_SECURITY') setAlarmLevel('LOW_SECURITY');
+      heistAudio.stopTension();
+    }
+  }, [activeTab]);
+
   // ── Loyalty Points ─────────────────────────────────────────────────────────
   const [loyaltyPoints, setLoyaltyPointsState] = useState(() => {
     try {
@@ -1052,6 +1071,7 @@ export default function App() {
 
     const handleRemoteHeistState = (state) => {
       if (!state) return;
+      if (activeTabRef.current !== 'liveheist' && !isInSquadRoomRef.current) return;
       const stage = allStages[currentStageIdx] || heistStages[0];
       const sId = stage.stageId || 1;
       if (state.solvedRoles && Object.keys(state.solvedRoles).length > 0) {
@@ -1067,17 +1087,20 @@ export default function App() {
         }));
       }
       if (state.timeLeft !== undefined) setTimeLeft(state.timeLeft);
-      if (state.alarmLevel) setAlarmLevel(state.alarmLevel);
+      if (state.alarmLevel && activeTabRef.current === 'liveheist') setAlarmLevel(state.alarmLevel);
       if (state.alarmFails !== undefined) setAlarmFails(state.alarmFails);
     };
 
     const handleRemotePuzzleFailed = (data) => {
+      if (activeTabRef.current !== 'liveheist' && !isInSquadRoomRef.current) return;
       if (data) {
         if (data.alarmFails !== undefined) setAlarmFails(data.alarmFails);
-        if (data.alarmLevel) setAlarmLevel(data.alarmLevel);
+        if (data.alarmLevel && activeTabRef.current === 'liveheist') setAlarmLevel(data.alarmLevel);
         if (data.timeLeft !== undefined) setTimeLeft(data.timeLeft);
-        heistAudio.playAlarmChime();
-        toast.error(`🚨 ALARM ESCALATED by ${data.failedBy || 'teammate'}: ${data.reason}`);
+        if (activeTabRef.current === 'liveheist') {
+          heistAudio.playAlarmChime();
+          toast.error(`🚨 ALARM ESCALATED by ${data.failedBy || 'teammate'}: ${data.reason}`);
+        }
       }
     };
 
@@ -1100,8 +1123,9 @@ export default function App() {
     };
 
     const handleTimerTick = (data) => {
+      if (activeTabRef.current !== 'liveheist' && !isInSquadRoomRef.current) return;
       if (data?.timeLeft !== undefined) setTimeLeft(data.timeLeft);
-      if (data?.alarmLevel) setAlarmLevel(data.alarmLevel);
+      if (data?.alarmLevel && activeTabRef.current === 'liveheist') setAlarmLevel(data.alarmLevel);
     };
 
     const handleRemoteStageSynced = (data) => {
@@ -1265,7 +1289,7 @@ export default function App() {
 
   useEffect(() => {
     let interval = null;
-    if (isTimerRunning && timeLeft > 0) {
+    if (isTimerRunning && activeTab === 'liveheist' && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -1284,7 +1308,7 @@ export default function App() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timeLeft, alarmLevel]);
+  }, [isTimerRunning, activeTab, timeLeft, alarmLevel]);
 
   // Re-enter fullscreen if user presses Escape during active heist
   useEffect(() => {
@@ -1559,6 +1583,9 @@ export default function App() {
     const code = lobby?.code || lobby?.roomCode;
     if (code) {
       lobbySocket.leave(code);
+      try {
+        heistSocket.leave(code);
+      } catch (e) {}
     }
     if (isLobbyVoiceConnected) {
       try {
@@ -1570,14 +1597,19 @@ export default function App() {
     setIsLeaveSquadModalOpen(false);
     setIsDeserterWarningOpen(false);
     setIsEndHeistModalOpen(false);
+
+    // Completely reset all heist alarms, timer, and tension audio
+    setIsTimerRunning(false);
+    setAlarmLevel('LOW_SECURITY');
+    setAlarmFails(0);
+    setTimeLeft(180);
+    heistAudio.stopTension();
+    exitHeistFullscreen();
     heistAudio.playKeyClick();
 
     // ── Loyalty Points deduction ONLY when leaving mid-heist ───────────
     const heistWasActive = (isTimerRunning && activeTab === 'liveheist') || deserterWarningIsHeistActive;
     if (heistWasActive) {
-      setIsTimerRunning(false);
-      heistAudio.stopTension();
-      exitHeistFullscreen();
       setIsMatchVictory(false);
       setActiveTab('operations');
 
@@ -1593,6 +1625,9 @@ export default function App() {
     } else {
       // Leaving from squad lobby before heist: NO PENALTY!
       toast.info("Left squad lobby.");
+      if (activeTab === 'liveheist' || activeTab === 'lobby') {
+        setActiveTab('home');
+      }
     }
   };
 
@@ -2328,7 +2363,7 @@ export default function App() {
             opacity: 0.22
           }}
         />
-        {alarmLevel === 'HIGH_LOCKDOWN' && (
+        {activeTab === 'liveheist' && alarmLevel === 'HIGH_LOCKDOWN' && (
           <div className="absolute inset-0 bg-red-900/25 pointer-events-none animate-pulse" />
         )}
       </div>

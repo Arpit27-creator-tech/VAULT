@@ -579,6 +579,7 @@ function handlePlayerLeave(io, socket, roomCode) {
   player.isReady = false;
 
   socket.leave(`lobby:${roomCode}`);
+  socket.leave(`heist:${roomCode}`);
 
   const activePlayers = lobby.players.filter(p => p.userId && p.username);
 
